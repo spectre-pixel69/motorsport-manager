@@ -4,6 +4,7 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { gameManager } from '../game/index';
+import { ENGINES } from '../data/bikes';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -146,6 +147,101 @@ app.post('/api/rnd/:teamId/unlock', (req: Request, res: Response) => {
   // Body: { upgradeId, costAllocation }
   // Returns: unlock confirmation, new capabilities
   res.status(501).json({ error: 'Not implemented' });
+});
+
+// ============================================================================
+// ENGINE BROWSER ENDPOINTS
+// ============================================================================
+
+app.get('/api/engines/list', (req: Request, res: Response) => {
+  try {
+    const engineList = Object.values(ENGINES).map(eng => ({
+      engineId: eng.id,
+      name: eng.name,
+      manufacturer: eng.manufacturer,
+      horsepower: eng.horsepower,
+      weight: eng.weight,
+      yearlyLeaseCost: eng.yearlyLeaseCost,
+      description: eng.description,
+      ovrBonus: eng.ovrBonus,
+      classSpecificCosts: {
+        '350-pro': eng.yearlyLeaseCost,
+        '250': eng.yearlyLeaseCost,
+        '250p': eng.id === 'restricted-450' ? 280000 : eng.yearlyLeaseCost * 0.7,
+        'womens-250': eng.yearlyLeaseCost * 0.9,
+      },
+    }));
+    res.json(engineList);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/engines/:engineId/detail', (req: Request, res: Response) => {
+  try {
+    const engine = ENGINES[req.params.engineId as any];
+    if (!engine) return res.status(404).json({ error: 'Engine not found' });
+    res.json({
+      engineId: engine.id,
+      name: engine.name,
+      manufacturer: engine.manufacturer,
+      horsepower: engine.horsepower,
+      weight: engine.weight,
+      reliability: engine.reliability,
+      yearlyLeaseCost: engine.yearlyLeaseCost,
+      baseLapTime: engine.baseLapTime,
+      description: engine.description,
+      ovrBonus: engine.ovrBonus,
+      classSpecificCosts: {
+        '350-pro': engine.yearlyLeaseCost,
+        '250': engine.yearlyLeaseCost,
+        '250p': engine.id === 'restricted-450' ? 280000 : engine.yearlyLeaseCost * 0.7,
+        'womens-250': engine.yearlyLeaseCost * 0.9,
+      },
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/team/:teamId/engines/add', (req: Request, res: Response) => {
+  try {
+    const { engineId, classSelections } = req.body;
+    // classSelections: { '350-pro': 1, '250': 2, '250p': 0, 'womens-250': 1 }
+    const team = gameManager.getTeam(req.params.teamId);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    let totalCost = 0;
+    const engine = ENGINES[engineId as any];
+    if (!engine) return res.status(400).json({ error: 'Engine not found' });
+
+    for (const [cls, qty] of Object.entries(classSelections)) {
+      if (qty > 0) {
+        const classCost =
+          cls === '250p'
+            ? 280000
+            : cls === 'womens-250'
+              ? engine.yearlyLeaseCost * 0.9
+              : engine.yearlyLeaseCost;
+        totalCost += classCost * (qty as number);
+      }
+    }
+
+    const budget = team.economy.getBudgetState();
+    if (budget.remaining < totalCost) {
+      return res.status(400).json({ error: 'Insufficient budget', required: totalCost, available: budget.remaining });
+    }
+
+    res.json({
+      engineId,
+      classSelections,
+      totalCost,
+      budgetRemaining: budget.remaining - totalCost,
+      confirmed: true,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
 });
 
 // ============================================================================
