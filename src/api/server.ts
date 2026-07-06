@@ -261,3 +261,217 @@ app.listen(PORT, () => {
   console.log(`📊 Season: 2027 (NAMC v15.1)`);
   console.log(`📡 WebSocket ready for real-time race streaming`);
 });
+
+// ============================================================================
+// CHASSIS SHOWROOM ENDPOINTS
+// ============================================================================
+
+app.get('/api/chassis/list', (req: Request, res: Response) => {
+  try {
+    const { CHASSIS } = require('../data/bikes');
+    const chassisList = Object.values(CHASSIS).map((ch: any) => ({
+      chassisId: ch.id,
+      name: ch.name,
+      manufacturer: ch.manufacturer,
+      weight: ch.weight,
+      rigidity: ch.rigidity,
+      yearlyLeaseCost: ch.yearlyLeaseCost,
+      description: ch.description,
+      strengths: ch.strengths,
+      weaknesses: ch.weaknesses,
+      ovrBonus: ch.ovrBonus,
+      classSpecificCosts: {
+        '350-pro': ch.yearlyLeaseCost,
+        '250': ch.yearlyLeaseCost,
+        '250p': ch.yearlyLeaseCost * 0.9,
+        'womens-250': ch.yearlyLeaseCost * 0.9,
+      },
+    }));
+    res.json(chassisList);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/chassis/:chassisId/detail', (req: Request, res: Response) => {
+  try {
+    const { CHASSIS } = require('../data/bikes');
+    const chassis = CHASSIS[req.params.chassisId as any];
+    if (!chassis) return res.status(404).json({ error: 'Chassis not found' });
+    res.json({
+      chassisId: chassis.id,
+      name: chassis.name,
+      manufacturer: chassis.manufacturer,
+      weight: chassis.weight,
+      rigidity: chassis.rigidity,
+      yearlyLeaseCost: chassis.yearlyLeaseCost,
+      description: chassis.description,
+      strengths: chassis.strengths,
+      weaknesses: chassis.weaknesses,
+      ovrBonus: chassis.ovrBonus,
+      compatibleEngines: chassis.compatibleEngines,
+      classSpecificCosts: {
+        '350-pro': chassis.yearlyLeaseCost,
+        '250': chassis.yearlyLeaseCost,
+        '250p': chassis.yearlyLeaseCost * 0.9,
+        'womens-250': chassis.yearlyLeaseCost * 0.9,
+      },
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/team/:teamId/chassis/add', (req: Request, res: Response) => {
+  try {
+    const { chassisId, classSelections } = req.body;
+    const team = gameManager.getTeam(req.params.teamId);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    const { CHASSIS } = require('../data/bikes');
+    const chassis = CHASSIS[chassisId as any];
+    if (!chassis) return res.status(400).json({ error: 'Chassis not found' });
+
+    let totalCost = 0;
+    for (const [cls, qty] of Object.entries(classSelections)) {
+      if (qty > 0) {
+        const classCost = ['250p', 'womens-250'].includes(cls) ? chassis.yearlyLeaseCost * 0.9 : chassis.yearlyLeaseCost;
+        totalCost += classCost * (qty as number);
+      }
+    }
+
+    const budget = team.economy.getBudgetState();
+    if (budget.remaining < totalCost) {
+      return res.status(400).json({ error: 'Insufficient budget', required: totalCost, available: budget.remaining });
+    }
+
+    res.json({ chassisId, classSelections, totalCost, budgetRemaining: budget.remaining - totalCost, confirmed: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================================
+// TIRES SHOWROOM ENDPOINTS
+// ============================================================================
+
+app.get('/api/tires/list', (req: Request, res: Response) => {
+  try {
+    const { TIRES } = require('../data/bikes');
+    const tiresList = Object.values(TIRES).map((tire: any) => ({
+      tireId: tire.id,
+      name: tire.name,
+      manufacturer: tire.manufacturer,
+      gripRating: tire.gripRating,
+      wearRate: tire.wearRate,
+      costPerSet: tire.costPerSet,
+      description: tire.description,
+      strengths: tire.strengths,
+      weaknesses: tire.weaknesses,
+      ovrBonus: tire.ovrBonus,
+      bestForSurface: tire.bestForSurface,
+      seasonalCost: tire.costPerSet * 20,
+    }));
+    res.json(tiresList);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/tires/:tireId/detail', (req: Request, res: Response) => {
+  try {
+    const { TIRES } = require('../data/bikes');
+    const tire = TIRES[req.params.tireId as any];
+    if (!tire) return res.status(404).json({ error: 'Tire not found' });
+    res.json({
+      tireId: tire.id,
+      name: tire.name,
+      manufacturer: tire.manufacturer,
+      gripRating: tire.gripRating,
+      wearRate: tire.wearRate,
+      durability: tire.durability,
+      costPerSet: tire.costPerSet,
+      seasonalCost: tire.costPerSet * 20,
+      description: tire.description,
+      strengths: tire.strengths,
+      weaknesses: tire.weaknesses,
+      ovrBonus: tire.ovrBonus,
+      bestForSurface: tire.bestForSurface,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================================
+// STAFF HIRING ENDPOINTS
+// ============================================================================
+
+app.get('/api/staff/list', (req: Request, res: Response) => {
+  try {
+    const { ALL_STAFF } = require('../data/staff');
+    const staffList = Object.values(ALL_STAFF).map((staff: any) => ({
+      staffId: staff.id,
+      name: staff.name,
+      role: staff.role,
+      experience: staff.experience,
+      salary: staff.salary,
+      specialties: staff.specialties,
+      rdUnlockTier: staff.rdUnlockTier,
+      description: staff.description,
+      ovrBonus: staff.ovrBonus,
+    }));
+    res.json(staffList);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.get('/api/staff/:staffId/detail', (req: Request, res: Response) => {
+  try {
+    const { ALL_STAFF } = require('../data/staff');
+    const staff = ALL_STAFF[req.params.staffId as any];
+    if (!staff) return res.status(404).json({ error: 'Staff not found' });
+    res.json({
+      staffId: staff.id,
+      name: staff.name,
+      role: staff.role,
+      experience: staff.experience,
+      salary: staff.salary,
+      specialties: staff.specialties,
+      rdUnlockTier: staff.rdUnlockTier,
+      maxBonusTier: staff.maxBonusTier,
+      description: staff.description,
+      ovrBonus: staff.ovrBonus,
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/team/:teamId/staff/hire', (req: Request, res: Response) => {
+  try {
+    const { staffIds } = req.body; // Array of staff IDs to hire
+    const team = gameManager.getTeam(req.params.teamId);
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+
+    const { ALL_STAFF } = require('../data/staff');
+    let totalCost = 0;
+
+    for (const staffId of staffIds) {
+      const staff = ALL_STAFF[staffId as any];
+      if (!staff) return res.status(400).json({ error: `Staff ${staffId} not found` });
+      totalCost += staff.salary;
+    }
+
+    const budget = team.economy.getBudgetState();
+    if (budget.remaining < totalCost) {
+      return res.status(400).json({ error: 'Insufficient budget', required: totalCost, available: budget.remaining });
+    }
+
+    res.json({ staffIds, totalCost, budgetRemaining: budget.remaining - totalCost, confirmed: true });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
