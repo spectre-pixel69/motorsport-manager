@@ -112,7 +112,8 @@ export function simulateRace(
         } else {
           st.status = 'dnf';
           st.lapsDone = lap - 1;
-          events.push({ lap, kind: 'crash', riderId: e.rider.id, text: `${e.rider.name} CRASHES OUT of P${posOf(e.rider.id, prevOrder) || '?'}` });
+          const p = posOf(e.rider.id, prevOrder);
+          events.push({ lap, kind: 'crash', riderId: e.rider.id, text: p ? `${e.rider.name} CRASHES OUT of P${p}!` : `${e.rider.name} CRASHES OUT on the opening lap!` });
           continue;
         }
       } else if (rng() < (100 - e.team.bike.reliability) * 0.00012) {

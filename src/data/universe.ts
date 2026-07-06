@@ -196,6 +196,14 @@ function buildNAMC(rng: RNG, u: Universe): void {
   }
 
   let orgCursor = 0;
+  // Rulebook 6.2: no duplicate numbers within the same class + championship.
+  const classNumbers = new Map<string, Set<number>>();
+  const numbersFor = (championship: ChampionshipId, cls: ClassId): Set<number> => {
+    const key = `${championship}:${cls}`;
+    let s = classNumbers.get(key);
+    if (!s) { s = new Set(); classNumbers.set(key, s); }
+    return s;
+  };
   const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number) => {
     const strokes = championship === 'fourStroke' ? '4S' : '2S';
     const makers = MANUFACTURERS.filter(m => m.strokes === 'both' || m.strokes === strokes);
@@ -207,13 +215,12 @@ function buildNAMC(rng: RNG, u: Universe): void {
     });
     u.teams[team.id] = team;
 
-    const usedNums = new Set<number>();
     // 8 starters: 2 per class (women's class riders are female)
     for (const cls of NAMC_CLASS_IDS) {
       for (let i = 0; i < RIDERS_PER_CLASS_PER_TEAM; i++) {
         const female = cls === 'women';
         const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
-        const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: usedNums });
+        const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
         if (cls === 'c125') rider.age = irange(rng, 18, 22);
         u.riders[rider.id] = rider;
       }
