@@ -1,127 +1,144 @@
-// NAMC economy: purses, revenue pool distribution, salaries — per rulebook.
-// Road disciplines use a simpler prize-money model.
+// NAMC Economy System: Purses, rider salaries, budgets, cash flow
+// Per v15.1 rulebook Section 4-5
 
-import type { ChampionshipId, ClassId, Team, Universe } from '../data/types';
-import {
-  APPEARANCE_FEE, PURSES, REVENUE_SPLIT, TEAM_POOL_BASE_SHARE, WEEKLY_LEAGUE_REVENUE,
-  CHARTERS_PER_CHAMPIONSHIP, NAMC_CLASS_IDS,
-} from '../data/namc';
-import { teamsOf, ridersOfTeam } from '../data/universe';
-import type { WeekendResult } from '../sim/weekend';
+import type { ChassisId, EngineId, TireId } from '../data/bikes';
+import type { ElectronicsType, ExhaustType } from '../data/setups';
+import { ENGINES, CHASSIS, TIRES, calculateBikeBuildCost } from '../data/bikes';
+import { ELECTRONICS_SYSTEMS, EXHAUST_SYSTEMS, calculateRoundSetupCost } from '../data/setups';
+import { ALL_STAFF } from '../data/staff';
 
-export interface RoundLedgerEntry {
-  teamId: string;
-  purse: number;          // riders' purse credited to team ledger (team manages payroll)
-  revenuePool: number;
-  salaries: number;       // per-round salary + appearance fees paid out
-  net: number;
+export type RiderClass = '350-pro' | '250' | '250p' | 'womens-250';
+export type FinishPosition = number; // 1-40
+
+// ============================================================================
+// RIDER SALARY STRUCTURE (Per v15.1 Section 4.1)
+// ============================================================================
+
+export const RIDER_SALARY_FLOOR: Record<RiderClass, number> = {
+  '350-pro': 400000,
+  '250': 200000,
+  '250p': 100000,
+  'womens-250': 100000,
+};
+
+export const APPEARANCE_FEE_PER_ROUND = 1000; // $1,000 per round, 20 rounds = $20,000 season
+export const PRO_DEBUT_BONUS = 25000; // One-time bonus for first-time pros
+export const BENCH_RIDER_RETAINER = 50000; // Annual retainer
+export const ROUND_PURSE = 800000; // $800,000 per round distributed across 4 classes
+export const MIN_FINISH_PAYOUT = 5000; // $5,000 minimum for 40th place
+
+// Win bonuses per class
+export const WIN_BONUS: Record<RiderClass, number> = {
+  '350-pro': 75000,
+  '250': 40000,
+  '250p': 20000,
+  'womens-250': 20000,
+};
+
+// ============================================================================
+// SEASONAL BUDGET ALLOCATION
+// ============================================================================
+
+export interface TeamBudget {
+  totalCapital: number; // $2,500,000 base
+  staffCosts: number; // Annual staff salaries
+  riderSalaries: number; // Annual rider compensation
+  bikeHardware: number; // Engine + Chassis leases
+  equipmentMaintenance: number; // Tires, repairs, consumables
+  rdInvestment: number; // R&D unlocks
+  reserved: number; // Cash buffer
+
+  spent: number; // Total spent (calculated)
+  remaining: number; // Available for use (calculated)
 }
 
-/** Rider purse for a class weekend: position -> dollars (40 deep). */
-export function pursesFor(classId: ClassId, finishOrder: string[]): Record<string, number> {
-  const scale = PURSES[classId] ?? PURSES.c125;
-  const out: Record<string, number> = {};
-  finishOrder.forEach((id, i) => { out[id] = scale[i] ?? scale[scale.length - 1]; });
-  return out;
+export interface CashFlowEntry {
+  round: number;
+  source: 'purse' | 'appearance' | 'win-bonus' | 'other';
+  amount: number;
+  description: string;
 }
 
-/**
- * Weekly revenue pool for ONE championship (4S or 2S).
- * Team pool = 45% x half weekly revenue; 60% equal base + 40% merit by round points.
- * Dual-charter teams: full share in fourStroke, $0 in twoStroke (cascades) — rulebook 2.6.3.
- */
-export function distributeRevenuePool(
-  u: Universe, championship: ChampionshipId, roundPointsByTeam: Record<string, number>,
-): Record<string, number> {
-  const champRevenue = WEEKLY_LEAGUE_REVENUE / 2;
-  const teamPool = champRevenue * REVENUE_SPLIT.teams;
-  const teams = teamsOf(u, 'namc', championship);
-  const base = (teamPool * TEAM_POOL_BASE_SHARE) / CHARTERS_PER_CHAMPIONSHIP;
-  const meritPool = teamPool * (1 - TEAM_POOL_BASE_SHARE);
-  const totalPts = Object.values(roundPointsByTeam).reduce((s, v) => s + v, 0) || 1;
+export class EconomyManager {
+  private seasonYear: number;
+  private teamBudget: TeamBudget;
+  private cashFlow: CashFlowEntry[] = [];
+  private riderRaceStarts: Map<string, number> = new Map();
 
-  const out: Record<string, number> = {};
-  // First pass: nominal shares
-  let cascadePot = 0;
-  const eligibleSingles: Team[] = [];
-  for (const t of teams) {
-    const merit = (meritPool * (roundPointsByTeam[t.id] ?? 0)) / totalPts;
-    const share = base + merit;
-    if (championship === 'twoStroke' && t.dualCharter) {
-      cascadePot += share;         // forfeited, cascades to single-charter 2S teams
-      out[t.id] = 0;
-    } else {
-      out[t.id] = share;
-      if (!t.dualCharter) eligibleSingles.push(t);
+  constructor(seasonYear: number = 2027) {
+    this.seasonYear = seasonYear;
+    this.teamBudget = {
+      totalCapital: 2500000,
+      staffCosts: 0,
+      riderSalaries: 0,
+      bikeHardware: 0,
+      equipmentMaintenance: 0,
+      rdInvestment: 0,
+      reserved: 0,
+      spent: 0,
+      remaining: 2500000,
+    };
+  }
+
+  allocateStaff(staffIds: string[]): { success: boolean; totalCost: number; error?: string } {
+    let totalCost = 0;
+    for (const staffId of staffIds) {
+      const staff = ALL_STAFF[staffId];
+      if (!staff) return { success: false, totalCost: 0, error: `Staff ${staffId} not found` };
+      totalCost += staff.salary;
     }
-  }
-  if (cascadePot > 0 && eligibleSingles.length > 0) {
-    const bonus = cascadePot / eligibleSingles.length;
-    for (const t of eligibleSingles) out[t.id] += bonus;
-  }
-  return out;
-}
-
-/** Process a full NAMC round for one championship: returns per-team ledger. */
-export function settleNamcRound(
-  u: Universe, championship: ChampionshipId, weekendResults: WeekendResult[],
-): RoundLedgerEntry[] {
-  // aggregate round champ points per team
-  const roundPointsByTeam: Record<string, number> = {};
-  const purseByTeam: Record<string, number> = {};
-
-  for (const w of weekendResults) {
-    const purse = pursesFor(w.classId, w.finishOrder);
-    for (const [riderId, pts] of Object.entries(w.points)) {
-      const r = u.riders[riderId];
-      if (!r?.teamId) continue;
-      roundPointsByTeam[r.teamId] = (roundPointsByTeam[r.teamId] ?? 0) + pts;
+    if (this.teamBudget.remaining < totalCost) {
+      return { success: false, totalCost, error: 'Insufficient budget for staff allocation' };
     }
-    for (const [riderId, dollars] of Object.entries(purse)) {
-      const r = u.riders[riderId];
-      if (!r?.teamId) continue;
-      // team banks purse, pays riders via salary line (manager-game abstraction)
-      purseByTeam[r.teamId] = (purseByTeam[r.teamId] ?? 0) + dollars * 0.5;
+    this.teamBudget.staffCosts = totalCost;
+    this.updateBudget();
+    return { success: true, totalCost };
+  }
+
+  calculatePurseForFinish(riderClass: RiderClass, finishPosition: FinishPosition): number {
+    const classShare = ROUND_PURSE / 4;
+    if (finishPosition === 1) return WIN_BONUS[riderClass];
+    if (finishPosition <= 3) return WIN_BONUS[riderClass] * 0.6;
+    if (finishPosition <= 5) return WIN_BONUS[riderClass] * 0.35;
+    if (finishPosition <= 10) return classShare / 10 * (1 - (finishPosition - 1) / 10);
+    return MIN_FINISH_PAYOUT;
+  }
+
+  processRaceResults(
+    round: number,
+    results: { riderId: string; riderClass: RiderClass; finishPosition: FinishPosition }[],
+  ): { totalPayout: number; breakdown: Record<string, number> } {
+    const breakdown: Record<string, number> = {};
+    let totalPayout = 0;
+    for (const result of results) {
+      const purse = this.calculatePurseForFinish(result.riderClass, result.finishPosition);
+      const appearanceFee = APPEARANCE_FEE_PER_ROUND;
+      const total = purse + appearanceFee;
+      breakdown[result.riderId] = total;
+      totalPayout += total;
+      this.riderRaceStarts.set(result.riderId, (this.riderRaceStarts.get(result.riderId) ?? 0) + 1);
+      this.cashFlow.push({ round, source: 'purse', amount: purse, description: `P${result.finishPosition} purse` });
+      this.cashFlow.push({ round, source: 'appearance', amount: appearanceFee, description: 'Appearance fee' });
     }
+    return { totalPayout, breakdown };
   }
 
-  const pool = distributeRevenuePool(u, championship, roundPointsByTeam);
-  const ledger: RoundLedgerEntry[] = [];
-  for (const team of teamsOf(u, 'namc', championship)) {
-    const riders = ridersOfTeam(u, team.id);
-    const salaries = riders.reduce((s, r) => s + r.salary / 24 + (r.bench ? 0 : APPEARANCE_FEE), 0);
-    const purse = purseByTeam[team.id] ?? 0;
-    const revenuePool = pool[team.id] ?? 0;
-    const net = purse + revenuePool - salaries;
-    team.budget += Math.round(net);
-    ledger.push({ teamId: team.id, purse, revenuePool, salaries, net });
+  getBudgetState(): TeamBudget {
+    return { ...this.teamBudget };
   }
-  return ledger;
-}
 
-/** Road round prize money (simple ladder-scaled model). */
-export function settleRoadRound(u: Universe, weekend: WeekendResult): void {
-  const tierMoney: Record<string, number> = {
-    gp1: 220_000, gp2: 60_000, gp3: 30_000,
-    sbk: 140_000, ss600: 45_000, ss300: 22_000,
-  };
-  const winnerPrize = tierMoney[weekend.classId] ?? 30_000;
-  weekend.finishOrder.forEach((riderId, i) => {
-    const r = u.riders[riderId];
-    if (!r?.teamId) return;
-    const team = u.teams[r.teamId];
-    const prize = Math.round(winnerPrize * Math.max(0, 1 - i * 0.09));
-    team.budget += prize;
-  });
-  // salaries: paid per round
-  const seen = new Set<string>();
-  for (const riderId of weekend.finishOrder) {
-    const r = u.riders[riderId];
-    if (!r?.teamId || seen.has(r.teamId)) continue;
-    seen.add(r.teamId);
-    const team = u.teams[r.teamId];
-    const roster = ridersOfTeam(u, team.id);
-    const rounds = u.calendars[team.discipline].length;
-    team.budget -= Math.round(roster.reduce((s, x) => s + x.salary / rounds, 0));
+  getCashFlowHistory(): CashFlowEntry[] {
+    return [...this.cashFlow];
+  }
+
+  private updateBudget(): void {
+    this.teamBudget.spent =
+      this.teamBudget.staffCosts +
+      this.teamBudget.riderSalaries +
+      this.teamBudget.bikeHardware +
+      this.teamBudget.equipmentMaintenance +
+      this.teamBudget.rdInvestment +
+      this.teamBudget.reserved;
+    this.teamBudget.remaining = this.teamBudget.totalCapital - this.teamBudget.spent;
   }
 }
