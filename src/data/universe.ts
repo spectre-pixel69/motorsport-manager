@@ -12,6 +12,7 @@ import { FIRST_M, FIRST_F, LAST, NAT_WEIGHTS, TEAM_ADJ, TEAM_NOUN, NAMC_TEAM_CIT
 import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NAMC_CLASS_IDS } from './namc';
 import { mulberry32, hashString, pick, irange, gauss, clamp, shuffle, type RNG } from '../util/rng';
 import { seededLogo } from '../logo/logos';
+import ALL_RIDERS from './riders';
 
 let riderSeq = 0;
 let teamSeq = 0;
@@ -204,7 +205,7 @@ function buildNAMC(rng: RNG, u: Universe): void {
     if (!s) { s = new Set(); classNumbers.set(key, s); }
     return s;
   };
-  const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number) => {
+  const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number, teamIndex?: number) => {
     const strokes = championship === 'fourStroke' ? '4S' : '2S';
     const makers = MANUFACTURERS.filter(m => m.strokes === 'both' || m.strokes === strokes);
     const team = makeTeam(rng, {
@@ -215,16 +216,41 @@ function buildNAMC(rng: RNG, u: Universe): void {
     });
     u.teams[team.id] = team;
 
-    // 8 starters: 2 per class (women's class riders are female)
-    for (const cls of NAMC_CLASS_IDS) {
-      for (let i = 0; i < RIDERS_PER_CLASS_PER_TEAM; i++) {
-        const female = cls === 'women';
-        const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
-        const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
-        if (cls === 'c125') rider.age = irange(rng, 18, 22);
-        u.riders[rider.id] = rider;
+    // Try to use pre-defined riders from ALL_RIDERS if available
+    let usePredefinedRiders = false;
+    if (teamIndex !== undefined && teamIndex < 20) {
+      const teamPrefix = String(teamIndex + 1).padStart(2, '0');
+      const riderIds = Object.keys(ALL_RIDERS).filter(rid => rid.startsWith(teamPrefix + '-'));
+      if (riderIds.length >= 8) {
+        usePredefinedRiders = true;
+        let riderCount = 0;
+        for (const rid of riderIds) {
+          if (riderCount >= 8) break;
+          const preRider = ALL_RIDERS[rid];
+          if (preRider.championship === championship) {
+            // Clone the rider and assign to this team
+            const assignedRider: Rider = { ...preRider, id: `r${riderSeq++}`, teamId: team.id };
+            u.riders[assignedRider.id] = assignedRider;
+            riderCount++;
+          }
+        }
       }
     }
+
+    // Fall back to dynamic generation if no pre-defined riders
+    if (!usePredefinedRiders) {
+      // 8 starters: 2 per class (women's class riders are female)
+      for (const cls of NAMC_CLASS_IDS) {
+        for (let i = 0; i < RIDERS_PER_CLASS_PER_TEAM; i++) {
+          const female = cls === 'women';
+          const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
+          const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
+          if (cls === 'c125') rider.age = irange(rng, 18, 22);
+          u.riders[rider.id] = rider;
+        }
+      }
+    }
+
     // bench: 2 male + 1 female (rulebook 4.8.1)
     for (let b = 0; b < 3; b++) {
       const female = b === 2;
@@ -235,21 +261,24 @@ function buildNAMC(rng: RNG, u: Universe): void {
   };
 
   // Dual-charter organizations — one team entry per championship, linked by orgId.
+  let teamIndex = 0;
   for (let d = 0; d < DUAL_ORGS; d++) {
     const name = orgNames[orgCursor++];
     const prestige = irange(rng, 65, 92);
     const orgId = `org_dual_${d}`;
     for (const champ of champs) {
-      const t = makeCharterTeam(champ, true, orgId, name, prestige);
+      const t = makeCharterTeam(champ, true, orgId, name, prestige, teamIndex);
       // shared identity across both halves
       const first = Object.values(u.teams).find(x => x.orgId === orgId && x.id !== t.id);
       if (first) { t.colors = first.colors; t.logo = first.logo; t.shortName = first.shortName; }
     }
+    teamIndex++;
   }
   // Single-charter teams
   for (const champ of champs) {
     for (let s = 0; s < CHARTERS_PER_CHAMPIONSHIP - DUAL_ORGS; s++) {
-      makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], irange(rng, 35, 80));
+      makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], irange(rng, 35, 80), teamIndex);
+      teamIndex++;
     }
   }
 }

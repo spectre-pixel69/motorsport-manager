@@ -12,6 +12,7 @@ import { SeasonProgress } from './dashboard/SeasonProgress';
 import { DraftPool } from './dashboard/DraftPool';
 import { FreeAgents } from './dashboard/FreeAgents';
 import { SeasonCalendar } from './dashboard/SeasonCalendar';
+import { RiderDetailModal } from './dashboard/RiderDetailModal';
 import './dashboard.css';
 
 interface Props {
@@ -95,12 +96,16 @@ export function TeamDashboard({ state, onExit }: Props) {
         </div>
       )}
 
-      {/* Rider Detail Modal - will implement when rider is clicked */}
-      {expandedRider && (
+      {/* Rider Detail Modal */}
+      {expandedRider && u.riders[expandedRider] && (
         <div class="modal-backdrop" onClick={() => setExpandedRider(null)}>
-          <div class="modal" onClick={e => e.stopPropagation()}>
+          <div class="modal rider-detail" onClick={e => e.stopPropagation()}>
             <button class="modal-close" onClick={() => setExpandedRider(null)}>✕</button>
-            {/* Rider detail content goes here */}
+            <RiderDetailModal
+              rider={u.riders[expandedRider]}
+              universe={u}
+              onClose={() => setExpandedRider(null)}
+            />
           </div>
         </div>
       )}
