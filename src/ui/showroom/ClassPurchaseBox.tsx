@@ -4,7 +4,8 @@ interface Props {
   classType: string;
   className: string;
   leasePrice: number;
-  engineId: string;
+  itemId?: string;
+  engineId?: string;
   selected: boolean;
   quantity: number;
   onUpdate: (quantity: number, selected: boolean) => void;
