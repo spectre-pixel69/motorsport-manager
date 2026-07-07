@@ -1,21 +1,42 @@
 // Draft Pool - Pre-season rider acquisition from available pool
 
+import { useState } from 'preact/hooks';
 import type { Rider, Universe } from '../../data/types';
+import { draftRider } from '../../api/client';
 
 interface Props {
   universe: Universe;
+  teamId: string;
+  classId: string;
   onClose: () => void;
   onDraft?: (riderId: string) => void;
 }
 
-export function DraftPool({ universe, onClose, onDraft }: Props) {
+export function DraftPool({ universe, teamId, classId, onClose, onDraft }: Props) {
+  const [drafting, setDrafting] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
   // Get all riders not on a team (available for draft)
   const availableRiders = Object.values(universe.riders).filter(
     r => !r.teamId || r.teamId === ''
   );
 
-  const handleDraft = (riderId: string) => {
-    onDraft?.(riderId);
+  const handleDraft = async (riderId: string) => {
+    setDrafting(riderId);
+    setError(null);
+    try {
+      const result = await draftRider(teamId, riderId, classId);
+      if (result.success) {
+        onDraft?.(riderId);
+        onClose();
+      } else {
+        setError(result.error || 'Failed to draft rider');
+      }
+    } catch (err) {
+      setError(String(err));
+    } finally {
+      setDrafting(null);
+    }
   };
 
   return (
@@ -26,6 +47,8 @@ export function DraftPool({ universe, onClose, onDraft }: Props) {
       </div>
 
       <div class="modal-body">
+        {error && <div class="error-banner">{error}</div>}
+
         {availableRiders.length === 0 ? (
           <div class="empty-state">
             <p>No riders available in draft pool</p>
@@ -50,8 +73,12 @@ export function DraftPool({ universe, onClose, onDraft }: Props) {
                     <span>Consistency: {Math.round(rider.stats.consistency)}</span>
                   </div>
                 </div>
-                <button class="btn-draft" onClick={() => handleDraft(rider.id)}>
-                  Draft
+                <button
+                  class="btn-draft"
+                  onClick={() => handleDraft(rider.id)}
+                  disabled={drafting === rider.id}
+                >
+                  {drafting === rider.id ? '...' : 'Draft'}
                 </button>
               </div>
             ))}

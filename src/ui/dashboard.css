@@ -901,6 +901,27 @@
   font-size: 12px;
 }
 
+/* Error Banner */
+.error-banner {
+  background: #3a1a1a;
+  border: 1px solid #8a2a2a;
+  color: #ff6b6b;
+  padding: 8px 12px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+/* Button States */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background-color: inherit;
+}
+
 /* Buttons */
 .btn-secondary {
   padding: 6px 12px;

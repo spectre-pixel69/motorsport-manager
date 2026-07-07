@@ -22,7 +22,7 @@ interface Props {
 type ModalType = null | 'draft' | 'freeagents' | 'calendar' | 'rider';
 
 export function TeamDashboard({ state, onExit }: Props) {
-  const [selectedClass, setSelectedClass] = useState<ClassId | null>(null);
+  const [selectedClass, setSelectedClass] = useState<ClassId>(state.focusClass);
   const [expandedRider, setExpandedRider] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState<ModalType>(null);
   const u = state.universe;
@@ -72,12 +72,16 @@ export function TeamDashboard({ state, onExit }: Props) {
             {openModal === 'draft' && (
               <DraftPool
                 universe={u}
+                teamId={team.id}
+                classId={selectedClass}
                 onClose={() => setOpenModal(null)}
               />
             )}
             {openModal === 'freeagents' && (
               <FreeAgents
                 universe={u}
+                teamId={team.id}
+                classId={selectedClass}
                 onClose={() => setOpenModal(null)}
               />
             )}
