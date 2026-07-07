@@ -17,11 +17,12 @@ interface Props {
   state: CareerState;
   onRaceReady: (weekends: WeekendResult[], playerWeekend: WeekendResult | null) => void;
   onExit: () => void;
+  onViewDashboard?: () => void;
 }
 
 type Tab = 'race' | 'standings' | 'team' | 'money' | 'league';
 
-export function Hub({ state, onRaceReady, onExit }: Props) {
+export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
   const [tab, setTab] = useState<Tab>('race');
   const [stClass, setStClass] = useState<ClassId>(state.focusClass);
   const [stChamp, setStChamp] = useState<ChampionshipId>(state.championship);
@@ -57,6 +58,7 @@ export function Hub({ state, onRaceReady, onExit }: Props) {
         <button class="ghost" onClick={onExit}>Menu</button>
       </div>
       <div class="tabs">
+        {state.discipline === 'namc' && <button class="primary" onClick={onViewDashboard}>📊 Team Dashboard</button>}
         <button class={tab === 'race' ? 'active' : ''} onClick={() => setTab('race')}>Race Weekend</button>
         <button class={tab === 'standings' ? 'active' : ''} onClick={() => setTab('standings')}>Standings</button>
         <button class={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>Team</button>

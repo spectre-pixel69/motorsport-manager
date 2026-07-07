@@ -5,6 +5,7 @@ import { BRAND } from './data/brand';
 import { loadCareer, deleteSave, saveCareer, type CareerState } from './game/state';
 import { NewGame } from './ui/NewGame';
 import { Hub } from './ui/Hub';
+import { TeamDashboard } from './ui/TeamDashboard';
 import { RaceView } from './ui/RaceView';
 import type { WeekendResult } from './sim/weekend';
 
@@ -12,6 +13,7 @@ type Screen =
   | { id: 'title' }
   | { id: 'new' }
   | { id: 'hub'; state: CareerState }
+  | { id: 'dashboard'; state: CareerState }
   | { id: 'race'; state: CareerState; weekends: WeekendResult[]; player: WeekendResult };
 
 function App() {
@@ -63,6 +65,14 @@ function App() {
             if (player) setScreen({ id: 'race', state: screen.state, weekends, player });
             else setScreen({ id: 'hub', state: screen.state });
           }}
+          onViewDashboard={() => setScreen({ id: 'dashboard', state: screen.state })}
+        />
+      )}
+
+      {screen.id === 'dashboard' && (
+        <TeamDashboard
+          state={screen.state}
+          onExit={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }}
         />
       )}
 
