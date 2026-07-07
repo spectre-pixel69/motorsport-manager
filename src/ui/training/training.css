@@ -1,0 +1,388 @@
+/* Training Center Styling */
+
+.training-center {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  background: #0a0e27;
+  color: #fff;
+  height: 100%;
+  overflow-y: auto;
+}
+
+.training-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 1px solid #2a2f4a;
+  padding-bottom: 12px;
+}
+
+.training-header h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 700;
+}
+
+.btn-close {
+  padding: 6px 12px;
+  background: #3a3f4a;
+  color: #fff;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.training-content {
+  display: grid;
+  grid-template-columns: 250px 1fr 200px;
+  gap: 20px;
+}
+
+/* Rider Selection */
+.rider-select {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #15192e;
+  border-radius: 8px;
+  border: 1px solid #2a2f4a;
+}
+
+.rider-select h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rider-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.rider-option {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #1a1f3a;
+  border: 2px solid #2a2f4a;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.rider-option:hover {
+  border-color: #3498db;
+  background: #1f2440;
+}
+
+.rider-option.active {
+  border-color: #3498db;
+  background: #0f1f3a;
+  box-shadow: 0 0 10px rgba(52, 152, 219, 0.3);
+}
+
+.rider-name {
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.rider-stamina {
+  font-size: 11px;
+  color: #888;
+}
+
+/* Training Panel */
+.training-panel {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 16px;
+  background: #15192e;
+  border-radius: 8px;
+  border: 1px solid #2a2f4a;
+}
+
+.training-panel h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.skill-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.skill-btn {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: #1a1f3a;
+  border: 2px solid #2a2f4a;
+  border-radius: 6px;
+  color: #fff;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+}
+
+.skill-btn:hover {
+  border-color: #3498db;
+  background: #1f2440;
+}
+
+.skill-btn.active {
+  border-color: #2ecc71;
+  background: #1a3a2a;
+  box-shadow: 0 0 8px rgba(46, 204, 113, 0.3);
+}
+
+.skill-name {
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: capitalize;
+  color: #aaa;
+}
+
+.skill-level {
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+}
+
+.skill-potential {
+  font-size: 11px;
+  color: #888;
+}
+
+.expected-gain {
+  font-size: 12px;
+  color: #2ecc71;
+  font-weight: 600;
+}
+
+.training-info {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  background: #1a1f3a;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  align-items: center;
+}
+
+.info-row .value {
+  font-weight: 600;
+  color: #3498db;
+}
+
+.info-row .gain {
+  color: #2ecc71;
+}
+
+.training-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 12px;
+  background: rgba(46, 204, 113, 0.1);
+  border: 1px solid #2ecc71;
+  border-radius: 6px;
+  border-left: 4px solid #2ecc71;
+}
+
+.training-result.overtrained {
+  background: rgba(243, 156, 18, 0.1);
+  border-color: #f39c12;
+  border-left-color: #f39c12;
+}
+
+.training-result h4 {
+  margin: 0;
+  font-size: 12px;
+  color: #2ecc71;
+  font-weight: 600;
+  text-transform: uppercase;
+}
+
+.training-result.overtrained h4 {
+  color: #f39c12;
+}
+
+.result-skill {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.result-gain {
+  color: #2ecc71;
+}
+
+.result-stamina {
+  font-size: 11px;
+  color: #888;
+}
+
+.overtrain-warning {
+  font-size: 11px;
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.15);
+  padding: 8px;
+  border-radius: 4px;
+  margin-top: 4px;
+}
+
+.training-actions {
+  display: flex;
+  gap: 10px;
+}
+
+.btn-train,
+.btn-rest {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.btn-train {
+  background: #2ecc71;
+  color: #0a0e27;
+}
+
+.btn-train:hover:not(:disabled) {
+  background: #27ae60;
+}
+
+.btn-train:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.btn-rest {
+  background: #3498db;
+  color: #fff;
+}
+
+.btn-rest:hover {
+  background: #2980b9;
+}
+
+/* Stamina Section */
+.stamina-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px;
+  background: #15192e;
+  border-radius: 8px;
+  border: 1px solid #2a2f4a;
+  min-width: 200px;
+}
+
+.stamina-section h3 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stamina-display {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stamina-label {
+  font-size: 12px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stamina-bar {
+  height: 24px;
+  background: #1a1f3a;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #2a2f4a;
+}
+
+.stamina-fill {
+  height: 100%;
+  background: #2ecc71;
+  transition: width 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 10px;
+  font-weight: 700;
+  color: #0a0e27;
+}
+
+.stamina-value {
+  font-size: 12px;
+  font-weight: 600;
+  text-align: center;
+  color: #aaa;
+}
+
+.stamina-warning {
+  font-size: 11px;
+  color: #e74c3c;
+  background: rgba(231, 76, 60, 0.15);
+  padding: 8px;
+  border-radius: 4px;
+  border-left: 3px solid #e74c3c;
+  margin-top: 4px;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .training-content {
+    grid-template-columns: 1fr;
+  }
+
+  .skill-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .skill-grid {
+    grid-template-columns: 1fr;
+  }
+}
