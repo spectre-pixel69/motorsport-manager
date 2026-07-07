@@ -3,6 +3,7 @@
 import type { CareerState } from '../../game/state';
 import { riderStandingsFor } from '../../game/state';
 import { NAMC_CLASS_IDS } from '../../data/namc';
+import { getChampionshipForClass } from './helpers';
 
 interface Props {
   state: CareerState;
@@ -12,39 +13,31 @@ export function OverallChampionship({ state }: Props) {
   const u = state.universe;
 
   // Aggregate standings across all NAMC classes
-  const allStandings = NAMC_CLASS_IDS.flatMap(classId =>
-    riderStandingsFor(state, classId).map(entry => ({
+  const allStandings = NAMC_CLASS_IDS.flatMap(classId => {
+    const champ = getChampionshipForClass(classId);
+    return riderStandingsFor(state, classId, champ).map(entry => ({
       ...entry,
       classId,
-    }))
-  );
+    }));
+  });
 
   // Group by rider and sum points
   const riderTotals = new Map<string, {
     riderId: string;
     rider: any;
     points: number;
-    wins: number;
-    podiums: number;
-    races: number;
   }>();
 
   allStandings.forEach(entry => {
     const key = entry.rider.id;
     const existing = riderTotals.get(key);
     if (existing) {
-      existing.points += entry.points;
-      existing.wins += entry.wins;
-      existing.podiums += entry.podiums;
-      existing.races += entry.races || 1;
+      existing.points += entry.pts;
     } else {
       riderTotals.set(key, {
         riderId: entry.rider.id,
         rider: entry.rider,
-        points: entry.points,
-        wins: entry.wins,
-        podiums: entry.podiums,
-        races: entry.races || 1,
+        points: entry.pts,
       });
     }
   });
@@ -74,8 +67,8 @@ export function OverallChampionship({ state }: Props) {
             </div>
             <div class="col-team">{u.teams[entry.rider.teamId]?.name || '—'}</div>
             <div class="col-points"><strong>{entry.points}</strong></div>
-            <div class="col-wins">{entry.wins}</div>
-            <div class="col-podiums">{entry.podiums}</div>
+            <div class="col-wins">—</div>
+            <div class="col-podiums">—</div>
           </div>
         ))}
       </div>

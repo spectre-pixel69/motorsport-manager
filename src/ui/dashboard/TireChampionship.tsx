@@ -1,9 +1,12 @@
 // Tire Championship - Shows which tire brand is leading in this class
 
-import type { RiderStanding } from '../../game/state';
+interface StandingEntry {
+  rider: any;
+  pts: number;
+}
 
 interface Props {
-  standings: RiderStanding[];
+  standings: StandingEntry[];
 }
 
 export function TireChampionship({ standings }: Props) {
@@ -11,8 +14,6 @@ export function TireChampionship({ standings }: Props) {
   const tireBrands = new Map<string, {
     brand: string;
     points: number;
-    wins: number;
-    podiums: number;
   }>();
 
   standings.forEach(entry => {
@@ -20,15 +21,11 @@ export function TireChampionship({ standings }: Props) {
     const brand = entry.rider.tireId || 'Unknown';
     const existing = tireBrands.get(brand);
     if (existing) {
-      existing.points += entry.points;
-      existing.wins += entry.wins;
-      existing.podiums += entry.podiums;
+      existing.points += entry.pts;
     } else {
       tireBrands.set(brand, {
         brand,
-        points: entry.points,
-        wins: entry.wins,
-        podiums: entry.podiums,
+        points: entry.pts,
       });
     }
   });
@@ -55,8 +52,8 @@ export function TireChampionship({ standings }: Props) {
               <div class="col-pos">{idx + 1}</div>
               <div class="col-brand">{entry.brand}</div>
               <div class="col-points">{entry.points}</div>
-              <div class="col-wins">{entry.wins}</div>
-              <div class="col-podiums">{entry.podiums}</div>
+              <div class="col-wins">—</div>
+              <div class="col-podiums">—</div>
             </div>
           ))}
         </div>

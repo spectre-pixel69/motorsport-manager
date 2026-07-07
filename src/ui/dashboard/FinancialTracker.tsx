@@ -1,23 +1,26 @@
 // Financial Tracker - Weekly costs, earnings, budget status, quick actions
 
-import type { ClassId } from '../../data/types';
-import type { Team, Rider } from '../../data/universe';
-import type { RiderStanding } from '../../game/state';
+import type { ClassId, Team, Rider } from '../../data/types';
+
+interface StandingEntry {
+  rider: any;
+  pts: number;
+}
 
 interface Props {
   team: Team;
   myRiders: Rider[];
   classId: ClassId;
-  standings: RiderStanding[];
+  standings: StandingEntry[];
 }
 
 export function FinancialTracker({ team, myRiders, classId, standings }: Props) {
   // Calculate weekly costs for this class's riders
   const weeklyPayroll = myRiders.reduce((sum, r) => sum + (r.salary / 52), 0);
 
-  // Estimate weekly earnings from standings (simplified: avg points per race * race purse)
+  // Estimate weekly earnings from standings (simplified: avg points / total possible * purse)
   const avgPointsPerRider = standings.length > 0
-    ? standings.reduce((sum, s) => sum + (s.points / Math.max(1, s.races)), 0) / standings.length
+    ? standings.reduce((sum, s) => sum + s.pts, 0) / standings.length
     : 0;
 
   const RACE_PURSE = 800000;

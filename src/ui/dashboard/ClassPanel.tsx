@@ -10,6 +10,7 @@ import { RiderRoster } from './RiderRoster';
 import { ChampionshipStandings } from './ChampionshipStandings';
 import { FinancialTracker } from './FinancialTracker';
 import { TireChampionship } from './TireChampionship';
+import { getChampionshipForClass, getClassColor } from './helpers';
 
 interface Props {
   state: CareerState;
@@ -29,24 +30,18 @@ export function ClassPanel({
   const u = state.universe;
   const team = u.teams[state.playerTeamId];
   const classInfo = classById(classId);
-  const standings = riderStandingsFor(state, classId);
+  const champ = getChampionshipForClass(classId);
+  const standings = riderStandingsFor(state, classId, champ);
   const myRiders = ridersOfTeam(u, team.id).filter(r => r.classId === classId && !r.bench);
 
-  // Get class-specific color scheme
-  const classColors: Record<ClassId, string> = {
-    fourStroke: '#FF9800', // Orange for 350 Pro
-    twoStroke: '#2196F3', // Blue for 250
-    twoStroke250p: '#E91E63', // Pink/Red for 250P
-    twoStroke250w: '#9C27B0', // Purple for Women's
-  };
-
+  const classColor = getClassColor(classId);
   const panelStyle = {
-    borderTop: `3px solid ${classColors[classId]}`,
+    borderTop: `3px solid ${classColor}`,
   };
 
   return (
     <div class="class-panel" style={panelStyle}>
-      <div class="panel-header" style={{ backgroundColor: classColors[classId] }}>
+      <div class="panel-header" style={{ backgroundColor: classColor }}>
         <h2>{classInfo.name}</h2>
       </div>
 

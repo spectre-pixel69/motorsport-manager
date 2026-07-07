@@ -1,9 +1,13 @@
 // Championship Standings - Class-specific points standings table
 
-import type { RiderStanding } from '../../game/state';
+interface StandingEntry {
+  rider: any;
+  pts: number;
+  team?: any;
+}
 
 interface Props {
-  standings: RiderStanding[];
+  standings: StandingEntry[];
 }
 
 export function ChampionshipStandings({ standings }: Props) {
@@ -31,9 +35,9 @@ export function ChampionshipStandings({ standings }: Props) {
                 {entry.rider.name}
               </div>
               <div class="col-team">{entry.team?.name || '—'}</div>
-              <div class="col-points"><strong>{entry.points}</strong></div>
-              <div class="col-wins">{entry.wins}</div>
-              <div class="col-podiums">{entry.podiums}</div>
+              <div class="col-points"><strong>{entry.pts}</strong></div>
+              <div class="col-wins">—</div>
+              <div class="col-podiums">—</div>
             </div>
           ))}
         </div>
