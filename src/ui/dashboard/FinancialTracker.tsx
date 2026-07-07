@@ -7,14 +7,17 @@ interface StandingEntry {
   pts: number;
 }
 
+type ModalType = 'draft' | 'freeagents' | 'calendar';
+
 interface Props {
   team: Team;
   myRiders: Rider[];
   classId: ClassId;
   standings: StandingEntry[];
+  onOpenModal?: (modalType: ModalType) => void;
 }
 
-export function FinancialTracker({ team, myRiders, classId, standings }: Props) {
+export function FinancialTracker({ team, myRiders, classId, standings, onOpenModal }: Props) {
   // Calculate weekly costs for this class's riders
   const weeklyPayroll = myRiders.reduce((sum, r) => sum + (r.salary / 52), 0);
 
@@ -84,9 +87,15 @@ export function FinancialTracker({ team, myRiders, classId, standings }: Props) 
       {/* Quick Actions */}
       <div class="quick-actions">
         <h3>Quick Actions</h3>
-        <button class="btn-action">View Draft Pool</button>
-        <button class="btn-action">View Free Agents</button>
-        <button class="btn-action">Season Calendar</button>
+        <button class="btn-action" onClick={() => onOpenModal?.('draft')}>
+          View Draft Pool
+        </button>
+        <button class="btn-action" onClick={() => onOpenModal?.('freeagents')}>
+          View Free Agents
+        </button>
+        <button class="btn-action" onClick={() => onOpenModal?.('calendar')}>
+          Season Calendar
+        </button>
       </div>
     </div>
   );

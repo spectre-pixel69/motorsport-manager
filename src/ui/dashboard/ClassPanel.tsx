@@ -12,12 +12,15 @@ import { FinancialTracker } from './FinancialTracker';
 import { TireChampionship } from './TireChampionship';
 import { getChampionshipForClass, getClassColor } from './helpers';
 
+type ModalType = 'draft' | 'freeagents' | 'calendar';
+
 interface Props {
   state: CareerState;
   classId: ClassId;
   isSelected: boolean;
   onSelectRider: (riderId: string) => void;
   expandedRiderId: string | null;
+  onOpenModal?: (modalType: ModalType) => void;
 }
 
 export function ClassPanel({
@@ -26,6 +29,7 @@ export function ClassPanel({
   isSelected,
   onSelectRider,
   expandedRiderId,
+  onOpenModal,
 }: Props) {
   const u = state.universe;
   const team = u.teams[state.playerTeamId];
@@ -69,6 +73,7 @@ export function ClassPanel({
             myRiders={myRiders}
             classId={classId}
             standings={standings}
+            onOpenModal={onOpenModal}
           />
         </div>
       </div>
