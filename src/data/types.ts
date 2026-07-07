@@ -11,13 +11,41 @@ export type ClassId =
 /** NAMC runs two parallel championships. Road disciplines use 'road'. */
 export type ChampionshipId = 'road' | 'fourStroke' | 'twoStroke';
 
+export type RiderTrait =
+  | 'wet-master' | 'holeshot-king' | 'late-braker' | 'ice-veins' | 'development-guru' | 'fan-favorite'
+  | 'fragile' | 'reckless' | 'slow-starter';
+
+export interface RiderSkills {
+  pace: number;           // raw speed (1-100)
+  braking: number;        // late braking, corner entry
+  cornerSpeed: number;    // mid-corner lean/carry
+  racecraft: number;      // overtaking + defending
+  consistency: number;    // error/crash avoidance
+  starts: number;         // launch / holeshot
+  fitness: number;        // stamina, injury resistance
+  wet: number;            // rain performance
+  feedback: number;       // R&D development quality
+}
+
 export interface RiderStats {
-  pace: number;        // raw speed 1-100
+  pace: number;        // raw speed 1-100 (legacy, kept for compatibility)
   consistency: number; // fewer mistakes
   starts: number;      // launch / holeshot ability
   aggression: number;  // overtaking, but crash risk
   fitness: number;     // late-race performance
   wet: number;         // rain skill
+}
+
+export interface RiderContract {
+  salary: number;           // per season
+  length: number;           // 1-4 years
+  signingBonus: number;     // lump sum
+  winBonus: number;         // per win
+  podiumBonus: number;      // per podium
+  titleBonus: number;       // championship bonus
+  isNo1Rider: boolean;      // No. 1 rider status (team lead)
+  releaseClause: number;    // buyout value (0 = none)
+  hasTeammateVeto: boolean; // can veto teammate signings
 }
 
 export interface Rider {
@@ -27,20 +55,43 @@ export interface Rider {
   nationality: string;
   number: number;
   stats: RiderStats;
-  overall: number;       // derived headline rating
-  potential: number;     // growth ceiling
-  salary: number;        // per season
-  morale: number;        // 0-100
-  injuredForRounds: number; // 0 = fit
+  skills: RiderSkills;        // NEW: expanded 9-skill system (0-100 exact)
+  overall: number;            // derived headline rating (discipline-weighted)
+  potential: number;          // HIDDEN: growth ceiling for each skill
+  stamina: number;            // 0-100, resource for training
+  traits: RiderTrait[];       // positive/negative traits
+  salary: number;             // per season
+  contract: RiderContract;    // NEW: full contract terms
+  morale: number;             // 0-100
+  injuredForRounds: number;   // 0 = fit
   careerWins: number;
   careerPodiums: number;
-  championships: number; // in current class (legacy plate tracking)
+  championships: number;      // in current class (legacy plate tracking)
   legacyPlate: 'none' | 'gold' | 'platinum' | 'diamond';
   isFemale: boolean;
   teamId: string | null;
-  classId: ClassId | null;   // class they race in
+  classId: ClassId | null;    // class they race in
   championship: ChampionshipId;
-  bench: boolean;            // NAMC reserve rider
+  bench: boolean;             // NAMC reserve rider
+}
+
+export type EngineMode = 'conserve' | 'standard' | 'push' | 'attack';
+export type PartFailureSeverity = 'minor' | 'moderate' | 'terminal';
+
+export interface BikeComponent {
+  id: string;
+  name: string;
+  type: 'engine' | 'gearbox' | 'suspension' | 'brakes' | 'chassis' | 'electronics';
+  reliability: number;   // 0-100: base failure rate
+  wear: number;          // 0-100: accumulates with mileage, multiplies failure chance
+  mileageMiles: number;  // cumulative mileage
+  lastRebuild?: number;  // round number of last rebuild
+}
+
+export interface BikeSetup {
+  engineMode: EngineMode;        // conserve | standard | push | attack
+  components: Record<string, BikeComponent>; // keyed by type
+  mileageThisRound: number;      // track wear accumulation
 }
 
 export interface BikeDev {
@@ -74,18 +125,25 @@ export interface Team {
   manufacturerId: string;
   tireBrandId: string;  // NAMC only
   bike: BikeDev;
+  bikeSetup: BikeSetup; // NEW: per-round setup with engine mode + component wear
   budget: number;       // cash on hand
   prestige: number;     // 1-100
   isPlayer: boolean;
   strikes: number;      // NAMC three-strike system
   classIds: ClassId[];  // classes this team fields riders in
+  facilityLevel: number;// training facility level 1-5
+  coachQuality: number; // coach skill modifier (0.8-1.5)
 }
+
+export type ManufacturerReliability = 'fragile' | 'balanced' | 'bulletproof';
 
 export interface Manufacturer {
   id: string;
   name: string;
   color: string;
-  strokes?: '2S' | '4S' | 'both'; // NAMC engine types offered
+  strokes?: '2S' | '4S' | 'both';              // NAMC engine types offered
+  reliabilityBias: ManufacturerReliability;    // personality: fragile (40-60), balanced (60-75), bulletproof (80-95)
+  performanceCeiling: number;                   // 0-100: peak engine output (inverse correlation with reliability)
 }
 
 export interface Sponsor {
