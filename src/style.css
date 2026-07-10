@@ -1,19 +1,30 @@
-/* Paddock Boss — original UI identity: Inferno Red / Carbon Black / Championship Chrome */
+/* Paddock Boss — Glass-Morphism Design System (v1.1 Alpha) */
+/* Locked Color Palette per CLAUDE.md */
 
 :root {
-  --red: #e2261f;
-  --black: #101214;
-  --panel: #181b1f;
-  --panel2: #1e2228;
-  --edge: #23272d;
-  --chrome: #c9d1d9;
-  --chrome-dim: #8b949e;
-  --chrome-bright: #f0f4f8;
-  --gold: #e8b23a;
-  --green: #3fb950;
-  --danger: #f85149;
-  --blue: #4493f8;
-  --namc: #e8842a;
+  /* Locked Core Colors */
+  --red: #e74c3c;              /* Accent Red: buttons, highlights, active states */
+  --orange: #f39c12;           /* Accent Orange: selected items, NAMC branding */
+  --gold: #ffd700;             /* Accent Gold: leaders, premium elements */
+
+  /* Background & Panels */
+  --black: #0a0e27;            /* Background: dark navy */
+  --panel: #15192e;            /* Panels: dark with glass-morphism */
+  --panel2: #1a1f3a;           /* Secondary panel: slightly lighter */
+  --edge: #2d3748;             /* Borders & edges */
+
+  /* Text & Chrome */
+  --chrome: #ffffff;           /* Primary text: white */
+  --chrome-bright: #ffffff;    /* Bright text: white */
+  --chrome-dim: #999999;       /* Muted text: gray */
+
+  /* Status Colors */
+  --green: #2ecc71;            /* Success, positive */
+  --danger: #e74c3c;           /* Warnings, failures (same as red) */
+  --blue: #3498db;             /* Info, interactive */
+
+  /* Legacy Compat */
+  --namc: #f39c12;             /* NAMC branding (orange) */
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
@@ -37,24 +48,80 @@ button {
   padding: 10px 16px;
   font-size: 14px;
   font-weight: 600;
-  transition: background 0.15s, transform 0.05s;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
 }
-button:active { transform: scale(0.97); }
-button.primary { background: var(--red); border-color: var(--red); color: #fff; }
-button.accent { background: var(--namc); border-color: var(--namc); color: #16100a; }
-button.ghost { background: transparent; }
-button:disabled { opacity: 0.4; cursor: default; }
+button:hover {
+  background: rgba(26, 31, 58, 0.8);
+  border-color: var(--edge);
+  transform: translateY(-1px);
+}
+button:active {
+  transform: scale(0.97);
+}
+button.primary {
+  background: var(--red);
+  border-color: var(--red);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(231, 76, 60, 0.25);
+}
+button.primary:hover {
+  background: #d63828;
+  box-shadow: 0 6px 16px rgba(231, 76, 60, 0.35);
+  transform: translateY(-2px);
+}
+button.accent {
+  background: var(--orange);
+  border-color: var(--orange);
+  color: #fff;
+}
+button.accent:hover {
+  background: #e8762d;
+}
+button.ghost {
+  background: transparent;
+  border-color: rgba(231, 76, 60, 0.3);
+}
+button.ghost:hover {
+  border-color: var(--red);
+  background: rgba(231, 76, 60, 0.1);
+}
+button:disabled {
+  opacity: 0.4;
+  cursor: default;
+  transform: none !important;
+}
 
 input[type='text'] {
-  background: var(--panel);
+  background: rgba(21, 25, 46, 0.6);
   border: 1px solid var(--edge);
   color: var(--chrome-bright);
   border-radius: 8px;
   padding: 10px 12px;
   font-size: 15px;
   width: 100%;
+  transition: all 0.25s ease;
+  backdrop-filter: blur(10px);
 }
-input[type='color'] { border: none; background: none; width: 44px; height: 34px; }
+input[type='text']:focus {
+  outline: none;
+  border-color: var(--red);
+  background: rgba(21, 25, 46, 0.8);
+  box-shadow: 0 0 0 3px rgba(231, 76, 60, 0.1);
+}
+input[type='text']:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+input[type='color'] {
+  border: 1px solid var(--edge);
+  background: rgba(21, 25, 46, 0.6);
+  width: 44px;
+  height: 34px;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.25s ease;
+}
 
 .screen { height: 100%; display: flex; flex-direction: column; overflow: hidden; }
 .scroll { overflow-y: auto; -webkit-overflow-scrolling: touch; }
