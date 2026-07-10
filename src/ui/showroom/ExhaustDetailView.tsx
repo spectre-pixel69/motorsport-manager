@@ -48,7 +48,7 @@ export function ExhaustDetailView({
           <div class="item-image">
             <div class="item-icon-large">💨</div>
             <h2>{exhaust.name}</h2>
-            <p class="manufacturer">{exhaust.manufacturer}</p>
+            <p class="description-short">{exhaust.description}</p>
           </div>
 
           <div class="ovr-bonuses">
@@ -73,8 +73,8 @@ export function ExhaustDetailView({
             <h3>Exhaust Specifications</h3>
 
             <div class="stat-item">
-              <span class="stat-label">Manufacturer:</span>
-              <span class="stat-value">{exhaust.manufacturer}</span>
+              <span class="stat-label">Torque Character:</span>
+              <span class="stat-value">{exhaust.torqueCharacter}</span>
             </div>
 
             <div class="stat-item">

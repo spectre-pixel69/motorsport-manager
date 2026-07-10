@@ -4,7 +4,8 @@
 import express from 'express';
 import type { Request, Response } from 'express';
 import { gameManager } from '../game/index';
-import { ENGINES } from '../data/bikes';
+import { ENGINES, CHASSIS, TIRES } from '../data/bikes';
+import { ALL_STAFF } from '../data/staff';
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -206,7 +207,7 @@ app.get('/api/engines/:engineId/detail', (req: Request, res: Response) => {
 
 app.post('/api/team/:teamId/engines/add', (req: Request, res: Response) => {
   try {
-    const { engineId, classSelections } = req.body;
+    const { engineId, classSelections } = req.body as { engineId: string; classSelections: Record<string, unknown> };
     // classSelections: { '350-pro': 1, '250': 2, '250p': 0, 'womens-250': 1 }
     const team = gameManager.getTeam(req.params.teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
@@ -216,14 +217,15 @@ app.post('/api/team/:teamId/engines/add', (req: Request, res: Response) => {
     if (!engine) return res.status(400).json({ error: 'Engine not found' });
 
     for (const [cls, qty] of Object.entries(classSelections)) {
-      if (qty > 0) {
+      const qtyNum = typeof qty === 'number' ? qty : Number(qty);
+      if (qtyNum > 0) {
         const classCost =
           cls === '250p'
             ? 280000
             : cls === 'womens-250'
               ? engine.yearlyLeaseCost * 0.9
               : engine.yearlyLeaseCost;
-        totalCost += classCost * (qty as number);
+        totalCost += classCost * qtyNum;
       }
     }
 
@@ -268,7 +270,7 @@ app.listen(PORT, () => {
 
 app.get('/api/chassis/list', (req: Request, res: Response) => {
   try {
-    const { CHASSIS } = require('../data/bikes');
+    // CHASSIS already imported
     const chassisList = Object.values(CHASSIS).map((ch: any) => ({
       chassisId: ch.id,
       name: ch.name,
@@ -295,7 +297,7 @@ app.get('/api/chassis/list', (req: Request, res: Response) => {
 
 app.get('/api/chassis/:chassisId/detail', (req: Request, res: Response) => {
   try {
-    const { CHASSIS } = require('../data/bikes');
+    // CHASSIS already imported
     const chassis = CHASSIS[req.params.chassisId as any];
     if (!chassis) return res.status(404).json({ error: 'Chassis not found' });
     res.json({
@@ -328,7 +330,7 @@ app.post('/api/team/:teamId/chassis/add', (req: Request, res: Response) => {
     const team = gameManager.getTeam(req.params.teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
-    const { CHASSIS } = require('../data/bikes');
+    // CHASSIS already imported
     const chassis = CHASSIS[chassisId as any];
     if (!chassis) return res.status(400).json({ error: 'Chassis not found' });
 
@@ -357,7 +359,7 @@ app.post('/api/team/:teamId/chassis/add', (req: Request, res: Response) => {
 
 app.get('/api/tires/list', (req: Request, res: Response) => {
   try {
-    const { TIRES } = require('../data/bikes');
+    // TIRES already imported
     const tiresList = Object.values(TIRES).map((tire: any) => ({
       tireId: tire.id,
       name: tire.name,
@@ -380,7 +382,7 @@ app.get('/api/tires/list', (req: Request, res: Response) => {
 
 app.get('/api/tires/:tireId/detail', (req: Request, res: Response) => {
   try {
-    const { TIRES } = require('../data/bikes');
+    // TIRES already imported
     const tire = TIRES[req.params.tireId as any];
     if (!tire) return res.status(404).json({ error: 'Tire not found' });
     res.json({
@@ -409,7 +411,7 @@ app.get('/api/tires/:tireId/detail', (req: Request, res: Response) => {
 
 app.get('/api/staff/list', (req: Request, res: Response) => {
   try {
-    const { ALL_STAFF } = require('../data/staff');
+    // ALL_STAFF already imported
     const staffList = Object.values(ALL_STAFF).map((staff: any) => ({
       staffId: staff.id,
       name: staff.name,
@@ -429,7 +431,7 @@ app.get('/api/staff/list', (req: Request, res: Response) => {
 
 app.get('/api/staff/:staffId/detail', (req: Request, res: Response) => {
   try {
-    const { ALL_STAFF } = require('../data/staff');
+    // ALL_STAFF already imported
     const staff = ALL_STAFF[req.params.staffId as any];
     if (!staff) return res.status(404).json({ error: 'Staff not found' });
     res.json({
@@ -455,7 +457,7 @@ app.post('/api/team/:teamId/staff/hire', (req: Request, res: Response) => {
     const team = gameManager.getTeam(req.params.teamId);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
-    const { ALL_STAFF } = require('../data/staff');
+    // ALL_STAFF already imported
     let totalCost = 0;
 
     for (const staffId of staffIds) {

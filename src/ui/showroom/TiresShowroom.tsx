@@ -51,10 +51,10 @@ export function TiresShowroom({ state, onExit }: Props) {
                   key={tire.id}
                   onClick={() => handleSelectTire(classType, tire.id)}
                 >
-                  <div class="tire-name">{tire.brand}</div>
+                  <div class="tire-name">{tire.name}</div>
                   <div class="tire-specs">
-                    <div class="spec">Grip: {tire.grip}</div>
-                    <div class="spec">Wear: {tire.wearRate}%</div>
+                    <div class="spec">Grip: {tire.gripRating}</div>
+                    <div class="spec">Wear Rate: {Math.round(tire.wearRate * 100)}%</div>
                   </div>
                   {selections[classType] === tire.id && (
                     <div class="selected-badge">✓ Selected</div>

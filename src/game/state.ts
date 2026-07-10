@@ -4,7 +4,7 @@ import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe }
 import { buildUniverse, gridOf, teamsOf, ridersOfTeam } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
-import { settleNamcRound, settleRoadRound, pursesFor, type RoundLedgerEntry } from './economy';
+import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { NAMC_CLASS_IDS } from '../data/namc';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';

@@ -51,7 +51,7 @@ export function ExhaustShowroom({ state, onExit }: Props) {
         <ShowroomGrid
           items={exhausts}
           itemType="exhaust"
-          onSelectItem={setSelectedExhaust}
+          onSelectItem={(item) => setSelectedExhaust(item as ExhaustSystem)}
         />
       ) : (
         <ExhaustDetailView

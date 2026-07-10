@@ -51,7 +51,7 @@ export function ChassisShowroom({ state, onExit }: Props) {
         <ShowroomGrid
           items={chassis}
           itemType="chassis"
-          onSelectItem={setSelectedChassis}
+          onSelectItem={(item) => setSelectedChassis(item as Chassis)}
         />
       ) : (
         <ChassisDetailView

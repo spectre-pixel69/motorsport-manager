@@ -1,7 +1,7 @@
 // 160 NAMC Riders - 4 classes × 20 teams × 8 riders per team
 // Includes: 350 Pro (4S), 250 Men, 250P Restricted, Women's 250 (2S)
 
-import type { Rider, RiderStats, ChampionshipId } from './types';
+import type { Rider, RiderStats, RiderSkills, RiderTrait, RiderContract, ChampionshipId } from './types';
 
 type RiderId = string;
 
@@ -18,16 +18,45 @@ function rider(
   championship: ChampionshipId,
   opts?: Partial<Rider>
 ): Rider {
-  return {
+  // Derive skills from stats
+  const skills: RiderSkills = {
+    pace: stats.pace || 50,
+    braking: stats.pace - 5,
+    cornerSpeed: stats.pace - 3,
+    racecraft: (stats.pace + overall) / 2,
+    consistency: stats.consistency || 50,
+    starts: stats.starts || 50,
+    fitness: stats.fitness || 50,
+    wet: stats.wet || 50,
+    feedback: 50,
+  };
+
+  const contract: RiderContract = {
+    salary: salary,
+    length: 1,
+    signingBonus: 0,
+    winBonus: 0,
+    podiumBonus: 0,
+    titleBonus: 0,
+    isNo1Rider: false,
+    releaseClause: 0,
+    hasTeammateVeto: false,
+  };
+
+  const base: Rider = {
     id,
     name,
     age,
     nationality,
     number,
     stats,
+    skills,
     overall,
     potential,
+    stamina: 100,
+    traits: [] as RiderTrait[],
     salary,
+    contract,
     morale: 75,
     injuredForRounds: 0,
     careerWins: Math.floor(overall / 15),
@@ -39,8 +68,9 @@ function rider(
     classId: null,
     championship,
     bench: false,
-    ...opts,
   };
+
+  return { ...base, ...opts } as Rider;
 }
 
 const FOUR_STROKE = 'fourStroke';

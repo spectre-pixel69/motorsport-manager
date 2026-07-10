@@ -59,6 +59,45 @@ export interface CashFlowEntry {
   description: string;
 }
 
+// ============================================================================
+// ROUND SETTLEMENT & LEDGER
+// ============================================================================
+
+export interface RoundLedgerEntry {
+  teamId: string;
+  purse: number;          // prize money to team
+  revenuePool: number;    // operational revenue (75% of purse share)
+  salaries: number;       // rider payroll this round
+  appearance: number;     // appearance fees
+}
+
+export function pursesFor(championship: 'road' | 'fourStroke' | 'twoStroke'): number {
+  return ROUND_PURSE;
+}
+
+export function settleNamcRound(u: any, championship: any, weekends: any[]): RoundLedgerEntry[] {
+  // Stub: process NAMC round, update team budgets, return ledger
+  // For now, just return empty ledger to allow game flow
+  const ledger: RoundLedgerEntry[] = [];
+  for (const team of Object.values(u.teams)) {
+    const t = team as any;
+    if (t.championship !== championship) continue;
+    ledger.push({
+      teamId: t.id,
+      purse: ROUND_PURSE / 4,
+      revenuePool: (ROUND_PURSE / 4) * 0.75,
+      salaries: 0,
+      appearance: 0,
+    });
+  }
+  return ledger;
+}
+
+export function settleRoadRound(u: any, weekend: any): void {
+  // Stub: process road round, update team budgets
+  // No return needed
+}
+
 export class EconomyManager {
   private seasonYear: number;
   private teamBudget: TeamBudget;

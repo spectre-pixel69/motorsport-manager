@@ -1,10 +1,11 @@
 // Generic Showroom Grid - Reusable for engines, chassis, etc
 
 import { useState } from 'preact/hooks';
-import type { Engine, Chassis } from '../../data/bikes';
+import type { Engine, Chassis, Tire } from '../../data/bikes';
+import type { ExhaustSystem } from '../../data/setups';
 import { ShowroomTooltip } from './ShowroomTooltip';
 
-type Item = Engine | Chassis;
+type Item = Engine | Chassis | Tire | ExhaustSystem | { id: string; name: string };
 
 interface Props {
   items: Item[];

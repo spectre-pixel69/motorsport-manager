@@ -70,16 +70,47 @@ function makeRider(
     ? SALARY_FLOORS[opts.classId] ?? 100_000
     : classDef?.salaryFloor ?? 50_000;
   const overall = overallOf(stats);
-  return {
+  const salary = opts.bench ? 50_000 : Math.round(floor * (1 + Math.max(0, overall - 60) / 25));
+
+  // Derive skills from stats
+  const skills = {
+    pace: stats.pace || 50,
+    braking: clamp(stats.pace - 5, 30, 99),
+    cornerSpeed: clamp(stats.pace - 3, 30, 99),
+    racecraft: clamp((stats.pace + overall) / 2, 30, 99),
+    consistency: stats.consistency || 50,
+    starts: stats.starts || 50,
+    fitness: stats.fitness || 50,
+    wet: stats.wet || 50,
+    feedback: 50,
+  };
+
+  const contract = {
+    salary,
+    length: 1,
+    signingBonus: 0,
+    winBonus: 0,
+    podiumBonus: 0,
+    titleBonus: 0,
+    isNo1Rider: false,
+    releaseClause: 0,
+    hasTeammateVeto: false,
+  };
+
+  const rider: Rider = {
     id: `r${riderSeq++}`,
     name: opts.name ?? riderName(rng, nat, female),
     age: irange(rng, 18, 34),
     nationality: nat,
     number: num,
     stats,
+    skills,
     overall,
     potential: clamp(overall + irange(rng, 0, 18), overall, 99),
-    salary: opts.bench ? 50_000 : Math.round(floor * (1 + Math.max(0, overall - 60) / 25)),
+    stamina: 100,
+    traits: [],
+    salary,
+    contract,
     morale: irange(rng, 55, 85),
     injuredForRounds: 0,
     careerWins: 0,
@@ -92,6 +123,8 @@ function makeRider(
     championship: opts.championship,
     bench: opts.bench ?? false,
   };
+
+  return rider;
 }
 
 function makeTeam(rng: RNG, opts: {
@@ -120,11 +153,18 @@ function makeTeam(rng: RNG, opts: {
       handling: clamp(Math.round(gauss(rng, 55 + (opts.prestige ?? 50) * 0.35, 8)), 30, 98),
       reliability: clamp(Math.round(gauss(rng, 70, 10)), 40, 98),
     },
+    bikeSetup: {
+      engineMode: 'standard',
+      components: {},
+      mileageThisRound: 0,
+    },
     budget: Math.round(500_000 + (opts.prestige ?? 50) * 40_000),
     prestige: opts.prestige ?? 50,
     isPlayer: false,
     strikes: 0,
     classIds: opts.classIds,
+    facilityLevel: Math.max(1, Math.min(5, Math.floor((opts.prestige ?? 50) / 20))),
+    coachQuality: 0.8 + ((opts.prestige ?? 50) / 100) * 0.7,
   };
 }
 

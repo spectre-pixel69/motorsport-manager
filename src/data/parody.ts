@@ -6,18 +6,18 @@ import type { Manufacturer, Sponsor, TireBrand } from './types';
 
 // ---------------------------------------------------------------- makers
 export const MANUFACTURERS: Manufacturer[] = [
-  { id: 'ducetti', name: 'Ducetti', color: '#d0021b', strokes: '4S' },
-  { id: 'hondra', name: 'Hondra', color: '#e8501e', strokes: 'both' },
-  { id: 'yamawa', name: 'Yamawa', color: '#1a49c4', strokes: 'both' },
-  { id: 'ktx', name: 'KTX', color: '#f07000', strokes: 'both' },
-  { id: 'apriya', name: 'Apriya', color: '#111111', strokes: '4S' },
-  { id: 'kawazuki', name: 'Kawazuki', color: '#3fae2a', strokes: 'both' },
-  { id: 'suzaka', name: 'Suzaka', color: '#2a6bd4', strokes: '4S' },
-  { id: 'bvm', name: 'BVM Motorrad', color: '#2f9de0', strokes: '4S' },
-  { id: 'stellar', name: 'Stellar Husk', color: '#e8e8e8', strokes: 'both' },
-  { id: 'gasgaz', name: 'GasGaz', color: '#cc1f2f', strokes: '2S' },
-  { id: 'triumf', name: 'Triumf', color: '#0e2a3a', strokes: '4S' },
-  { id: 'betta', name: 'Betta', color: '#b01d2e', strokes: '2S' },
+  { id: 'ducetti', name: 'Ducetti', color: '#d0021b', strokes: '4S', reliabilityBias: 'fragile', performanceCeiling: 95 },
+  { id: 'hondra', name: 'Hondra', color: '#e8501e', strokes: 'both', reliabilityBias: 'balanced', performanceCeiling: 88 },
+  { id: 'yamawa', name: 'Yamawa', color: '#1a49c4', strokes: 'both', reliabilityBias: 'balanced', performanceCeiling: 90 },
+  { id: 'ktx', name: 'KTX', color: '#f07000', strokes: 'both', reliabilityBias: 'balanced', performanceCeiling: 87 },
+  { id: 'apriya', name: 'Apriya', color: '#111111', strokes: '4S', reliabilityBias: 'fragile', performanceCeiling: 93 },
+  { id: 'kawazuki', name: 'Kawazuki', color: '#3fae2a', strokes: 'both', reliabilityBias: 'bulletproof', performanceCeiling: 82 },
+  { id: 'suzaka', name: 'Suzaka', color: '#2a6bd4', strokes: '4S', reliabilityBias: 'bulletproof', performanceCeiling: 80 },
+  { id: 'bvm', name: 'BVM Motorrad', color: '#2f9de0', strokes: '4S', reliabilityBias: 'balanced', performanceCeiling: 85 },
+  { id: 'stellar', name: 'Stellar Husk', color: '#e8e8e8', strokes: 'both', reliabilityBias: 'bulletproof', performanceCeiling: 78 },
+  { id: 'gasgaz', name: 'GasGaz', color: '#cc1f2f', strokes: '2S', reliabilityBias: 'fragile', performanceCeiling: 92 },
+  { id: 'triumf', name: 'Triumf', color: '#0e2a3a', strokes: '4S', reliabilityBias: 'bulletproof', performanceCeiling: 81 },
+  { id: 'betta', name: 'Betta', color: '#b01d2e', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 86 },
 ];
 
 // ---------------------------------------------------------------- sponsors
