@@ -15,9 +15,9 @@ app.use(express.json());
 
 // CORS for UE5.7 client
 app.use((req, res, next) => {
-  res.header('Access-Control-Allow-Origin', '*');
-  res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-  res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
   if (req.method === 'OPTIONS') res.sendStatus(200);
   else next();
 });
@@ -50,7 +50,7 @@ app.post('/api/team/create', (req: Request, res: Response) => {
 
 app.get('/api/team/:teamId', (req: Request, res: Response) => {
   try {
-    const team = gameManager.getTeam(req.params.teamId);
+    const team = gameManager.getTeam(req.params.teamId as string);
     if (!team) return res.status(404).json({ error: 'Team not found' });
     res.json({ id: team.id, owner: team.owner, budget: team.economy.getBudgetState() });
   } catch (e: any) {
@@ -180,7 +180,8 @@ app.get('/api/engines/list', (req: Request, res: Response) => {
 
 app.get('/api/engines/:engineId/detail', (req: Request, res: Response) => {
   try {
-    const engine = ENGINES[req.params.engineId as any];
+    const engineId = req.params.engineId as any;
+    const engine: any = ENGINES[engineId];
     if (!engine) return res.status(404).json({ error: 'Engine not found' });
     res.json({
       engineId: engine.id,
@@ -209,11 +210,11 @@ app.post('/api/team/:teamId/engines/add', (req: Request, res: Response) => {
   try {
     const { engineId, classSelections } = req.body as { engineId: string; classSelections: Record<string, unknown> };
     // classSelections: { '350-pro': 1, '250': 2, '250p': 0, 'womens-250': 1 }
-    const team = gameManager.getTeam(req.params.teamId);
+    const team = gameManager.getTeam(req.params.teamId as string);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
     let totalCost = 0;
-    const engine = ENGINES[engineId as any];
+    const engine: any = ENGINES[engineId as any];
     if (!engine) return res.status(400).json({ error: 'Engine not found' });
 
     for (const [cls, qty] of Object.entries(classSelections)) {
@@ -298,7 +299,8 @@ app.get('/api/chassis/list', (req: Request, res: Response) => {
 app.get('/api/chassis/:chassisId/detail', (req: Request, res: Response) => {
   try {
     // CHASSIS already imported
-    const chassis = CHASSIS[req.params.chassisId as any];
+    const chassisId = req.params.chassisId as any;
+    const chassis: any = CHASSIS[chassisId];
     if (!chassis) return res.status(404).json({ error: 'Chassis not found' });
     res.json({
       chassisId: chassis.id,
@@ -326,19 +328,20 @@ app.get('/api/chassis/:chassisId/detail', (req: Request, res: Response) => {
 
 app.post('/api/team/:teamId/chassis/add', (req: Request, res: Response) => {
   try {
-    const { chassisId, classSelections } = req.body;
-    const team = gameManager.getTeam(req.params.teamId);
+    const { chassisId, classSelections } = req.body as { chassisId: string; classSelections: Record<string, unknown> };
+    const team = gameManager.getTeam(req.params.teamId as string);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
     // CHASSIS already imported
-    const chassis = CHASSIS[chassisId as any];
+    const chassis: any = CHASSIS[chassisId as any];
     if (!chassis) return res.status(400).json({ error: 'Chassis not found' });
 
     let totalCost = 0;
     for (const [cls, qty] of Object.entries(classSelections)) {
-      if (qty > 0) {
+      const qtyNum = typeof qty === 'number' ? qty : Number(qty);
+      if (qtyNum > 0) {
         const classCost = ['250p', 'womens-250'].includes(cls) ? chassis.yearlyLeaseCost * 0.9 : chassis.yearlyLeaseCost;
-        totalCost += classCost * (qty as number);
+        totalCost += classCost * qtyNum;
       }
     }
 
@@ -383,7 +386,8 @@ app.get('/api/tires/list', (req: Request, res: Response) => {
 app.get('/api/tires/:tireId/detail', (req: Request, res: Response) => {
   try {
     // TIRES already imported
-    const tire = TIRES[req.params.tireId as any];
+    const tireId = req.params.tireId as any;
+    const tire: any = TIRES[tireId];
     if (!tire) return res.status(404).json({ error: 'Tire not found' });
     res.json({
       tireId: tire.id,
@@ -454,7 +458,7 @@ app.get('/api/staff/:staffId/detail', (req: Request, res: Response) => {
 app.post('/api/team/:teamId/staff/hire', (req: Request, res: Response) => {
   try {
     const { staffIds } = req.body; // Array of staff IDs to hire
-    const team = gameManager.getTeam(req.params.teamId);
+    const team = gameManager.getTeam(req.params.teamId as string);
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
     // ALL_STAFF already imported
