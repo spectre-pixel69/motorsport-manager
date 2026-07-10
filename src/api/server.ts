@@ -180,8 +180,7 @@ app.get('/api/engines/list', (req: Request, res: Response) => {
 
 app.get('/api/engines/:engineId/detail', (req: Request, res: Response) => {
   try {
-    const engineId = req.params.engineId as any;
-    const engine: any = ENGINES[engineId];
+    const engine = (ENGINES as any)[req.params.engineId as string];
     if (!engine) return res.status(404).json({ error: 'Engine not found' });
     res.json({
       engineId: engine.id,
@@ -214,7 +213,7 @@ app.post('/api/team/:teamId/engines/add', (req: Request, res: Response) => {
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
     let totalCost = 0;
-    const engine: any = ENGINES[engineId as any];
+    const engine = (ENGINES as any)[engineId];
     if (!engine) return res.status(400).json({ error: 'Engine not found' });
 
     for (const [cls, qty] of Object.entries(classSelections)) {
@@ -299,8 +298,7 @@ app.get('/api/chassis/list', (req: Request, res: Response) => {
 app.get('/api/chassis/:chassisId/detail', (req: Request, res: Response) => {
   try {
     // CHASSIS already imported
-    const chassisId = req.params.chassisId as any;
-    const chassis: any = CHASSIS[chassisId];
+    const chassis = (CHASSIS as any)[req.params.chassisId as string];
     if (!chassis) return res.status(404).json({ error: 'Chassis not found' });
     res.json({
       chassisId: chassis.id,
@@ -333,7 +331,7 @@ app.post('/api/team/:teamId/chassis/add', (req: Request, res: Response) => {
     if (!team) return res.status(404).json({ error: 'Team not found' });
 
     // CHASSIS already imported
-    const chassis: any = CHASSIS[chassisId as any];
+    const chassis = (CHASSIS as any)[chassisId];
     if (!chassis) return res.status(400).json({ error: 'Chassis not found' });
 
     let totalCost = 0;
@@ -386,8 +384,7 @@ app.get('/api/tires/list', (req: Request, res: Response) => {
 app.get('/api/tires/:tireId/detail', (req: Request, res: Response) => {
   try {
     // TIRES already imported
-    const tireId = req.params.tireId as any;
-    const tire: any = TIRES[tireId];
+    const tire = (TIRES as any)[req.params.tireId as string];
     if (!tire) return res.status(404).json({ error: 'Tire not found' });
     res.json({
       tireId: tire.id,
