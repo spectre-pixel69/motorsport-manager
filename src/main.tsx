@@ -3,6 +3,7 @@ import { useState } from 'preact/hooks';
 import './style.css';
 import { BRAND } from './data/brand';
 import { loadCareer, deleteSave, saveCareer, type CareerState } from './game/state';
+import { getTelemetry } from './util/telemetry';
 import { NewGame } from './ui/NewGame';
 import { Hub } from './ui/Hub';
 import { TeamDashboard } from './ui/TeamDashboard';

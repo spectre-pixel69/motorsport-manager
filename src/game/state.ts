@@ -8,6 +8,7 @@ import { settleNamcRound, settleRoadRound, pursesFor, type RoundLedgerEntry } fr
 import { NAMC_CLASS_IDS } from '../data/namc';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';
+import { restoreTelemetryFromState } from '../util/telemetry';
 
 export interface Standings {
   /** riderId -> points, per class+championship key */
@@ -261,9 +262,11 @@ export function loadCareer(): CareerState | null {
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
-    const parsed = JSON.parse(raw) as CareerState;
+    const parsed = JSON.parse(raw) as any;
     if (parsed.version !== 1) return null;
-    return parsed;
+    // Restore telemetry from saved state
+    restoreTelemetryFromState(parsed);
+    return parsed as CareerState;
   } catch {
     return null;
   }

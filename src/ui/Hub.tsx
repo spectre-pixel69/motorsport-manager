@@ -10,6 +10,7 @@ import {
 } from '../game/state';
 import { ridersOfTeam } from '../data/universe';
 import { NAMC_CLASS_IDS } from '../data/namc';
+import { logRaceStart, logRaceEnd, exportTelemetry } from '../util/telemetry';
 import { Logo } from './Logo';
 import type { WeekendResult } from '../sim/weekend';
 
@@ -37,7 +38,17 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
   const meta = DISCIPLINE_META[state.discipline];
 
   const goRacing = () => {
+    const cal = state.universe.calendars[state.discipline];
+    const round = cal[state.round];
+
+    // Log race start
+    logRaceStart(state, state.round + 1, round.trackId);
+
     const { weekends, playerWeekend } = runRound(state, approaches);
+
+    // Log race end
+    logRaceEnd(state, weekends, playerWeekend);
+
     saveCareer(state);
     onRaceReady(weekends, playerWeekend);
   };
@@ -47,6 +58,19 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
       ? (['fourStroke', 'twoStroke'] as ChampionshipId[]).flatMap(ch => NAMC_CLASS_IDS.map(cls => ({ cls, champ: ch })))
       : CLASSES.filter(c => c.discipline === state.discipline).map(c => ({ cls: c.id, champ: 'road' as ChampionshipId }));
 
+  const downloadTelemetry = () => {
+    const json = exportTelemetry();
+    const blob = new Blob([json], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `paddock-boss-telemetry-${Date.now()}.json`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div class="screen">
       <div class="topbar">
@@ -55,6 +79,7 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
         <span class="season-chip">{meta.short} &middot; {state.season}</span>
         <div class="grow" />
         <span class="money">${Math.round(team.budget).toLocaleString()}</span>
+        <button class="ghost" onClick={downloadTelemetry} title="Export telemetry data for alpha testing">📊</button>
         <button class="ghost" onClick={onExit}>Menu</button>
       </div>
       <div class="tabs">
