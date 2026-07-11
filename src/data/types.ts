@@ -48,6 +48,20 @@ export interface RiderContract {
   hasTeammateVeto: boolean; // can veto teammate signings
 }
 
+export interface GatePreferenceProfile {
+  holeshotPreferenceScore: number;         // 0-100: how badly rider wants holeshot (influences gate strategy)
+  insideOutsideBias: number;                // -100 to +100: -100=inside bias, +100=outside bias
+  conditionAdaptationSkill: number;         // 0-100: ability to adapt to different track surfaces/drainage
+  riskTolerance: number;                    // 0-100: willingness to take desperate gate picks
+  trackTypePreference: 'hardpack' | 'loam' | 'clay' | 'sandy' | 'balanced'; // which surface types rider prefers
+  wetWeatherGateAdjustment: number;         // 0-100: tendency to shift gate strategy in rain
+  mentalPreparationRigor: number;           // 0-100: how methodically rider prepares gate decision
+  physicalGateComfort: number;              // 0-100: comfort with bike setup at specific gates
+  dirtQualitySensitivity: number;           // 0-100: sensitivity to rut quality / dirt prep
+  competitiveAggressionIndex: number;       // 0-100: aggressive gate-picking tendencies
+  gateArchetype: 'holeshot-king' | 'gambler' | 'smooth-operator' | 'wet-specialist' | 'track-reader' | 'physical-attacker' | 'conservative' | 'developer'; // personality type
+}
+
 export interface Rider {
   id: string;
   name: string;
@@ -62,6 +76,7 @@ export interface Rider {
   traits: RiderTrait[];       // positive/negative traits
   salary: number;             // per season
   contract: RiderContract;    // NEW: full contract terms
+  gatePreference: GatePreferenceProfile;  // NEW: 10-metric gate selection profile
   morale: number;             // 0-100
   injuredForRounds: number;   // 0 = fit
   careerWins: number;

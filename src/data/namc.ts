@@ -73,7 +73,7 @@ export const DUAL_CHARTER_FIRST_PRIZE = 5_000_000;
 export const TIRE_CHAMPIONSHIP_PURSE = [200_000, 125_000, 100_000, 75_000];
 
 // ---- format constants
-export const NAMC_ROUNDS = 24;
+export const NAMC_ROUNDS = 20;    // all-outdoor championship per v15.1 rulebook
 export const NAMC_GRID = 40;      // per class per championship
 export const A_MAIN_SIZE = 20;
 export const CHARTERS_PER_CHAMPIONSHIP = 20;
@@ -83,6 +83,7 @@ export const BENCH_SIZE = 3;      // 2 male + 1 female (4.8.1)
 export const NAMC_CLASS_IDS: ClassId[] = ['c350', 'c250', 'c125', 'women'];
 
 // Race lengths (minutes) — 3.5.1 / 3.5.2 (used to scale sim laps)
+// NAMC uses outdoor times for all 20 rounds (all-outdoor format)
 export const RACE_MINUTES = {
   stadium: { qual: 15, main: 25 },
   outdoor: { qual: 20, main: 30 },
