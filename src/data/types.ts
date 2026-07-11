@@ -169,7 +169,49 @@ export interface Track {
   kind: 'road' | 'stadium' | 'outdoor';
   lengthKm: number;     // road course length (motocross: lap length)
   baseLapSec: number;   // reference lap time for a 100-rated rider
-  weatherBias: number;  // 0-1 chance-of-rain modifier
+  weatherBias: number;  // 0-1 chance-of-rain modifier (deprecated: use TrackDetails)
+}
+
+/**
+ * Extended track information for detailed weather simulation & race strategy.
+ * See src/data/tracks.ts for comprehensive database of all tracks.
+ */
+export interface TrackDetails extends Track {
+  elevation: number;                           // meters above sea level
+  soilType?: 'loam' | 'sand' | 'hardpack' | 'clay' | 'mixed'; // motocross
+  asphaltType?: 'bitumen' | 'chip-seal' | 'concrete'; // road courses
+
+  seasonalWeather: {
+    spring: { dry: number; lightRain: number; heavyRain: number };
+    summer: { dry: number; lightRain: number; heavyRain: number };
+    fall: { dry: number; lightRain: number; heavyRain: number };
+    winter: { dry: number; lightRain: number; heavyRain: number };
+  };
+
+  historicalEvents: {
+    event: string;
+    frequency: 'rare' | 'occasional' | 'common';
+    season: string;
+    impact: string;
+  }[];
+
+  drainageRating: number;                     // 1 (poor) to 5 (excellent)
+  drainageNotes: string;
+  waterHazards: string[];
+
+  safetyFactors: {
+    runoff: 'gravel' | 'tarmac' | 'grass' | 'mixed' | 'barriers';
+    wallsPresent: boolean;
+    wallHeight?: string;
+    waterHazardPresent: boolean;
+    hazardDescription?: string;
+    overtakeZones: number;
+    crashRiskRating: number;                  // 1-10
+  };
+
+  cornersPerLap: number;
+  avgSpeed: number;                           // km/h
+  specialties: string[];
 }
 
 export interface CalendarRound {
