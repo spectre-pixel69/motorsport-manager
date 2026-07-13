@@ -162,6 +162,40 @@ Status meanings:
 - **Also:** CLAUDE.md locked-specs section needs the purse/revenue conflation
   rewritten.
 
+## 11-18. THE v15.1 ALIGNMENT WAVE (2026-07-13, actual rulebook obtained)
+
+The real rulebook (docs/NAMC_RULEBOOK_v15.1_06232026.pdf) is now in the repo.
+Root cause of ALL prior items confirmed: the game was built from a secondhand
+summary. Corrections applied this wave:
+
+- **11. Points (§11.2) — FIXED.** Not 40→1. Main Event: 25/22/20/18/16/15/14/
+  13/12/11, then 10..1, then 1 pt P21-40. Sprint Race half-scale (12.5 win).
+- **12. Sprint Races (§3.5/3.6) — FIXED.** Every round = Sprint (12min+1lap,
+  0.5x) + Main Event (35min+2laps, 1.0x) per class. Weekend sim rebuilt.
+- **13. Race lengths — FIXED.** Main is 35+2, not 30. The 60% "scaled classes"
+  rule for 250P/Women's does NOT exist (Appendix A: all classes identical).
+- **14. Calendar (§10.2) — FIXED.** Real 20-venue 2027 calendar implemented
+  (Fox Raceway opener → Glen Helen finale). Bye weeks/1,000-mile rule =
+  calendar metadata, not yet modeled.
+- **15. Purse (§5.2) — FIXED + NEW CONTRADICTION.** Only endpoints specified:
+  wins 75/40/20/20k, $5k P40 floor. Old detailed tables were from a stale
+  source. NEW: §5.2's "$800,000 round purse" cannot cover its own guarantees
+  (160 × $5k floor = $800k before win money). Needs boss ruling/erratum.
+- **16. Numbers (§6.1) — FIXED.** Earned annually by standings position;
+  champion runs #1. Wired into season rollover. Legacy NUMBER program (§6.2,
+  retired numbers) ≠ our gold/platinum/diamond "legacy plates" — plates are
+  an invention of the old summary; keep or replace pending boss ruling.
+- **17. Penalties (§13.1) — LOGGED.** Four-tier system (Warning/Fine/
+  Suspension/Charter Revocation), NOT three strikes. Fines → Rider Welfare
+  Fund. Terminal violations list (§12.4). Enforcement still unwired.
+- **18. Misc corrections logged:** revenue = 25% of gross to rider pool
+  (§5.1); tire championship does not exist in v15.1 (§8 = open tire war) —
+  applyTirePoints is legacy; Rider's Cup eligibility = 10 round starts
+  (§11.1); Manufacturer's Cup = sum of all 8 roster riders w/ Mathematical
+  Elimination Rule (§11.4); draft/free agency fully specified (§4.10-4.14);
+  bench activation protocol (App. B) — IMPLEMENTED; OVR 5-pillar scouting
+  scale (§4.10); 18+ hard age floor (§3.8); charter system (§2).
+
 ---
 
 **How to add an entry:** what was built, what the correct rule is, which

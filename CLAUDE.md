@@ -8,7 +8,17 @@
 
 ---
 
-## LOCKED SPECIFICATIONS (DO NOT CHANGE)
+## ⚠️ SOURCE OF TRUTH
+The ONLY authority for NAMC rules is **docs/NAMC_RULEBOOK_v15.1_06232026.pdf**
+(in this repo). Sections of this CLAUDE.md are known to contain stale/wrong
+summaries (see docs/RULEBOOK_DISCREPANCIES.md). When this file and the PDF
+disagree, THE PDF WINS. Read the PDF before implementing any league rule.
+Key corrections: points are 25/22/20/18/16... + Sprint half-scale (§11.2), NOT
+F1 and NOT 40→1; every round = Sprint + Main Event (§3.6); all-outdoor 20-round
+calendar (§10.2); four-tier penalties (§13.1), not three strikes; purse money
+belongs to the RIDER (team cut ≤25% via contract); S4-only in Year One (§1.6).
+
+## LOCKED SPECIFICATIONS (superseded by the PDF above where they conflict)
 
 These are contractual constraints from the NAMC v15.1 rulebook. All game mechanics must honor these.
 

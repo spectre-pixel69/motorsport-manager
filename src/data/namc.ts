@@ -4,16 +4,19 @@
 
 import type { ClassId } from './types';
 
-// ---- 5.10.1 Race purse scales (40 positions each)
-// Tier weighting order: 350 > 250 > Women's > 250P.
-// The rulebook printed ONE table labeled "125" and served it to two classes —
-// resolved (audit log #7): the printed table is the WOMEN'S table ($385,250);
-// the rulebook's stated total ($341,200) is the 250P's, rebuilt below.
+// ---- §5.2 Round Purse — rulebook v15.1 defines only the endpoints per class:
+// win payout (350: $75k, 250: $40k, 250P: $20k, Women's: $20k) and the $5,000
+// 40th-place minimum (§4.3). Graduation between them is unspecified; the 350
+// table keeps the established shape and the others scale from it.
+//
+// KNOWN RULEBOOK CONTRADICTION (audit log): §5.2 states an "$800,000 round
+// purse across all classes", but 160 finishers x $5,000 minimum is already
+// $800,000 BEFORE win money. Actual table totals below are ~$1.31M/round.
+// Awaiting a boss ruling; the tables honor the specified endpoints.
 const steps = (from: number, step: number, n: number): number[] =>
   Array.from({ length: n }, (_, i) => from - step * i);
 
-// 350 Class — EXACT rulebook table. Actual sum $619,000/round.
-// (Rulebook states $585,000 — arithmetic mismatch, open in audit log.)
+// 350 Pro — win $75,000 (§5.2), P40 $5,000. Sum $619,000/round.
 export const PURSE_350 = [
   75_000, 37_500, 22_500,
   ...steps(22_000, 500, 17),   // P4-P20: 22000 -> 14000
@@ -21,34 +24,16 @@ export const PURSE_350 = [
   8_500, 8_000, 7_500, 7_000, 6_500,        // P31-P35
   6_200, 5_900, 5_600, 5_300, 5_000,        // P36-P40
 ];
-// 250 Class — EXACT rulebook table. Actual sum $499,500/round.
-// (Rulebook states $486,600 — arithmetic mismatch, open in audit log.)
-export const PURSE_250 = [
-  60_000, 30_000, 18_000,
-  ...steps(17_600, 400, 17),   // P4-P20: 17600 -> 11200
-  ...steps(10_800, 400, 10),   // P21-P30: 10800 -> 7200
-  6_800, 6_400, 6_100, 5_800, 5_600,        // P31-P35
-  5_400, 5_300, 5_200, 5_100, 5_000,        // P36-P40
-];
-// Women's Pro — the rulebook's printed "125" table. Sum $385,250/round.
-export const PURSE_WOMEN = [
-  45_000, 22_500, 13_500,
-  ...steps(13_200, 300, 17),   // P4-P20: 13200 -> 8400
-  ...steps(8_100, 300, 7),     // P21-P27: 8100 -> 6300
-  6_100, 5_900, 5_700,         // P28-P30 (step changes to -200 in the table)
-  5_600, 5_500, 5_400, 5_300, 5_250,        // P31-P35
-  5_200, 5_150, 5_100, 5_050, 5_000,        // P36-P40
-];
-// 250P Restricted — bottom tier, built to the rulebook's stated total of
-// EXACTLY $341,200/round, same shape as the other tables, P40 = $5,000
-// minimum finish payout preserved.
-export const PURSE_250P = [
-  40_000, 20_000, 12_500,
-  ...steps(11_600, 300, 17),   // P4-P20: 11600 -> 6800
-  ...steps(6_750, 150, 10),    // P21-P30: 6750 -> 5400
-  5_350, 5_300, 5_250, 5_200, 5_150,        // P31-P35
-  5_120, 5_090, 5_060, 5_030, 5_000,        // P36-P40
-];
+
+/** Scale the 350 table's shape to a class win payout, preserving the $5k floor. */
+const scaledPurse = (winPayout: number): number[] => {
+  const f = (winPayout - 5_000) / (75_000 - 5_000);
+  return PURSE_350.map(p => 5_000 + Math.round(((p - 5_000) * f) / 50) * 50);
+};
+
+export const PURSE_250 = scaledPurse(40_000);    // win $40,000 (§5.2), sum ~$312k
+export const PURSE_WOMEN = scaledPurse(20_000);  // win $20,000 (§5.2), sum ~$186k
+export const PURSE_250P = scaledPurse(20_000);   // win $20,000 (§5.2), sum ~$186k
 
 export const PURSES: Record<string, number[]> = {
   c350: PURSE_350,
@@ -101,14 +86,35 @@ export const BENCH_SIZE = 3;      // 2 male + 1 female (4.8.1)
 // Tier weighting order: 350 > 250 > Women's > 250P (c125 = 250P internal id)
 export const NAMC_CLASS_IDS: ClassId[] = ['c350', 'c250', 'women', 'c125'];
 
-// Race lengths (minutes) — 3.5.1 / 3.5.2 (used to scale sim laps)
-// NAMC uses outdoor times for all 20 rounds (all-outdoor format)
-export const RACE_MINUTES = {
-  stadium: { qual: 15, main: 25 },
-  outdoor: { qual: 20, main: 30 },
-  scaled: { qual: 9, main: 15 },   // 125 + women's stadium (60%)
-  scaledOutdoor: { qual: 12, main: 18 },
-};
+// Race lengths — rulebook v15.1 §3.6: Sprint 12 min + 1 lap (0.5x),
+// Main Event 35 min + 2 laps (1.0x). ALL four classes run identical
+// durations (Appendix A) — the old 60% "scaled classes" rule does not exist.
+export const RACE_MINUTES = { sprint: 12, main: 35 };
 
-/** Which classes use the 60% scaled durations. */
-export const SCALED_CLASSES: ClassId[] = ['c125', 'women'];
+/**
+ * 2027 Master Racing Calendar — rulebook v15.1 §10.2, all 20 venues in order.
+ * [id, name, location, nation]. 24-week span with 5 bye weeks (3 standard +
+ * 2 maritime, §10.1/10.3 — byes are calendar metadata, not race rounds).
+ */
+export const NAMC_2027_CALENDAR: [string, string, string, string][] = [
+  ['fox', 'Fox Raceway', 'Pala, CA', 'USA'],
+  ['estero', 'Estero Beach MX', 'Ensenada, BC', 'MEX'],
+  ['compedge', 'Competitive Edge MX', 'Adelanto, CA', 'USA'],
+  ['motoland', 'Motoland MX Park', 'Casa Grande, AZ', 'USA'],
+  ['hangtown', 'Hangtown MX', 'Rancho Murieta, CA', 'USA'],
+  ['washougal', 'Washougal MX Park', 'Washougal, WA', 'USA'],
+  ['motopark', 'Motopark', 'Chilliwack, BC', 'CAN'],
+  ['bigair', 'Big Air Motocross', 'Big Sky, MT', 'USA'],
+  ['thunder', 'Thunder Valley MX', 'Lakewood, CO', 'USA'],
+  ['freestone', 'Freestone MX', 'Wortham, TX', 'USA'],
+  ['springcreek', 'Spring Creek MX', 'Millville, MN', 'USA'],
+  ['ironman', 'Ironman Raceway', 'Crawfordsville, IN', 'USA'],
+  ['redbud', 'RedBud MX', 'Buchanan, MI', 'USA'],
+  ['southwick', 'Southwick MX', 'Southwick, MA', 'USA'],
+  ['highpoint', 'High Point Raceway', 'Mt. Morris, PA', 'USA'],
+  ['buddscreek', 'Budds Creek MX', 'Mechanicsville, MD', 'USA'],
+  ['whistler', 'Whistler MX', 'Whistler, BC', 'CAN'],
+  ['anchorage', 'Anchorage MX', 'Anchorage, AK', 'USA'],
+  ['waikoloa', 'Waikoloa MX', 'Waikoloa, HI', 'USA'],
+  ['glenhelen', 'Glen Helen Raceway', 'Devore, CA', 'USA'],   // SEASON FINALE
+];

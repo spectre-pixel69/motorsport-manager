@@ -6,6 +6,7 @@ import type { ElectronicsType, ExhaustType } from '../data/setups';
 import { ENGINES, CHASSIS, TIRES, calculateBikeBuildCost } from '../data/bikes';
 import { ELECTRONICS_SYSTEMS, EXHAUST_SYSTEMS, calculateRoundSetupCost } from '../data/setups';
 import { ALL_STAFF } from '../data/staff';
+import { PURSES, WEEKLY_LEAGUE_REVENUE, REVENUE_SPLIT } from '../data/namc';
 
 export type RiderClass = '350-pro' | '250' | '250p' | 'womens-250';
 export type FinishPosition = number; // 1-40
@@ -75,22 +76,45 @@ export function pursesFor(championship: 'road' | 'fourStroke' | 'twoStroke'): nu
   return ROUND_PURSE;
 }
 
+/**
+ * Weekly settlement — rulebook v15.1 §4.2 (appearance fees), §4.9 (24-hour
+ * payment rule), §5.2 (round purse). Purse money is the RIDER'S; the team
+ * receives only its contract-negotiated cut (purseShareTeamPct, cap 25%).
+ * Teams pay per-round salary draws (annual/20) + appearance fees, and
+ * receive a league revenue share (interim model pending §5.1 team split).
+ */
 export function settleNamcRound(u: any, championship: any, weekends: any[]): RoundLedgerEntry[] {
-  // Stub: process NAMC round, update team budgets, return ledger
-  // For now, just return empty ledger to allow game flow
-  const ledger: RoundLedgerEntry[] = [];
-  for (const team of Object.values(u.teams)) {
-    const t = team as any;
-    if (t.championship !== championship) continue;
-    ledger.push({
-      teamId: t.id,
-      purse: ROUND_PURSE / 4,
-      revenuePool: (ROUND_PURSE / 4) * 0.75,
-      salaries: 0,
-      appearance: 0,
+  const revenueSharePerTeam = (WEEKLY_LEAGUE_REVENUE * REVENUE_SPLIT.teams) / 20;
+  const byTeam: Record<string, RoundLedgerEntry> = {};
+  const entry = (teamId: string): RoundLedgerEntry =>
+    (byTeam[teamId] ??= { teamId, purse: 0, revenuePool: 0, salaries: 0, appearance: 0 });
+
+  // Purse by Main Event finishing position; team collects its contract cut only
+  for (const w of weekends) {
+    const table = PURSES[w.classId] ?? [];
+    w.finishOrder.forEach((riderId: string, i: number) => {
+      const r = u.riders[riderId];
+      if (!r?.teamId) return;
+      const payout = table[i] ?? MIN_FINISH_PAYOUT;
+      const teamCut = Math.round(payout * Math.min(25, r.contract?.purseShareTeamPct ?? 0) / 100);
+      entry(r.teamId).purse += teamCut;
     });
   }
-  return ledger;
+
+  // Team obligations + league revenue share
+  for (const team of Object.values(u.teams)) {
+    const t = team as any;
+    if (t.discipline !== 'namc' || t.championship !== championship) continue;
+    const e = entry(t.id);
+    const roster = Object.values(u.riders).filter((r: any) => r.teamId === t.id) as any[];
+    for (const r of roster) {
+      e.salaries += Math.round((r.salary ?? 0) / 20);           // per-round salary draw
+      if (!r.bench && r.injuredForRounds === 0) e.appearance += APPEARANCE_FEE_PER_ROUND;
+    }
+    e.revenuePool = Math.round(revenueSharePerTeam);
+    t.budget += e.purse + e.revenuePool - e.salaries - e.appearance;
+  }
+  return Object.values(byTeam);
 }
 
 export function settleRoadRound(u: any, weekend: any): void {

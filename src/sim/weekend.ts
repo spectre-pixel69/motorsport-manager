@@ -1,12 +1,13 @@
 // Race weekend formats.
 // Road (GP/SBK): qualifying -> race. Points top 15.
-// NAMC (v15.1): hot-lap qualifying (sets gate pick order) -> MAIN RACE on a
-// unified 40-rider single gate. No motos, no A/B split, no relegation.
-// Points 40-1. (The old A/B-Main structure was the 2S/4S-era rule — removed.)
+// NAMC (rulebook v15.1 §3.5-3.7, §11.2, Appendix A): Friday hot-lap
+// qualifying (sets gate pick order) -> SPRINT RACE (12 min + 1 lap, half-scale
+// points) -> MAIN EVENT (35 min + 2 laps, full points) on a unified 40-rider
+// single gate. All four classes run identical formats.
 
 import type { ChampionshipId, ClassId, Rider, Track, Universe } from '../data/types';
-import { namcPointsFor, roadPointsFor } from '../data/classes';
-import { RACE_MINUTES, SCALED_CLASSES } from '../data/namc';
+import { namcPointsFor, namcSprintPointsFor, roadPointsFor } from '../data/classes';
+import { RACE_MINUTES } from '../data/namc';
 import { gridOf } from '../data/universe';
 import { simulateQualifying, simulateRace, lapsForMinutes, type Entrant, type RaceOutcome } from './engine';
 import { type RNG } from '../util/rng';
@@ -78,27 +79,35 @@ export function runNamcWeekend(
   const track = u.tracks[trackId];
   const grid = gridOf(u, classId, championship);
   const wet = rng() < track.weatherBias;
-  const scaled = SCALED_CLASSES.includes(classId);
-  const mainMin = scaled ? RACE_MINUTES.scaledOutdoor.main : RACE_MINUTES.outdoor.main;
 
-  // --- Hot-lap qualifying (3.4): fastest qualifier picks his gate first.
-  // Grid slot = qualifying rank until the rider gate-selection system lands.
+  // --- Friday hot-lap qualifying (§3.7): fastest qualifier picks his gate
+  // first. Grid slot = qualifying rank until rider gate-selection lands.
   const entrants = toEntrants(u, grid, approachFor);
   const qOrder = simulateQualifying(rng, entrants, track, wet);
   const byId = new Map(entrants.map(e => [e.rider.id, e]));
-  qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
+  const setGridFromQual = () => qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
 
-  // --- MAIN RACE: unified 40-rider single gate, points 40-1 (3.9)
-  const mainLaps = lapsForMinutes(track, mainMin);
-  const race = simulateRace(rng, entrants, track, mainLaps, { wet });
+  // --- SPRINT RACE (§3.6): 12 min + 1 lap, half-scale points (§11.2)
+  setGridFromQual();
+  const sprintLaps = lapsForMinutes(track, RACE_MINUTES.sprint) + 1;
+  const sprint = simulateRace(rng, entrants, track, sprintLaps, { wet });
+  const sprintPoints: Record<string, number> = {};
+  sprint.rows.forEach(row => { sprintPoints[row.riderId] = Math.max(0.5, namcSprintPointsFor(row.pos)); });
 
-  const finishOrder = race.rows.map(r => r.riderId);
+  // --- MAIN EVENT (§3.6): 35 min + 2 laps, full points, gate pick from Friday qual
+  setGridFromQual();
+  const mainLaps = lapsForMinutes(track, RACE_MINUTES.main) + 2;
+  const main = simulateRace(rng, entrants, track, mainLaps, { wet });
+  const finishOrder = main.rows.map(r => r.riderId);
+  const mainPoints: Record<string, number> = {};
+  finishOrder.forEach((id, i) => { mainPoints[id] = Math.max(1, namcPointsFor(i + 1)); });
+
   const points: Record<string, number> = {};
-  finishOrder.forEach((id, i) => {
-    // DNF in the Main still scores 1 pt minimum (rulebook DNF definition)
-    points[id] = Math.max(1, namcPointsFor(i + 1));
-  });
+  for (const id of Object.keys(mainPoints)) points[id] = (sprintPoints[id] ?? 0) + mainPoints[id];
 
-  const sessions: SessionResult[] = [{ name: 'MAIN RACE', outcome: race, points }];
-  return { classId, championship, trackId, sessions, finishOrder, points, weather: race.weather };
+  const sessions: SessionResult[] = [
+    { name: 'SPRINT RACE', outcome: sprint, points: sprintPoints },
+    { name: 'MAIN EVENT', outcome: main, points: mainPoints },
+  ];
+  return { classId, championship, trackId, sessions, finishOrder, points, weather: main.weather };
 }

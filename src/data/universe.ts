@@ -6,10 +6,10 @@ import type {
 import { CLASSES, classById } from './classes';
 import {
   MANUFACTURERS, SPONSORS, TIRE_BRANDS, GP_TEAMS, GP_STARS, SBK_TEAMS, SBK_STARS,
-  GP_TRACKS, SBK_TRACKS, NAMC_STADIUMS, NAMC_OUTDOORS,
+  GP_TRACKS, SBK_TRACKS,
 } from './parody';
 import { FIRST_M, FIRST_F, LAST, NAT_WEIGHTS, TEAM_ADJ, TEAM_NOUN, NAMC_TEAM_CITIES } from './names';
-import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NAMC_CLASS_IDS } from './namc';
+import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NAMC_CLASS_IDS, NAMC_2027_CALENDAR } from './namc';
 import { mulberry32, hashString, pick, irange, gauss, clamp, shuffle, type RNG } from '../util/rng';
 import { makeGatePreferenceProfile } from './gatePreference';
 import { seededLogo } from '../logo/logos';
@@ -129,6 +129,24 @@ function makeRider(
   };
 
   return rider;
+}
+
+/**
+ * Draft-class rookie (rulebook §4.10/4.11): age 18-19 out of the NAMC
+ * Development Series, OVR-vetted. Used by the off-season draft to refill
+ * rosters after retirements.
+ */
+export function makeDraftRookie(rng: RNG, opts: {
+  classId: ClassId; championship: ChampionshipId; teamId: string | null;
+  female?: boolean; quality?: number; bench?: boolean;
+}): Rider {
+  const rookie = makeRider(rng, {
+    discipline: 'namc', base: opts.quality ?? 52, classId: opts.classId,
+    championship: opts.championship, teamId: opts.teamId, female: opts.female, bench: opts.bench,
+  });
+  rookie.age = irange(rng, 18, 19);
+  rookie.potential = clamp(rookie.overall + irange(rng, 8, 25), rookie.overall, 99); // rookies carry headroom
+  return rookie;
 }
 
 function makeTeam(rng: RNG, opts: {
@@ -299,24 +317,18 @@ function buildTracks(u: Universe): void {
   for (const [id, name, location, lengthKm, baseLap, wb] of SBK_TRACKS) {
     u.tracks[id] = { id, name, location, discipline: 'sbk', kind: 'road', lengthKm, baseLapSec: baseLap, weatherBias: wb };
   }
-  NAMC_STADIUMS.forEach(([id, name, location]) => {
-    u.tracks[id] = { id, name, location, discipline: 'namc', kind: 'stadium', lengthKm: 0.9, baseLapSec: 52, weatherBias: 0.04 };
-  });
-  NAMC_OUTDOORS.forEach(([id, name, location]) => {
-    u.tracks[id] = { id, name, location, discipline: 'namc', kind: 'outdoor', lengthKm: 1.8, baseLapSec: 95, weatherBias: 0.22 };
+  // NAMC 2027 Master Racing Calendar (rulebook v15.1 §10.2): 20 real venues,
+  // Fox Raceway opener -> Glen Helen finale. Lap time varies per venue.
+  NAMC_2027_CALENDAR.forEach(([id, name, location], i) => {
+    const baseLap = 88 + ((i * 7) % 18);            // 88-105s, deterministic per venue
+    const wb = location.includes('WA') || location.includes('BC') || location.includes('AK') ? 0.30
+      : location.includes('HI') || location.includes('TX') ? 0.24 : 0.18;
+    u.tracks[id] = { id, name, location, discipline: 'namc', kind: 'outdoor', lengthKm: 1.8, baseLapSec: baseLap, weatherBias: wb };
   });
 
   u.calendars.gp = GP_TRACKS.map(([id], i) => ({ round: i + 1, trackId: id, kind: 'road' as const }));
   u.calendars.sbk = SBK_TRACKS.map(([id], i) => ({ round: i + 1, trackId: id, kind: 'road' as const }));
-
-  // NAMC: 20-round all-outdoor championship (v15.1 rulebook)
-  const namcCal: CalendarRound[] = [];
-  for (let i = 0; i < 20; i++) {
-    const trackIdx = i % NAMC_OUTDOORS.length;
-    const [id] = NAMC_OUTDOORS[trackIdx];
-    namcCal.push({ round: i + 1, trackId: id, kind: 'outdoor' });
-  }
-  u.calendars.namc = namcCal;
+  u.calendars.namc = NAMC_2027_CALENDAR.map(([id], i) => ({ round: i + 1, trackId: id, kind: 'outdoor' as const }));
 }
 
 export function buildUniverse(seed: number, season = 2027): Universe {

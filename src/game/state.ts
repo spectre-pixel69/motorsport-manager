@@ -1,11 +1,11 @@
 // Game state: career save, standings, season progression, persistence.
 
 import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe } from '../data/types';
-import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf } from '../data/universe';
+import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf, makeDraftRookie } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
-import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE } from '../data/namc';
+import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
 import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';
@@ -230,9 +230,15 @@ function applyTirePoints(state: CareerState, w: WeekendResult): void {
 
 function applyInjuriesAndRecovery(state: CareerState, rng: () => number, weekends: WeekendResult[]): void {
   const u = state.universe;
-  // recover
+  // recover; returning starters send their bench sub back down (Appendix B step 8)
   for (const r of Object.values(u.riders)) {
-    if (r.injuredForRounds > 0) r.injuredForRounds -= 1;
+    if (r.injuredForRounds > 0) {
+      r.injuredForRounds -= 1;
+      if (r.injuredForRounds === 0) {
+        const sub = Object.values(u.riders).find(x => x.subbingFor === r.id);
+        if (sub) { sub.bench = true; sub.classId = null; sub.subbingFor = undefined; }
+      }
+    }
   }
   // new injuries from crashes (NAMC: substitute cascade handled by gridOf exclusion)
   for (const w of weekends) {
@@ -243,6 +249,18 @@ function applyInjuriesAndRecovery(state: CareerState, rng: () => number, weekend
           if (r && r.injuredForRounds === 0) {
             r.injuredForRounds = irange(rng as any, 1, 4);
             state.messages.unshift(`INJURY: ${r.name} out for ${r.injuredForRounds} round(s) after a crash.`);
+            // Bench Rider Activation Protocol (rulebook Appendix B / 4.13):
+            // promote a free bench rider from the same charter, matching
+            // gender for the Women's 250 class.
+            if (r.classId && r.teamId) {
+              const bench = Object.values(u.riders).find(x =>
+                x.teamId === r.teamId && x.bench && !x.subbingFor &&
+                x.injuredForRounds === 0 && x.isFemale === (r.classId === 'women'));
+              if (bench) {
+                bench.bench = false; bench.classId = r.classId; bench.subbingFor = r.id;
+                state.messages.unshift(`BENCH ACTIVATION: ${bench.name} steps in for ${r.name} (${r.classId}).`);
+              }
+            }
           }
         }
       }
@@ -400,7 +418,46 @@ export function advanceSeason(state: CareerState): string[] {
     if (r.contract.length <= 0) r.contract.length = 1;
   }
 
-  // 4. Reset the season state
+  // 4. §6.1 F1-style number system: next season's number = this season's
+  //    Rider's Cup finishing position. The champion carries #1.
+  if (state.discipline === 'namc') {
+    for (const cls of classes) {
+      const table = riderStandingsFor(state, cls, 'fourStroke');
+      table.forEach((row, i) => { row.rider.number = i + 1; });
+    }
+  }
+
+  // 5. Retirement + the NAMC Draft (§4.10/4.11): riders age out at 36+,
+  //    and every vacancy is refilled from the Development Series rookie
+  //    class. Worst teams draft first (reverse team standings).
+  if (state.discipline === 'namc') {
+    const rng = mulberry32(hashString(`${state.seed}:draft:${state.season}`));
+    let retired = 0;
+    for (const r of Object.values(u.riders)) {
+      if (r.classId && NAMC_CLASS_IDS.includes(r.classId) && r.age >= 36) {
+        delete u.riders[r.id];
+        retired++;
+      }
+    }
+    // Draft order: reverse Manufacturer's Cup standings (worst picks first)
+    const order = teamStandingsFor(state, 'fourStroke').map(x => x.team).reverse();
+    let drafted = 0;
+    for (const team of order) {
+      for (const cls of NAMC_CLASS_IDS) {
+        const active = Object.values(u.riders).filter(r => r.teamId === team.id && r.classId === cls && !r.bench);
+        for (let need = RIDERS_PER_CLASS_PER_TEAM - active.length; need > 0; need--) {
+          // earlier picks land better prospects
+          const quality = 58 - Math.floor((drafted / order.length) * 8) + irange(rng, -4, 4);
+          const rookie = makeDraftRookie(rng, { classId: cls, championship: 'fourStroke', teamId: team.id, female: cls === 'women', quality });
+          u.riders[rookie.id] = rookie;
+          drafted++;
+        }
+      }
+    }
+    if (retired || drafted) notes.push(`Off-season: ${retired} riders retired; ${drafted} rookies drafted out of the Development Series.`);
+  }
+
+  // 6. Reset the season state
   state.season += 1;
   u.season += 1;
   state.round = 0;

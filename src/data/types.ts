@@ -115,6 +115,7 @@ export interface Rider {
   classId: ClassId | null;    // class they race in
   championship: ChampionshipId;
   bench: boolean;             // NAMC reserve rider
+  subbingFor?: string;        // Appendix B: active bench rider covering this injured starter
 }
 
 export type EngineMode = 'conserve' | 'standard' | 'push' | 'attack';
