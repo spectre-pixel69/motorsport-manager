@@ -11,13 +11,13 @@ export const CLASSES: ClassDef[] = [
   { id: 'sbk', name: 'World Superbike', shortName: 'SBK', discipline: 'sbk', tier: 1, gridSize: 22, salaryFloor: 250_000 },
   { id: 'ss600', name: 'World Supersport', shortName: 'SS600', discipline: 'sbk', tier: 2, gridSize: 26, salaryFloor: 90_000 },
   { id: 'ss300', name: 'Supersport 300', shortName: 'SS300', discipline: 'sbk', tier: 3, gridSize: 30, salaryFloor: 40_000 },
-  // NAMC classes (per rulebook 3.1 / 4.3) — exist in BOTH championships
+  // NAMC classes (rulebook 3.1 / 4.3). Tier weighting order: 350 > 250 > Women's > 250P.
   { id: 'c350', name: '350 Class', shortName: '350', discipline: 'namc', tier: 1, gridSize: 40, salaryFloor: 400_000 },
   { id: 'c250', name: '250 Class', shortName: '250', discipline: 'namc', tier: 2, gridSize: 40, salaryFloor: 200_000 },
+  { id: 'women', name: "Women's Pro Class", shortName: 'WPRO', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000, womenOnly: true },
   // 250P: a 250 tuned down to 125-spec output — the "P" denotes the restriction.
   // (Internal id stays 'c125' for save/key compatibility.)
-  { id: 'c125', name: '250P Restricted', shortName: '250P', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000 },
-  { id: 'women', name: "Women's Pro Class", shortName: 'WPRO', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000, womenOnly: true },
+  { id: 'c125', name: '250P Restricted', shortName: '250P', discipline: 'namc', tier: 4, gridSize: 40, salaryFloor: 100_000 },
 ];
 
 export const classById = (id: ClassId): ClassDef => CLASSES.find(c => c.id === id)!;

@@ -21,7 +21,7 @@ export function Standings({ state }: Props) {
   const classOptions: { cls: ClassId; champ: ChampionshipId }[] =
     state.discipline === 'namc'
       ? (['fourStroke'] as ChampionshipId[]).flatMap(ch =>
-          ['c350', 'c250', 'c125', 'women'].map(cls => ({ cls: cls as ClassId, champ: ch }))
+          ['c350', 'c250', 'women', 'c125'].map(cls => ({ cls: cls as ClassId, champ: ch }))
         )
       : ['gp1', 'gp2', 'gp3', 'sbk', 'ss600', 'ss300'].map(cls => ({ cls: cls as ClassId, champ: 'road' as ChampionshipId }));
 

@@ -99,14 +99,35 @@ Status meanings:
 - **Fixed in:** `src/sim/weekend.ts` (runNamcWeekend rewritten),
   `src/data/namc.ts` (A_MAIN_SIZE removed).
 
-## 7. 125-class purse table doesn't sum to its stated total — PARTIALLY RESOLVED
+## 7. 125-class purse table doesn't sum to its stated total — FIXED
 
 - **Class identity resolved (boss, 2026-07-13):** The table the rulebook labels
   "125" belongs to the **250P Restricted** class — a 250 tuned down to 125-spec
   output; the "P" denotes the restriction. Not a separate 125cc class.
-- **Still open:** the arithmetic. The table sums to $385,250 per round but the
-  rulebook states the total as $341,200. Re-check 5.10.1 to decide which number
-  is authoritative — this looks like an error in the rulebook itself.
+- **Arithmetic resolved (boss, 2026-07-13):** Tier weighting order is
+  **350 > 250 > Women's > 250P**. The rulebook printed one table and served it
+  to two classes — that's the source of the mismatch. Resolution:
+  - The printed table (sums $385,250) is the **Women's Pro** table (tier 3).
+  - The **250P** (tier 4, bottom) gets its own table built to the rulebook's
+    stated total of exactly **$341,200**, same shape, P40 = $5,000 minimum
+    finish payout preserved.
+- **Fixed in:** `src/data/namc.ts` (PURSE_WOMEN + new PURSE_250P, PURSES map),
+  `src/data/classes.ts` (women tier 3, 250P tier 4), `NAMC_CLASS_IDS` and
+  Standings tab order now follow tier order.
+- **Rulebook erratum needed:** 5.10.1 should print separate Women's and 250P
+  tables.
+
+## 9. 350 & 250 purse tables don't sum to their stated totals — VERIFY (rulebook errors?)
+
+- **What was found (while fixing #7):** The rulebook's stated per-round totals
+  don't match its own printed tables for the top two classes either:
+  - 350 Class: printed table sums to **$619,000**; rulebook states $585,000.
+  - 250 Class: printed table sums to **$499,500**; rulebook states $486,600.
+- **Current code:** implements the printed tables exactly (values untouched);
+  comments in `src/data/namc.ts` now record the true sums.
+- **Rulebook section to re-check:** 5.10.1 — decide per class whether the
+  table or the stated total is authoritative. (Tier order holds either way:
+  619,000 > 499,500 > 385,250 > 341,200.)
 
 ## 8. Class naming: "125 Class" vs "250P Restricted" — FIXED
 
