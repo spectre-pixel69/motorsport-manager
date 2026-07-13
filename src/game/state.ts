@@ -1,11 +1,11 @@
 // Game state: career save, standings, season progression, persistence.
 
 import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe } from '../data/types';
-import { buildUniverse, gridOf, teamsOf, ridersOfTeam } from '../data/universe';
+import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
-import { NAMC_CLASS_IDS } from '../data/namc';
+import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE } from '../data/namc';
 import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';
@@ -318,4 +318,93 @@ export function teamStandingsFor(state: CareerState, championship: ChampionshipI
 
 export function seasonOver(state: CareerState): boolean {
   return state.round >= state.universe.calendars[state.discipline].length;
+}
+
+// ------------------------------------------------------------ season rollover
+//
+// MINIMAL off-season: only the mechanical necessities live here. Every place a
+// real system SHOULD hook in but doesn't yet is deliberately left out and
+// tracked in docs/SIMULATION_FINDINGS.md — do not silently invent mechanics
+// here; wire the real system instead.
+
+/** Legacy plate from career title count (1+ gold, 3+ platinum, 5+ diamond). */
+function legacyPlateFor(championships: number): Rider['legacyPlate'] {
+  if (championships >= 5) return 'diamond';
+  if (championships >= 3) return 'platinum';
+  if (championships >= 1) return 'gold';
+  return 'none';
+}
+
+/**
+ * Close out the season and open the next one. Returns off-season notes
+ * (champions crowned, payouts) for the message feed.
+ */
+export function advanceSeason(state: CareerState): string[] {
+  const u = state.universe;
+  const notes: string[] = [];
+  const classes = CLASSES.filter(c => c.discipline === state.discipline).map(c => c.id);
+  const champs: ChampionshipId[] = state.discipline === 'namc' ? ['fourStroke'] : ['road'];
+
+  // 1. Crown champions; award legacy plates
+  for (const champ of champs) {
+    for (const cls of classes) {
+      const table = riderStandingsFor(state, cls, champ);
+      const top = table[0];
+      if (!top) continue;
+      top.rider.championships += 1;
+      top.rider.legacyPlate = legacyPlateFor(top.rider.championships);
+      notes.push(`${state.season} ${classById(cls).shortName} CHAMPION: ${top.rider.name} (${top.pts} pts)`);
+    }
+  }
+
+  // 2. Team championship purse payout (rulebook 11.3) — the one annual moment
+  //    money moves until the weekly economy settlement is wired.
+  if (state.discipline === 'namc') {
+    const order = teamStandingsFor(state, 'fourStroke');
+    order.forEach((row, i) => {
+      const prize = TEAM_CHAMPIONSHIP_PURSE[i] ?? 0;
+      row.team.budget += prize;
+      if (i === 0) notes.push(`${row.team.name} take the team title ($${(prize / 1000).toFixed(0)}k)`);
+    });
+  }
+
+  // 3. Riders: age one year, apply post-32 physical decline (per training.ts
+  //    spec), heal over the winter, reset season resources and mental state.
+  for (const r of Object.values(u.riders)) {
+    r.age += 1;
+    if (r.age >= 32) {
+      const physical = 0.1 + (r.age - 32) * 0.05;   // 0.1-0.3+/season on physical stats
+      r.stats.pace = Math.max(30, r.stats.pace - physical);
+      r.stats.fitness = Math.max(30, r.stats.fitness - physical);
+      r.stats.starts = Math.max(30, r.stats.starts - physical);
+      r.skills.pace = Math.max(30, r.skills.pace - physical);
+      r.skills.fitness = Math.max(30, r.skills.fitness - physical);
+      r.skills.starts = Math.max(30, r.skills.starts - physical);
+      r.overall = overallOf(r.stats);
+    }
+    r.stamina = 100;
+    r.injuredForRounds = 0;
+    r.morale = clamp(Math.round(r.morale + (70 - r.morale) * 0.5), 0, 100);
+    if (r.mental) {
+      r.mental.confidence = 50;
+      r.mental.tilt = 0;
+      r.mental.fatigue = 0;
+      r.mental.angerCharge = 0;
+      r.mental.consecutiveWins = 0;
+      r.mental.consecutivePodiums = 0;
+      r.mental.peakForm = false;
+    }
+    // Contracts tick down; with no transfer market yet, expired deals
+    // auto-renew for one season at the same terms (tracked as a finding).
+    r.contract.length -= 1;
+    if (r.contract.length <= 0) r.contract.length = 1;
+  }
+
+  // 4. Reset the season state
+  state.season += 1;
+  u.season += 1;
+  state.round = 0;
+  state.standings = emptyStandings();
+  state.messages.unshift(...notes, `The ${state.season} season is here. New year, same dirt.`);
+  return notes;
 }
