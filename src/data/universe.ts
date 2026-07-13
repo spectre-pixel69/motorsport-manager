@@ -1,7 +1,7 @@
 // Universe builder: generates the full three-discipline world.
 
 import type {
-  ChampionshipId, ClassId, DisciplineId, Rider, RiderStats, Team, Track, Universe, CalendarRound, GatePreferenceProfile,
+  ChampionshipId, ClassId, DisciplineId, Rider, RiderStats, Team, Track, Universe, CalendarRound,
 } from './types';
 import { CLASSES, classById } from './classes';
 import {
@@ -11,8 +11,8 @@ import {
 import { FIRST_M, FIRST_F, LAST, NAT_WEIGHTS, TEAM_ADJ, TEAM_NOUN, NAMC_TEAM_CITIES } from './names';
 import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NAMC_CLASS_IDS } from './namc';
 import { mulberry32, hashString, pick, irange, gauss, clamp, shuffle, type RNG } from '../util/rng';
+import { makeGatePreferenceProfile } from './gatePreference';
 import { seededLogo } from '../logo/logos';
-import ALL_RIDERS from './riders';
 
 let riderSeq = 0;
 let teamSeq = 0;
@@ -48,160 +48,6 @@ function makeStats(rng: RNG, base: number): RiderStats {
 
 export function overallOf(s: RiderStats): number {
   return Math.round(s.pace * 0.42 + s.consistency * 0.22 + s.starts * 0.10 + s.fitness * 0.14 + s.aggression * 0.06 + s.wet * 0.06);
-}
-
-function makeGatePreferenceProfile(rng: RNG, stats: RiderStats, traits: string[]): GatePreferenceProfile {
-  // Select archetype based on rider characteristics
-  const archetypes: Array<[string, number]> = [
-    ['holeshot-king', stats.starts],
-    ['gambler', stats.aggression],
-    ['smooth-operator', stats.consistency],
-    ['wet-specialist', stats.wet],
-    ['track-reader', stats.pace],
-    ['physical-attacker', stats.fitness],
-    ['conservative', 100 - stats.aggression],
-    ['developer', 50], // neutral baseline
-  ];
-
-  // Sort by score and pick top archetype with some randomness
-  archetypes.sort((a, b) => b[1] - a[1]);
-  const archetype = archetypes[Math.min(2, Math.floor(rng() * 3))][0] as GatePreferenceProfile['gateArchetype'];
-
-  // Base metrics from archetype
-  let profile: GatePreferenceProfile;
-
-  switch (archetype) {
-    case 'holeshot-king':
-      profile = {
-        holeshotPreferenceScore: clamp(stats.starts + irange(rng, -10, 15), 0, 100),
-        insideOutsideBias: irange(rng, -40, -10), // inside bias
-        conditionAdaptationSkill: clamp(stats.pace + irange(rng, -15, 10), 0, 100),
-        riskTolerance: clamp(stats.aggression + irange(rng, -10, 20), 0, 100),
-        trackTypePreference: 'balanced',
-        wetWeatherGateAdjustment: clamp(50 + irange(rng, -20, 20), 0, 100),
-        mentalPreparationRigor: clamp(70 + irange(rng, -15, 15), 0, 100),
-        physicalGateComfort: clamp(stats.starts + irange(rng, -5, 15), 0, 100),
-        dirtQualitySensitivity: clamp(stats.starts + irange(rng, 0, 20), 0, 100),
-        competitiveAggressionIndex: clamp(85 + irange(rng, -10, 10), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'gambler':
-      profile = {
-        holeshotPreferenceScore: clamp(stats.aggression + irange(rng, -15, 10), 0, 100),
-        insideOutsideBias: irange(rng, -10, 40), // outside bias
-        conditionAdaptationSkill: clamp(50 + irange(rng, -20, 20), 0, 100),
-        riskTolerance: clamp(stats.aggression + irange(rng, 15, 30), 0, 100),
-        trackTypePreference: 'balanced',
-        wetWeatherGateAdjustment: clamp(70 + irange(rng, -20, 15), 0, 100),
-        mentalPreparationRigor: clamp(40 + irange(rng, -20, 20), 0, 100),
-        physicalGateComfort: clamp(50 + irange(rng, -20, 20), 0, 100),
-        dirtQualitySensitivity: clamp(30 + irange(rng, -20, 30), 0, 100),
-        competitiveAggressionIndex: clamp(90 + irange(rng, -10, 10), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'smooth-operator':
-      profile = {
-        holeshotPreferenceScore: clamp(50 + irange(rng, -20, 20), 0, 100),
-        insideOutsideBias: irange(rng, -30, 30), // balanced
-        conditionAdaptationSkill: clamp(stats.consistency + irange(rng, 10, 20), 0, 100),
-        riskTolerance: clamp(stats.consistency + irange(rng, -20, 10), 0, 100),
-        trackTypePreference: 'loam',
-        wetWeatherGateAdjustment: clamp(40 + irange(rng, -15, 25), 0, 100),
-        mentalPreparationRigor: clamp(80 + irange(rng, -10, 15), 0, 100),
-        physicalGateComfort: clamp(stats.consistency + irange(rng, 10, 15), 0, 100),
-        dirtQualitySensitivity: clamp(75 + irange(rng, -15, 15), 0, 100),
-        competitiveAggressionIndex: clamp(40 + irange(rng, -15, 20), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'wet-specialist':
-      profile = {
-        holeshotPreferenceScore: clamp(50 + irange(rng, -20, 20), 0, 100),
-        insideOutsideBias: irange(rng, -20, 20), // adaptable
-        conditionAdaptationSkill: clamp(stats.wet + irange(rng, 15, 25), 0, 100),
-        riskTolerance: clamp(stats.wet + irange(rng, -10, 20), 0, 100),
-        trackTypePreference: 'clay',
-        wetWeatherGateAdjustment: clamp(stats.wet + irange(rng, 20, 35), 0, 100),
-        mentalPreparationRigor: clamp(70 + irange(rng, -15, 15), 0, 100),
-        physicalGateComfort: clamp(stats.wet + irange(rng, 10, 20), 0, 100),
-        dirtQualitySensitivity: clamp(80 + irange(rng, -10, 15), 0, 100),
-        competitiveAggressionIndex: clamp(55 + irange(rng, -15, 20), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'track-reader':
-      profile = {
-        holeshotPreferenceScore: clamp(60 + irange(rng, -15, 15), 0, 100),
-        insideOutsideBias: irange(rng, -25, 25), // balanced
-        conditionAdaptationSkill: clamp(stats.pace + irange(rng, 10, 20), 0, 100),
-        riskTolerance: clamp(50 + irange(rng, -20, 20), 0, 100),
-        trackTypePreference: 'balanced',
-        wetWeatherGateAdjustment: clamp(65 + irange(rng, -20, 20), 0, 100),
-        mentalPreparationRigor: clamp(85 + irange(rng, -10, 10), 0, 100),
-        physicalGateComfort: clamp(75 + irange(rng, -10, 15), 0, 100),
-        dirtQualitySensitivity: clamp(85 + irange(rng, -10, 10), 0, 100),
-        competitiveAggressionIndex: clamp(60 + irange(rng, -15, 20), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'physical-attacker':
-      profile = {
-        holeshotPreferenceScore: clamp(70 + irange(rng, -10, 15), 0, 100),
-        insideOutsideBias: irange(rng, -15, 35), // slight outside bias
-        conditionAdaptationSkill: clamp(stats.fitness + irange(rng, -10, 15), 0, 100),
-        riskTolerance: clamp(75 + irange(rng, -10, 20), 0, 100),
-        trackTypePreference: 'hardpack',
-        wetWeatherGateAdjustment: clamp(50 + irange(rng, -20, 20), 0, 100),
-        mentalPreparationRigor: clamp(60 + irange(rng, -15, 20), 0, 100),
-        physicalGateComfort: clamp(stats.fitness + irange(rng, 15, 25), 0, 100),
-        dirtQualitySensitivity: clamp(50 + irange(rng, -15, 20), 0, 100),
-        competitiveAggressionIndex: clamp(80 + irange(rng, -10, 15), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'conservative':
-      profile = {
-        holeshotPreferenceScore: clamp(30 + irange(rng, -15, 20), 0, 100),
-        insideOutsideBias: irange(rng, -50, -10), // strong inside bias
-        conditionAdaptationSkill: clamp(75 + irange(rng, -10, 15), 0, 100),
-        riskTolerance: clamp(20 + irange(rng, -10, 20), 0, 100),
-        trackTypePreference: 'loam',
-        wetWeatherGateAdjustment: clamp(30 + irange(rng, -15, 25), 0, 100),
-        mentalPreparationRigor: clamp(90 + irange(rng, -5, 10), 0, 100),
-        physicalGateComfort: clamp(80 + irange(rng, -10, 15), 0, 100),
-        dirtQualitySensitivity: clamp(70 + irange(rng, -10, 15), 0, 100),
-        competitiveAggressionIndex: clamp(25 + irange(rng, -15, 25), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-
-    case 'developer':
-    default:
-      profile = {
-        holeshotPreferenceScore: clamp(50 + irange(rng, -20, 20), 0, 100),
-        insideOutsideBias: irange(rng, -30, 30), // balanced
-        conditionAdaptationSkill: clamp(50 + irange(rng, -15, 25), 0, 100),
-        riskTolerance: clamp(50 + irange(rng, -20, 20), 0, 100),
-        trackTypePreference: 'balanced',
-        wetWeatherGateAdjustment: clamp(50 + irange(rng, -20, 20), 0, 100),
-        mentalPreparationRigor: clamp(60 + irange(rng, -20, 25), 0, 100),
-        physicalGateComfort: clamp(50 + irange(rng, -20, 20), 0, 100),
-        dirtQualitySensitivity: clamp(50 + irange(rng, -20, 20), 0, 100),
-        competitiveAggressionIndex: clamp(50 + irange(rng, -20, 20), 0, 100),
-        gateArchetype: archetype,
-      };
-      break;
-  }
-
-  return profile;
 }
 
 function makeRider(
@@ -379,11 +225,11 @@ function buildRoadDiscipline(
 }
 
 function buildNAMC(rng: RNG, u: Universe): void {
-  // 6 dual-charter orgs + 14 single-charter teams per championship.
-  const DUAL_ORGS = 6;
-  const champs: ChampionshipId[] = ['fourStroke', 'twoStroke'];
+  // NAMC v15.1: S4-only championship, 20 charters. (2S parallel championship
+  // is future DLC — dual-charter plumbing stays in the data model for it.)
+  const champs: ChampionshipId[] = ['fourStroke'];
   const orgNames: string[] = [];
-  while (orgNames.length < DUAL_ORGS + 14 + 14) {
+  while (orgNames.length < CHARTERS_PER_CHAMPIONSHIP) {
     const style = irange(rng, 0, 2);
     const name = style === 0
       ? `${pick(rng, TEAM_ADJ)} ${pick(rng, TEAM_NOUN)}`
@@ -402,7 +248,7 @@ function buildNAMC(rng: RNG, u: Universe): void {
     if (!s) { s = new Set(); classNumbers.set(key, s); }
     return s;
   };
-  const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number, teamIndex?: number) => {
+  const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number) => {
     const strokes = championship === 'fourStroke' ? '4S' : '2S';
     const makers = MANUFACTURERS.filter(m => m.strokes === 'both' || m.strokes === strokes);
     const team = makeTeam(rng, {
@@ -413,38 +259,16 @@ function buildNAMC(rng: RNG, u: Universe): void {
     });
     u.teams[team.id] = team;
 
-    // Try to use pre-defined riders from ALL_RIDERS if available
-    let usePredefinedRiders = false;
-    if (teamIndex !== undefined && teamIndex < 20) {
-      const teamPrefix = String(teamIndex + 1).padStart(2, '0');
-      const riderIds = Object.keys(ALL_RIDERS).filter(rid => rid.startsWith(teamPrefix + '-'));
-      if (riderIds.length >= 8) {
-        usePredefinedRiders = true;
-        let riderCount = 0;
-        for (const rid of riderIds) {
-          if (riderCount >= 8) break;
-          const preRider = ALL_RIDERS[rid];
-          if (preRider.championship === championship) {
-            // Clone the rider and assign to this team
-            const assignedRider: Rider = { ...preRider, id: `r${riderSeq++}`, teamId: team.id };
-            u.riders[assignedRider.id] = assignedRider;
-            riderCount++;
-          }
-        }
-      }
-    }
-
-    // Fall back to dynamic generation if no pre-defined riders
-    if (!usePredefinedRiders) {
-      // 8 starters: 2 per class (women's class riders are female)
-      for (const cls of NAMC_CLASS_IDS) {
-        for (let i = 0; i < RIDERS_PER_CLASS_PER_TEAM; i++) {
-          const female = cls === 'women';
-          const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
-          const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
-          if (cls === 'c125') rider.age = irange(rng, 18, 22);
-          u.riders[rider.id] = rider;
-        }
+    // 8 starters: 2 per class (women's class riders are female).
+    // Every rider goes through makeRider so classId, race number, gate
+    // preference profile and salary floors are always consistent.
+    for (const cls of NAMC_CLASS_IDS) {
+      for (let i = 0; i < RIDERS_PER_CLASS_PER_TEAM; i++) {
+        const female = cls === 'women';
+        const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
+        const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
+        if (cls === 'c125') rider.age = irange(rng, 18, 22);
+        u.riders[rider.id] = rider;
       }
     }
 
@@ -457,25 +281,12 @@ function buildNAMC(rng: RNG, u: Universe): void {
     return team;
   };
 
-  // Dual-charter organizations — one team entry per championship, linked by orgId.
-  let teamIndex = 0;
-  for (let d = 0; d < DUAL_ORGS; d++) {
-    const name = orgNames[orgCursor++];
-    const prestige = irange(rng, 65, 92);
-    const orgId = `org_dual_${d}`;
-    for (const champ of champs) {
-      const t = makeCharterTeam(champ, true, orgId, name, prestige, teamIndex);
-      // shared identity across both halves
-      const first = Object.values(u.teams).find(x => x.orgId === orgId && x.id !== t.id);
-      if (first) { t.colors = first.colors; t.logo = first.logo; t.shortName = first.shortName; }
-    }
-    teamIndex++;
-  }
-  // Single-charter teams
+  // 20 single-charter teams in the S4 championship. First 6 get factory-level
+  // prestige (they become the dual-charter orgs when the 2S championship ships).
   for (const champ of champs) {
-    for (let s = 0; s < CHARTERS_PER_CHAMPIONSHIP - DUAL_ORGS; s++) {
-      makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], irange(rng, 35, 80), teamIndex);
-      teamIndex++;
+    for (let s = 0; s < CHARTERS_PER_CHAMPIONSHIP; s++) {
+      const prestige = s < 6 ? irange(rng, 65, 92) : irange(rng, 35, 80);
+      makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], prestige);
     }
   }
 }

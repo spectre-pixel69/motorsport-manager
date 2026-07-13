@@ -3,6 +3,7 @@
 
 import type { Rider, Team, Track, TireBrand, Universe } from '../data/types';
 import { clamp, gauss, type RNG } from '../util/rng';
+import { mentalPaceFactor, mentalCrashFactor, mentalStartAdjust } from '../game/psychology';
 
 export interface Entrant {
   rider: Rider;
@@ -57,12 +58,15 @@ function lapPace(rng: RNG, e: Entrant, track: Track, wet: boolean, lap: number, 
   const fatigue = lap > laps * 0.66 ? (lap - laps * 0.66) * (0.05 * (1 - s.fitness / 110)) : 0;
   const noise = Math.abs(gauss(rng, 0, (110 - s.consistency) * 0.012));
   const wetPenalty = wet ? track.baseLapSec * 0.08 : 0;
-  return track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty - APPROACH_PACE[e.approach];
+  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty - APPROACH_PACE[e.approach];
+  // mental state nudges the edges (hard-capped ±1% inside the factor)
+  return raw * mentalPaceFactor(e.rider);
 }
 
 /** Start performance: lower = better launch. */
 function startBonus(rng: RNG, e: Entrant): number {
-  return (100 - e.rider.stats.starts) * 0.02 + rng() * 1.2 - APPROACH_PACE[e.approach] * 0.5;
+  return (100 - e.rider.stats.starts) * 0.02 + rng() * 1.2 - APPROACH_PACE[e.approach] * 0.5
+    + mentalStartAdjust(e.rider);
 }
 
 function crashChance(e: Entrant, wet: boolean, laps: number): number {
@@ -70,6 +74,7 @@ function crashChance(e: Entrant, wet: boolean, laps: number): number {
   // per-lap probability; season-long ≈ realistic DNF rates
   let p = 0.0022 + (s.aggression / 100) * 0.0035 * APPROACH_RISK[e.approach] + (100 - s.consistency) * 0.00003;
   if (wet) p *= 2.1;
+  p *= mentalCrashFactor(e.rider); // a tilted rider forces it
   return clamp(p * (24 / laps) ** 0.25, 0.0005, 0.05);
 }
 

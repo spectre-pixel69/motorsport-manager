@@ -6,6 +6,7 @@ import { classById, CLASSES } from '../data/classes';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { NAMC_CLASS_IDS } from '../data/namc';
+import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';
 import { restoreTelemetryFromState } from '../util/telemetry';
@@ -136,12 +137,16 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   const rng = mulberry32(hashString(`${state.seed}:${state.season}:${state.discipline}:${round.round}`));
   const approachFor = (r: Rider) => approaches[r.id] ?? 'normal';
 
+  // mental states drift back toward baseline before the gate drops
+  decayAllMentalStates(u);
+
   const weekends: WeekendResult[] = [];
   let playerWeekend: WeekendResult | null = null;
 
   if (state.discipline === 'namc') {
-    // Both championships race every round; sim all 8 class fields.
-    for (const champ of ['fourStroke', 'twoStroke'] as ChampionshipId[]) {
+    // S4-only championship (v15.1); all 4 class fields race every round.
+    // (2S parallel championship is future DLC.)
+    for (const champ of ['fourStroke'] as ChampionshipId[]) {
       const champWeekends: WeekendResult[] = [];
       for (const cls of NAMC_CLASS_IDS) {
         const w = runNamcWeekend(rng, u, cls, champ, round.trackId, approachFor);
@@ -167,9 +172,24 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   }
 
   applyInjuriesAndRecovery(state, rng, weekends);
+  applyPsychology(state, weekends);
   recordHistory(state, weekends);
   state.round += 1;
   return { weekends, playerWeekend };
+}
+
+/** Post-race mental-state pass; surfaces storylines for player-team riders + focus class. */
+function applyPsychology(state: CareerState, weekends: WeekendResult[]): void {
+  const u = state.universe;
+  for (const w of weekends) {
+    const stories = processWeekendPsychology(u, w);
+    for (const s of stories) {
+      const r = u.riders[s.riderId];
+      const isPlayerRider = r?.teamId === state.playerTeamId;
+      const isFocus = w.classId === state.focusClass && w.championship === state.championship;
+      if (isPlayerRider || isFocus) state.messages.unshift(s.text);
+    }
+  }
 }
 
 function applyPoints(state: CareerState, w: WeekendResult): void {

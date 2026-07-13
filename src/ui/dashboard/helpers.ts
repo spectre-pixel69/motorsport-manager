@@ -2,17 +2,16 @@
 
 import type { ClassId } from '../../data/types';
 
-// Map NAMC classes to their championships
-// 350 Pro: Four Stroke only
-// 250, 125 (250P), Women's 250: Two Stroke
+// Map classes to their championships.
+// NAMC v15.1: ALL four classes race in the single S4 championship.
+// (The parallel 2S championship is future DLC.)
 export function getChampionshipForClass(classId: ClassId): 'fourStroke' | 'twoStroke' | 'road' {
   switch (classId) {
     case 'c350':
-      return 'fourStroke';
     case 'c250':
     case 'c125':
     case 'women':
-      return 'twoStroke';
+      return 'fourStroke';
     default:
       return 'road';
   }

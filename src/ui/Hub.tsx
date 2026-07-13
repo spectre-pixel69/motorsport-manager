@@ -55,7 +55,7 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
 
   const classOptions: { cls: ClassId; champ: ChampionshipId }[] =
     state.discipline === 'namc'
-      ? (['fourStroke', 'twoStroke'] as ChampionshipId[]).flatMap(ch => NAMC_CLASS_IDS.map(cls => ({ cls, champ: ch })))
+      ? (['fourStroke'] as ChampionshipId[]).flatMap(ch => NAMC_CLASS_IDS.map(cls => ({ cls, champ: ch })))
       : CLASSES.filter(c => c.discipline === state.discipline).map(c => ({ cls: c.id, champ: 'road' as ChampionshipId }));
 
   const downloadTelemetry = () => {

@@ -62,6 +62,26 @@ export interface GatePreferenceProfile {
   gateArchetype: 'holeshot-king' | 'gambler' | 'smooth-operator' | 'wet-specialist' | 'track-reader' | 'physical-attacker' | 'conservative' | 'developer'; // personality type
 }
 
+/**
+ * Rider mental state — incremental, never whiplash.
+ * Design rule: no single event moves any dial more than ±3 points.
+ * Baselines: confidence 50, tilt 0, fatigue 0. States drift back toward
+ * baseline each round, so storylines come from SUSTAINED runs of events,
+ * not one bad Tuesday.
+ */
+export interface RiderMentalState {
+  confidence: number;         // 0-100 (baseline 50): momentum from recent results
+  tilt: number;               // 0-100 (baseline 0): frustration / negative spiral
+  fatigue: number;            // 0-100 (baseline 0): season-long mental wear
+  angerCharge: number;        // 0-100 (baseline 0): short-fuse fuel from a robbery/thrown-away win.
+                              // Halves each round (~gone in 3). Confident + angry = faster;
+                              // rattled + angry = crash-prone ("emotion gets in the way").
+  consecutiveWins: number;
+  consecutivePodiums: number;
+  peakForm: boolean;          // 3+ straight podiums: riding the wave ("everything +1" feel)
+  lastEvents: string[];       // short log of what last moved the needle (UI/debug)
+}
+
 export interface Rider {
   id: string;
   name: string;
@@ -77,6 +97,7 @@ export interface Rider {
   salary: number;             // per season
   contract: RiderContract;    // NEW: full contract terms
   gatePreference: GatePreferenceProfile;  // NEW: 10-metric gate selection profile
+  mental?: RiderMentalState;  // NEW: lazily initialized (keeps old saves loadable)
   morale: number;             // 0-100
   injuredForRounds: number;   // 0 = fit
   careerWins: number;
@@ -193,7 +214,7 @@ export interface Track {
  */
 export interface TrackDetails extends Track {
   elevation: number;                           // meters above sea level
-  soilType?: 'loam' | 'sand' | 'hardpack' | 'clay' | 'mixed'; // motocross
+  soilType?: 'loam' | 'sand' | 'hardpack' | 'clay' | 'mixed' | 'volcanic'; // motocross
   asphaltType?: 'bitumen' | 'chip-seal' | 'concrete'; // road courses
 
   seasonalWeather: {

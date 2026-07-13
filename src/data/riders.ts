@@ -2,6 +2,8 @@
 // Includes: 350 Pro (4S), 250 Men, 250P Restricted, Women's 250 (2S)
 
 import type { Rider, RiderStats, RiderSkills, RiderTrait, RiderContract, ChampionshipId } from './types';
+import { makeGatePreferenceProfile } from './gatePreference';
+import { mulberry32, hashString } from '../util/rng';
 
 type RiderId = string;
 
@@ -43,6 +45,10 @@ function rider(
     hasTeammateVeto: false,
   };
 
+  // Deterministic gate profile per rider (seeded from id+name, stable across loads)
+  const gateRng = mulberry32(hashString(`gate:${id}:${name}`));
+  const gatePreference = makeGatePreferenceProfile(gateRng, stats, []);
+
   const base: Rider = {
     id,
     name,
@@ -57,6 +63,7 @@ function rider(
     traits: [] as RiderTrait[],
     salary,
     contract,
+    gatePreference,
     morale: 75,
     injuredForRounds: 0,
     careerWins: Math.floor(overall / 15),

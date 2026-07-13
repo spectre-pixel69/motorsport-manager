@@ -21,7 +21,7 @@ export interface TrackDetails {
 
   // ---- Terrain Characteristics
   elevation: number;                           // meters above sea level
-  soilType?: 'loam' | 'sand' | 'hardpack' | 'clay' | 'mixed'; // motocross tracks
+  soilType?: 'loam' | 'sand' | 'hardpack' | 'clay' | 'mixed' | 'volcanic'; // motocross tracks
   asphaltType?: 'bitumen' | 'chip-seal' | 'concrete'; // road courses
 
   // ---- Lap/Course Data
