@@ -43,6 +43,12 @@ export interface RiderContract {
   winBonus: number;         // per win
   podiumBonus: number;      // per podium
   titleBonus: number;       // championship bonus
+  /**
+   * Team's negotiated cut of the rider's purse winnings, set at contract
+   * signing. Purse money is the RIDER'S by default; the team pushes for a
+   * share during negotiation. HARD CAP 25% — no rider ever gives more.
+   */
+  purseShareTeamPct: number; // 0-25
   isNo1Rider: boolean;      // No. 1 rider status (team lead)
   releaseClause: number;    // buyout value (0 = none)
   hasTeammateVeto: boolean; // can veto teammate signings

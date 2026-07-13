@@ -65,7 +65,11 @@ export const APPEARANCE_FEE = 1_000;        // per round
 export const RESERVE_RETAINER = 50_000;     // bench riders
 export const PRO_DEBUT_BONUS = 25_000;      // newly drafted rider
 
-// ---- 5.3 weekly revenue split
+// ---- 5.3 weekly LEAGUE REVENUE split (swag/merch/TV — NOT purse winnings;
+// purse money is the rider's, minus a contract-negotiated team cut ≤25%).
+// Boss quotes the split as riders 25 / teams 45 / NAMC personnel 20 /
+// operational 20 — which sums to 110%. Code keeps the closing version below
+// (with a 10% tire slice) until the rulebook settles it. Audit log #10.
 export const REVENUE_SPLIT = { teams: 0.45, riders: 0.25, tires: 0.10, league: 0.20 };
 // 5.4 team pool: 60% equal base, 40% merit
 export const TEAM_POOL_BASE_SHARE = 0.60;

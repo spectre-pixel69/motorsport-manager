@@ -140,6 +140,28 @@ Status meanings:
 - **Rulebook section to re-check:** 3.1 — see whether the rulebook's own
   wording caused the misread.
 
+## 10. "25% of purse goes to riders" — FIXED (misread) + VERIFY (split arithmetic)
+
+- **What the docs claimed:** CLAUDE.md locked specs said "25% of purse goes to
+  riders (appearance + finish bonuses)" with a "75% operational split" to
+  teams — i.e., the team keeps three quarters of a rider's race winnings.
+- **Ruling (boss, 2026-07-13):** Backwards. Purse winnings are the RIDER'S
+  money. The team's cut is negotiated at contract signing and is HARD-CAPPED
+  at 25% — no rider gives more. The 25%-to-riders figure was lifted from a
+  different stream entirely: the weekly LEAGUE REVENUE split (merch/swag/TV,
+  rulebook 5.3), which the boss quotes as: riders 25%, teams 45%, NAMC
+  personnel 20%, operational costs 20%.
+- **Fixed in:** `src/data/types.ts` (`RiderContract.purseShareTeamPct`, 0-25),
+  contract factories in `src/data/universe.ts` / `src/data/riders.ts`
+  (default 0 until negotiation system lands), comment on `REVENUE_SPLIT` in
+  `src/data/namc.ts`.
+- **Still to VERIFY in rulebook 5.3:** the quoted revenue split sums to 110%
+  (25+45+20+20). Code currently carries riders 25 / teams 45 / tires 10 /
+  league 20 (= 100%). Settle which slice is 10% — personnel, operational — or
+  whether the tire manufacturers' slice exists at all.
+- **Also:** CLAUDE.md locked-specs section needs the purse/revenue conflation
+  rewritten.
+
 ---
 
 **How to add an entry:** what was built, what the correct rule is, which

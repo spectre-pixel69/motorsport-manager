@@ -40,6 +40,7 @@ function rider(
     winBonus: 0,
     podiumBonus: 0,
     titleBonus: 0,
+    purseShareTeamPct: 0,  // negotiated at signing; hard cap 25
     isNo1Rider: false,
     releaseClause: 0,
     hasTeammateVeto: false,
