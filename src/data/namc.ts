@@ -24,8 +24,10 @@ export const PURSE_250 = [
   6_800, 6_400, 6_100, 5_800, 5_600,        // P31-P35
   5_400, 5_300, 5_200, 5_100, 5_000,        // P36-P40
 ];
-// 125 & Women's Pro (rulebook table; actual sum $385,250 — the rulebook's
-// stated total of $341,200 does not match its own table. Case-study finding.)
+// 250P Restricted & Women's Pro. (The rulebook labels this table "125" but it
+// belongs to the 250P class — a 250 tuned down to 125-spec output, hence the P.
+// Note: table sums to $385,250 vs the rulebook's stated $341,200 total —
+// arithmetic mismatch in the rulebook itself, still open in the audit log.)
 export const PURSE_125 = [
   45_000, 22_500, 13_500,
   ...steps(13_200, 300, 17),   // P4-P20: 13200 -> 8400
@@ -74,8 +76,7 @@ export const TIRE_CHAMPIONSHIP_PURSE = [200_000, 125_000, 100_000, 75_000];
 
 // ---- format constants
 export const NAMC_ROUNDS = 20;    // all-outdoor championship per v15.1 rulebook
-export const NAMC_GRID = 40;      // per class per championship
-export const A_MAIN_SIZE = 20;
+export const NAMC_GRID = 40;      // unified 40-rider single gate per class
 export const CHARTERS_PER_CHAMPIONSHIP = 20;
 export const RIDERS_PER_CLASS_PER_TEAM = 2;
 export const BENCH_SIZE = 3;      // 2 male + 1 female (4.8.1)

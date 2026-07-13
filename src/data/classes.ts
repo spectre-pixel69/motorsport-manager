@@ -14,7 +14,9 @@ export const CLASSES: ClassDef[] = [
   // NAMC classes (per rulebook 3.1 / 4.3) — exist in BOTH championships
   { id: 'c350', name: '350 Class', shortName: '350', discipline: 'namc', tier: 1, gridSize: 40, salaryFloor: 400_000 },
   { id: 'c250', name: '250 Class', shortName: '250', discipline: 'namc', tier: 2, gridSize: 40, salaryFloor: 200_000 },
-  { id: 'c125', name: '125 Class', shortName: '125', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000 },
+  // 250P: a 250 tuned down to 125-spec output — the "P" denotes the restriction.
+  // (Internal id stays 'c125' for save/key compatibility.)
+  { id: 'c125', name: '250P Restricted', shortName: '250P', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000 },
   { id: 'women', name: "Women's Pro Class", shortName: 'WPRO', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000, womenOnly: true },
 ];
 

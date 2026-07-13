@@ -83,39 +83,41 @@ Status meanings:
   class+championship per rulebook 6.2, salary floor, gate profile).
   `riders.ts` is retained (unwired) as raw material for the future 2S DLC.
 
-## 6. Weekend format: A/B split vs unified 40-man gate — VERIFY
+## 6. Weekend format: A/B split vs unified 40-man gate — FIXED
 
-- **What is built:** `src/sim/weekend.ts` runs hot-lap qualifying → A/B split
+- **What was built:** `src/sim/weekend.ts` ran hot-lap qualifying → A/B split
   (top 20 / bottom 20) → Race 1 + Race 2 qualifying races → separate B-Main and
   A-Main (20 riders each), citing "rulebook 3.x". Points 1-40 assigned across
   A-Main then B-Main finishers.
-- **What the spec says:** CLAUDE.md locked specs say "Unified 40-rider single
-  gate (no motos, no relegation)" — and the boss has confirmed "it's just a
-  forty man gate."
-- **Conflict:** A 20-rider A-Main with qualifying races is not a unified
-  40-rider single gate. One of these is a misreading.
-- **Rulebook sections to re-check:** 3.4 (qualifying), 3.5 (race lengths),
-  3.6.1 (qualifying-race points), 3.9 (Main Race points).
-- **Status:** NOT yet changed — needs the rulebook to settle whether race day
-  is one 40-man moto or the A/B-Main structure.
+- **Ruling (boss, 2026-07-13):** The A/B-Main structure is the OLD rule from
+  the two-stroke/four-stroke days. Current format: hot-lap qualifying (fastest
+  qualifier picks his gate first) → one MAIN RACE on a unified 40-rider single
+  gate. No motos, no relegation. Much simpler race weekend across all four
+  classes.
+- **Root cause to check in rulebook:** section 3.x was read from an outdated
+  edition — verify v15.1 replaced the A/B format.
+- **Fixed in:** `src/sim/weekend.ts` (runNamcWeekend rewritten),
+  `src/data/namc.ts` (A_MAIN_SIZE removed).
 
-## 7. 125-class purse table doesn't sum to its stated total — VERIFY (rulebook's own error?)
+## 7. 125-class purse table doesn't sum to its stated total — PARTIALLY RESOLVED
 
-- **What was found:** The rulebook's 125/Women's purse table sums to $385,250
-  per round, but the rulebook states the total as $341,200. Noted in
-  `src/data/namc.ts` as a case-study finding; the code implements the table,
-  not the stated total.
-- **Rulebook section to re-check:** 5.10.1. Decide which number is
-  authoritative and whether the rulebook itself needs an erratum.
+- **Class identity resolved (boss, 2026-07-13):** The table the rulebook labels
+  "125" belongs to the **250P Restricted** class — a 250 tuned down to 125-spec
+  output; the "P" denotes the restriction. Not a separate 125cc class.
+- **Still open:** the arithmetic. The table sums to $385,250 per round but the
+  rulebook states the total as $341,200. Re-check 5.10.1 to decide which number
+  is authoritative — this looks like an error in the rulebook itself.
 
-## 8. Season length constant vs class docs — DOC-ONLY
+## 8. Class naming: "125 Class" vs "250P Restricted" — FIXED
 
-- **What the docs claimed:** CLAUDE.md names the classes "350 Pro (4S),
-  250 Men (2S), 250P Restricted, Women's 250" while code uses
-  `c350 / c250 / c125 / women` with display names "350 Class / 250 Class /
-  125 Class / Women's Pro Class" (from rulebook 3.1 / 4.3).
-- **Action:** Re-check rulebook 3.1 for the official class names —
-  "250P Restricted" vs "125 Class" can't both be right.
+- **What was built:** Code displayed the third class as "125 Class"
+  (shortName "125"), reading rulebook 3.1 literally.
+- **Ruling (boss, 2026-07-13):** Official class is **250P Restricted**
+  (shortName "250P") — a 250 machine restricted to 125-spec output.
+- **Fixed in:** `src/data/classes.ts` (display name + shortName). Internal
+  class id stays `c125` for save/key compatibility.
+- **Rulebook section to re-check:** 3.1 — see whether the rulebook's own
+  wording caused the misread.
 
 ---
 
