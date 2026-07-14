@@ -8,6 +8,11 @@ import { NewGame } from './ui/NewGame';
 import { Hub } from './ui/Hub';
 import { TeamDashboard } from './ui/TeamDashboard';
 import { RaceView } from './ui/RaceView';
+import { Showroom } from './ui/Showroom';
+import { Placeholder } from './ui/Placeholder';
+import { TrainingCenter } from './ui/training/TrainingCenter';
+import { PartsManager } from './ui/garage/PartsManager';
+import { ridersOfTeam } from './data/universe';
 import type { WeekendResult } from './sim/weekend';
 
 type Screen =
@@ -15,7 +20,11 @@ type Screen =
   | { id: 'new' }
   | { id: 'hub'; state: CareerState }
   | { id: 'dashboard'; state: CareerState }
-  | { id: 'race'; state: CareerState; weekends: WeekendResult[]; player: WeekendResult };
+  | { id: 'race'; state: CareerState; weekends: WeekendResult[]; player: WeekendResult }
+  | { id: 'showroom'; state: CareerState }
+  | { id: 'garage'; state: CareerState }
+  | { id: 'training'; state: CareerState }
+  | { id: 'placeholder'; state: CareerState; title: string; note?: string };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ id: 'title' });
@@ -67,6 +76,10 @@ function App() {
             else setScreen({ id: 'hub', state: screen.state });
           }}
           onViewDashboard={() => setScreen({ id: 'dashboard', state: screen.state })}
+          onOpenShowroom={() => setScreen({ id: 'showroom', state: screen.state })}
+          onOpenGarage={() => setScreen({ id: 'garage', state: screen.state })}
+          onOpenTraining={() => setScreen({ id: 'training', state: screen.state })}
+          onOpenPlaceholder={(title, note) => setScreen({ id: 'placeholder', state: screen.state, title, note })}
         />
       )}
 
@@ -75,6 +88,47 @@ function App() {
           state={screen.state}
           onExit={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }}
         />
+      )}
+
+      {screen.id === 'showroom' && (
+        <Showroom state={screen.state} onExit={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }} />
+      )}
+
+      {screen.id === 'training' && (() => {
+        const team = screen.state.universe.teams[screen.state.playerTeamId];
+        return (
+          <TrainingCenter
+            riders={ridersOfTeam(screen.state.universe, team.id)}
+            facilityLevel={team.facilityLevel}
+            coachQuality={team.coachQuality}
+            onClose={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }}
+          />
+        );
+      })()}
+
+      {screen.id === 'garage' && (() => {
+        const team = screen.state.universe.teams[screen.state.playerTeamId];
+        const hasReckless = ridersOfTeam(screen.state.universe, team.id).some(r => r.traits.includes('reckless'));
+        return (
+          <PartsManager
+            bikeSetup={team.bikeSetup}
+            teamBudget={team.budget}
+            hasRecklessRider={hasReckless}
+            reliabilityRdLevel={1}
+            crewQuality={team.coachQuality}
+            baseEngineCost={45_000}
+            onEngineModChange={mode => { team.bikeSetup.engineMode = mode; saveCareer(screen.state); }}
+            onRebuild={componentType => {
+              const c = team.bikeSetup.components[componentType];
+              if (c) { c.wear = 0; c.lastRebuild = screen.state.round; team.budget -= 15_000; saveCareer(screen.state); }
+            }}
+            onClose={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }}
+          />
+        );
+      })()}
+
+      {screen.id === 'placeholder' && (
+        <Placeholder title={screen.title} note={screen.note} onBack={() => setScreen({ id: 'hub', state: screen.state })} />
       )}
 
       {screen.id === 'race' && (() => {

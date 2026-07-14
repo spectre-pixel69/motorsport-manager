@@ -5,7 +5,7 @@ import type { ChampionshipId, ClassId } from '../data/types';
 import { classById, CLASSES } from '../data/classes';
 import { DISCIPLINE_META } from '../data/brand';
 import {
-  riderStandingsFor, teamStandingsFor, saveCareer, seasonOver, runRound,
+  riderStandingsFor, teamStandingsFor, saveCareer, seasonOver, runRound, advanceSeason,
   type ApproachMap, type CareerState,
 } from '../game/state';
 import { ridersOfTeam } from '../data/universe';
@@ -19,11 +19,15 @@ interface Props {
   onRaceReady: (weekends: WeekendResult[], playerWeekend: WeekendResult | null) => void;
   onExit: () => void;
   onViewDashboard?: () => void;
+  onOpenShowroom?: () => void;
+  onOpenGarage?: () => void;
+  onOpenTraining?: () => void;
+  onOpenPlaceholder?: (title: string, note?: string) => void;
 }
 
 type Tab = 'race' | 'standings' | 'team' | 'money' | 'league';
 
-export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
+export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroom, onOpenGarage, onOpenTraining, onOpenPlaceholder }: Props) {
   const [tab, setTab] = useState<Tab>('race');
   const [stClass, setStClass] = useState<ClassId>(state.focusClass);
   const [stChamp, setStChamp] = useState<ChampionshipId>(state.championship);
@@ -84,6 +88,11 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
       </div>
       <div class="tabs">
         {state.discipline === 'namc' && <button class="primary" onClick={onViewDashboard}>📊 Team Dashboard</button>}
+        <button onClick={onOpenShowroom}>🏪 Showroom</button>
+        <button onClick={onOpenGarage}>🔧 Garage</button>
+        <button onClick={onOpenTraining}>🏋️ Training</button>
+        <button class="ghost" onClick={() => onOpenPlaceholder?.('R&D Center', 'Complexity / Power / Adaptability design philosophy, component budget allocation, designer risk. Opens at Round 15 per the design.')}>🧪 R&D</button>
+        <button class="ghost" onClick={() => onOpenPlaceholder?.('Off-Season HQ', 'Season review, the NAMC Draft (reverse standings, no pick trading), and the Free Agent Pool per rulebook 4.10-4.14. The sim runs it; this page makes it playable.')}>🗓️ Off-Season HQ</button>
         <button class={tab === 'race' ? 'active' : ''} onClick={() => setTab('race')}>Race Weekend</button>
         <button class={tab === 'standings' ? 'active' : ''} onClick={() => setTab('standings')}>Standings</button>
         <button class={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>Team</button>
@@ -125,7 +134,10 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard }: Props) {
           ) : (
             <div class="panel">
               <h3>Season complete</h3>
-              <p class="mb">The {state.season} season is in the books. Check the final standings — then the off-season begins (coming in the next build: draft, contracts, development).</p>
+              <p class="mb">The {state.season} season is in the books. The off-season runs the full rulebook cycle: retirements, contract expiries, the NAMC Draft, then the Free Agent Pool.</p>
+              <button class="primary" onClick={() => { advanceSeason(state); saveCareer(state); bump(x => x + 1); }}>
+                🗓️ Run the Off-Season → Start {state.season + 1}
+              </button>
             </div>
           )
         )}
