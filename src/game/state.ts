@@ -412,10 +412,6 @@ export function advanceSeason(state: CareerState): string[] {
       r.mental.consecutivePodiums = 0;
       r.mental.peakForm = false;
     }
-    // Contracts tick down; with no transfer market yet, expired deals
-    // auto-renew for one season at the same terms (tracked as a finding).
-    r.contract.length -= 1;
-    if (r.contract.length <= 0) r.contract.length = 1;
   }
 
   // 4. §6.1 F1-style number system: next season's number = this season's
@@ -427,34 +423,114 @@ export function advanceSeason(state: CareerState): string[] {
     }
   }
 
-  // 5. Retirement + the NAMC Draft (§4.10/4.11): riders age out at 36+,
-  //    and every vacancy is refilled from the Development Series rookie
-  //    class. Worst teams draft first (reverse team standings).
+  // 5. The full off-season cycle (rulebook §4.10-4.14), in league order:
+  //    retirements -> contract expiries (lockdown: no signings until Draft
+  //    Day) -> the NAMC Draft (reverse standings, no pick trading) -> Free
+  //    Agent Pool opens the day after Draft Day (§4.12).
   if (state.discipline === 'namc') {
-    const rng = mulberry32(hashString(`${state.seed}:draft:${state.season}`));
+    const rng = mulberry32(hashString(`${state.seed}:offseason:${state.season}`));
+    // Draft order locked BEFORE standings reset: reverse Manufacturer's Cup
+    const draftOrder = teamStandingsFor(state, 'fourStroke').map(x => x.team).reverse();
+
+    // 5a. Winter reset: bench subs stand down (their starters heal over the
+    //     off-season), keeping every roster at 2-per-class before the math.
+    for (const r of Object.values(u.riders)) {
+      if (r.subbingFor) { r.bench = true; r.classId = null; r.subbingFor = undefined; }
+    }
+
+    // Retirements (age 36+); aging free agents drift out of the sport
     let retired = 0;
     for (const r of Object.values(u.riders)) {
-      if (r.classId && NAMC_CLASS_IDS.includes(r.classId) && r.age >= 36) {
+      if (!r.classId || !NAMC_CLASS_IDS.includes(r.classId)) continue;
+      if (r.age >= 36 || (r.teamId === null && r.age >= 33)) {
         delete u.riders[r.id];
         retired++;
       }
     }
-    // Draft order: reverse Manufacturer's Cup standings (worst picks first)
-    const order = teamStandingsFor(state, 'fourStroke').map(x => x.team).reverse();
+
+    // 5b. Contract expiries. Teams may re-sign their own riders before the
+    //     lockdown; unrenewed riders hit the Free Agent Pool (teamId null).
+    let toFreeAgency = 0;
+    for (const r of Object.values(u.riders)) {
+      if (!r.classId || !NAMC_CLASS_IDS.includes(r.classId) || r.bench || !r.teamId) continue;
+      r.contract.length -= 1;
+      if (r.contract.length > 0) continue;
+      const team = u.teams[r.teamId];
+      // Re-sign decision: quality + morale + budget health
+      const wantsToStay = r.morale >= 45;
+      const teamWants = r.overall >= 60 + irange(rng, -6, 6) && team.budget > 0;
+      if (wantsToStay && teamWants) {
+        r.contract.length = irange(rng, 1, 3);
+        r.salary = Math.round((classById(r.classId).salaryFloor) * (1 + Math.max(0, r.overall - 60) / 25));
+        r.contract.salary = r.salary;
+      } else {
+        r.teamId = null;   // into the Free Agent Pool
+        toFreeAgency++;
+      }
+    }
+
+    // 5c. THE NAMC DRAFT (§4.10/4.11) — two weeks before the opener. Rookie
+    //     class out of the Development Series; worst teams pick first.
     let drafted = 0;
-    for (const team of order) {
+    const rookieClass: Rider[] = [];
+    for (let i = 0; i < 24; i++) {
+      const cls = NAMC_CLASS_IDS[i % 4];
+      rookieClass.push(makeDraftRookie(rng, { classId: cls, championship: 'fourStroke', teamId: null, female: cls === 'women', quality: 50 + irange(rng, 0, 14) }));
+    }
+    rookieClass.sort((a, b) => b.overall - a.overall);
+    for (const team of draftOrder) {
       for (const cls of NAMC_CLASS_IDS) {
-        const active = Object.values(u.riders).filter(r => r.teamId === team.id && r.classId === cls && !r.bench);
-        for (let need = RIDERS_PER_CLASS_PER_TEAM - active.length; need > 0; need--) {
-          // earlier picks land better prospects
-          const quality = 58 - Math.floor((drafted / order.length) * 8) + irange(rng, -4, 4);
-          const rookie = makeDraftRookie(rng, { classId: cls, championship: 'fourStroke', teamId: team.id, female: cls === 'women', quality });
-          u.riders[rookie.id] = rookie;
-          drafted++;
+        const have = Object.values(u.riders).filter(r => r.teamId === team.id && r.classId === cls && !r.bench).length;
+        if (have >= RIDERS_PER_CLASS_PER_TEAM) continue;
+        const idx = rookieClass.findIndex(r => r.classId === cls);
+        if (idx === -1) continue;
+        // Teams may pass: if a proven free agent clearly outclasses the best
+        // rookie, hold the slot for the FA window (draft picks aren't mandatory)
+        const bestFA = Object.values(u.riders)
+          .filter(r => r.teamId === null && r.classId === cls && !r.bench)
+          .sort((a, b) => b.overall - a.overall)[0];
+        if (bestFA && bestFA.overall > rookieClass[idx].overall + 5) continue;
+        const pick = rookieClass.splice(idx, 1)[0];
+        pick.teamId = team.id;
+        u.riders[pick.id] = pick;
+        drafted++;
+      }
+    }
+
+    // 5d. FREE AGENCY (§4.12) — pool opens the day after Draft Day. Teams
+    //     with remaining vacancies sign best available; prestige-rich teams
+    //     get first calls. Undrafted rookies join the pool too.
+    rookieClass.forEach(r => { u.riders[r.id] = r; });
+    let signed = 0;
+    const byPull = Object.values(u.teams)
+      .filter(t => t.discipline === 'namc' && t.championship === 'fourStroke')
+      .sort((a, b) => (b.prestige + b.budget / 100_000) - (a.prestige + a.budget / 100_000));
+    for (const team of byPull) {
+      for (const cls of NAMC_CLASS_IDS) {
+        let have = Object.values(u.riders).filter(r => r.teamId === team.id && r.classId === cls && !r.bench).length;
+        while (have < RIDERS_PER_CLASS_PER_TEAM) {
+          const fa = Object.values(u.riders)
+            .filter(r => r.teamId === null && r.classId === cls && !r.bench)
+            .sort((a, b) => b.overall - a.overall)[0];
+          if (!fa) break;
+          fa.teamId = team.id;
+          fa.contract.length = irange(rng, 1, 2);
+          fa.salary = Math.round(classById(cls).salaryFloor * (1 + Math.max(0, fa.overall - 60) / 30));
+          fa.contract.salary = fa.salary;
+          fa.morale = clamp(fa.morale + 10, 0, 100);   // new home bounce
+          signed++; have++;
         }
       }
     }
-    if (retired || drafted) notes.push(`Off-season: ${retired} riders retired; ${drafted} rookies drafted out of the Development Series.`);
+
+    // Unsigned riders drift away — the Pool holds the best 24 hopefuls
+    const pool = Object.values(u.riders)
+      .filter(r => r.teamId === null && r.classId && NAMC_CLASS_IDS.includes(r.classId))
+      .sort((a, b) => b.overall - a.overall);
+    pool.slice(24).forEach(r => { delete u.riders[r.id]; });
+
+    const poolLeft = Object.values(u.riders).filter(r => r.teamId === null && r.classId && NAMC_CLASS_IDS.includes(r.classId)).length;
+    notes.push(`Off-season: ${retired} retired, ${toFreeAgency} hit free agency, ${drafted} rookies drafted, ${signed} free agents signed (${poolLeft} remain in the Pool).`);
   }
 
   // 6. Reset the season state

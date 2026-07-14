@@ -87,7 +87,7 @@ function makeRider(
 
   const contract = {
     salary,
-    length: 1,
+    length: irange(rng, 1, 4),
     signingBonus: 0,
     winBonus: 0,
     podiumBonus: 0,
@@ -302,10 +302,53 @@ function buildNAMC(rng: RNG, u: Universe): void {
 
   // 20 single-charter teams in the S4 championship. First 6 get factory-level
   // prestige (they become the dual-charter orgs when the 2S championship ships).
+  const created: Team[] = [];
   for (const champ of champs) {
     for (let s = 0; s < CHARTERS_PER_CHAMPIONSHIP; s++) {
       const prestige = s < 6 ? irange(rng, 65, 92) : irange(rng, 35, 80);
-      makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], prestige);
+      created.push(makeCharterTeam(champ, false, undefined, orgNames[orgCursor++], prestige));
+    }
+  }
+  runYearOneDraft(rng, u, created);
+}
+
+/**
+ * Year One NAMC Draft (rulebook v15.1 §4.10): factory charters keep up to 2
+ * pre-contracted riders, Independent Teams keep 1; every other active rider
+ * enters the class draft pools and is selected in public-lottery order.
+ * Bench riders are pre-approved at roster submission (§3.3) and stay put.
+ */
+function runYearOneDraft(rng: RNG, u: Universe, teams: Team[]): void {
+  const factories = teams.slice().sort((a, b) => b.prestige - a.prestige).slice(0, 6);
+  const isFactory = new Set(factories.map(t => t.id));
+  const pools: Record<string, Rider[]> = {};
+
+  for (const team of teams) {
+    const active = Object.values(u.riders)
+      .filter(r => r.teamId === team.id && !r.bench)
+      .sort((a, b) => b.overall - a.overall);
+    const keep = isFactory.has(team.id) ? 2 : 1;   // pre-contracted riders
+    active.slice(keep).forEach(r => {
+      (pools[r.classId!] ??= []).push(r);
+      r.teamId = null;
+    });
+  }
+  for (const cls of Object.keys(pools)) pools[cls].sort((a, b) => b.overall - a.overall);
+
+  // Public lottery sets the order (§4.10); best available per vacancy, no trading.
+  const lottery = shuffle(rng, teams.slice());
+  let picking = true;
+  while (picking) {
+    picking = false;
+    for (const team of lottery) {
+      for (const cls of NAMC_CLASS_IDS) {
+        const have = Object.values(u.riders).filter(r => r.teamId === team.id && r.classId === cls && !r.bench).length;
+        const pool = pools[cls] ?? [];
+        if (have < RIDERS_PER_CLASS_PER_TEAM && pool.length > 0) {
+          pool.shift()!.teamId = team.id;
+          picking = true;
+        }
+      }
     }
   }
 }
@@ -353,7 +396,8 @@ export function buildUniverse(seed: number, season = 2027): Universe {
 // ------------------------------------------------------------ helpers
 export function gridOf(u: Universe, classId: ClassId, championship: ChampionshipId): Rider[] {
   return Object.values(u.riders).filter(r =>
-    r.classId === classId && r.championship === championship && !r.bench && r.injuredForRounds === 0,
+    r.classId === classId && r.championship === championship && !r.bench &&
+    r.injuredForRounds === 0 && r.teamId !== null,   // free agents don't take gates
   );
 }
 
