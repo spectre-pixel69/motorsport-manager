@@ -353,13 +353,28 @@ function legacyPlateFor(championships: number): Rider['legacyPlate'] {
   return 'none';
 }
 
+export interface OffSeasonReport {
+  endedSeason: number;
+  champions: { classId: ClassId; rider: string; teamName: string; pts: number; titles: number }[];
+  teamTitle: { teamName: string; prize: number } | null;
+  retired: { name: string; age: number; titles: number }[];
+  toFreeAgency: { name: string; fromTeam: string; classId: ClassId; overall: number }[];
+  draftPicks: { teamName: string; rider: string; classId: ClassId; overall: number; isPlayer: boolean }[];
+  faSignings: { rider: string; toTeam: string; classId: ClassId; overall: number; isPlayer: boolean }[];
+  poolLeft: number;
+}
+
 /**
- * Close out the season and open the next one. Returns off-season notes
- * (champions crowned, payouts) for the message feed.
+ * Close out the season and open the next one. Returns a structured
+ * OffSeasonReport for the Off-Season screen (notes also go to messages).
  */
-export function advanceSeason(state: CareerState): string[] {
+export function advanceSeason(state: CareerState): OffSeasonReport {
   const u = state.universe;
   const notes: string[] = [];
+  const report: OffSeasonReport = {
+    endedSeason: state.season, champions: [], teamTitle: null, retired: [],
+    toFreeAgency: [], draftPicks: [], faSignings: [], poolLeft: 0,
+  };
   const classes = CLASSES.filter(c => c.discipline === state.discipline).map(c => c.id);
   const champs: ChampionshipId[] = state.discipline === 'namc' ? ['fourStroke'] : ['road'];
 
@@ -371,6 +386,7 @@ export function advanceSeason(state: CareerState): string[] {
       if (!top) continue;
       top.rider.championships += 1;
       top.rider.legacyPlate = legacyPlateFor(top.rider.championships);
+      report.champions.push({ classId: cls, rider: top.rider.name, teamName: top.rider.teamId ? u.teams[top.rider.teamId].name : 'Free Agent', pts: top.pts, titles: top.rider.championships });
       notes.push(`${state.season} ${classById(cls).shortName} CHAMPION: ${top.rider.name} (${top.pts} pts)`);
     }
   }
@@ -382,7 +398,7 @@ export function advanceSeason(state: CareerState): string[] {
     order.forEach((row, i) => {
       const prize = TEAM_CHAMPIONSHIP_PURSE[i] ?? 0;
       row.team.budget += prize;
-      if (i === 0) notes.push(`${row.team.name} take the team title ($${(prize / 1000).toFixed(0)}k)`);
+      if (i === 0) { report.teamTitle = { teamName: row.team.name, prize }; notes.push(`${row.team.name} take the team title ($${(prize / 1000).toFixed(0)}k)`); }
     });
   }
 
@@ -465,6 +481,7 @@ export function advanceSeason(state: CareerState): string[] {
     for (const r of Object.values(u.riders)) {
       if (!r.classId || !NAMC_CLASS_IDS.includes(r.classId)) continue;
       if (r.age >= 36 || (r.teamId === null && r.age >= 33)) {
+        report.retired.push({ name: r.name, age: r.age, titles: r.championships });
         delete u.riders[r.id];
         retired++;
       }
@@ -486,6 +503,7 @@ export function advanceSeason(state: CareerState): string[] {
         r.salary = Math.round((classById(r.classId).salaryFloor) * (1 + Math.max(0, r.overall - 60) / 25));
         r.contract.salary = r.salary;
       } else {
+        report.toFreeAgency.push({ name: r.name, fromTeam: team.name, classId: r.classId, overall: Math.round(r.overall) });
         r.teamId = null;   // into the Free Agent Pool
         toFreeAgency++;
       }
@@ -515,6 +533,7 @@ export function advanceSeason(state: CareerState): string[] {
         const pick = rookieClass.splice(idx, 1)[0];
         pick.teamId = team.id;
         u.riders[pick.id] = pick;
+        report.draftPicks.push({ teamName: team.name, rider: pick.name, classId: cls, overall: Math.round(pick.overall), isPlayer: team.isPlayer });
         drafted++;
       }
     }
@@ -540,6 +559,7 @@ export function advanceSeason(state: CareerState): string[] {
           fa.salary = Math.round(classById(cls).salaryFloor * (1 + Math.max(0, fa.overall - 60) / 30));
           fa.contract.salary = fa.salary;
           fa.morale = clamp(fa.morale + 10, 0, 100);   // new home bounce
+          report.faSignings.push({ rider: fa.name, toTeam: team.name, classId: cls, overall: Math.round(fa.overall), isPlayer: team.isPlayer });
           signed++; have++;
         }
       }
@@ -552,6 +572,7 @@ export function advanceSeason(state: CareerState): string[] {
     pool.slice(24).forEach(r => { delete u.riders[r.id]; });
 
     const poolLeft = Object.values(u.riders).filter(r => r.teamId === null && r.classId && NAMC_CLASS_IDS.includes(r.classId)).length;
+    report.poolLeft = poolLeft;
     notes.push(`Off-season: ${retired} retired, ${toFreeAgency} hit free agency, ${drafted} rookies drafted, ${signed} free agents signed (${poolLeft} remain in the Pool).`);
   }
 
@@ -561,5 +582,5 @@ export function advanceSeason(state: CareerState): string[] {
   state.round = 0;
   state.standings = emptyStandings();
   state.messages.unshift(...notes, `The ${state.season} season is here. New year, same dirt.`);
-  return notes;
+  return report;
 }

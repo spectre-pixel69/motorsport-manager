@@ -2,7 +2,7 @@ import { render } from 'preact';
 import { useState } from 'preact/hooks';
 import './style.css';
 import { BRAND } from './data/brand';
-import { loadCareer, deleteSave, saveCareer, type CareerState } from './game/state';
+import { loadCareer, deleteSave, saveCareer, advanceSeason, type CareerState, type OffSeasonReport } from './game/state';
 import { getTelemetry } from './util/telemetry';
 import { NewGame } from './ui/NewGame';
 import { Hub } from './ui/Hub';
@@ -10,6 +10,7 @@ import { TeamDashboard } from './ui/TeamDashboard';
 import { RaceView } from './ui/RaceView';
 import { Showroom } from './ui/Showroom';
 import { Placeholder } from './ui/Placeholder';
+import { OffSeason } from './ui/OffSeason';
 import { TrainingCenter } from './ui/training/TrainingCenter';
 import { PartsManager } from './ui/garage/PartsManager';
 import { ridersOfTeam } from './data/universe';
@@ -24,7 +25,8 @@ type Screen =
   | { id: 'showroom'; state: CareerState }
   | { id: 'garage'; state: CareerState }
   | { id: 'training'; state: CareerState }
-  | { id: 'placeholder'; state: CareerState; title: string; note?: string };
+  | { id: 'placeholder'; state: CareerState; title: string; note?: string }
+  | { id: 'offseason'; state: CareerState; report: OffSeasonReport };
 
 function App() {
   const [screen, setScreen] = useState<Screen>({ id: 'title' });
@@ -80,6 +82,11 @@ function App() {
           onOpenGarage={() => setScreen({ id: 'garage', state: screen.state })}
           onOpenTraining={() => setScreen({ id: 'training', state: screen.state })}
           onOpenPlaceholder={(title, note) => setScreen({ id: 'placeholder', state: screen.state, title, note })}
+          onRunOffSeason={() => {
+            const report = advanceSeason(screen.state);
+            saveCareer(screen.state);
+            setScreen({ id: 'offseason', state: screen.state, report });
+          }}
         />
       )}
 
@@ -126,6 +133,10 @@ function App() {
           />
         );
       })()}
+
+      {screen.id === 'offseason' && (
+        <OffSeason state={screen.state} report={screen.report} onDone={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }} />
+      )}
 
       {screen.id === 'placeholder' && (
         <Placeholder title={screen.title} note={screen.note} onBack={() => setScreen({ id: 'hub', state: screen.state })} />

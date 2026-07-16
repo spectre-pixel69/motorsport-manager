@@ -5,7 +5,7 @@ import type { ChampionshipId, ClassId } from '../data/types';
 import { classById, CLASSES } from '../data/classes';
 import { DISCIPLINE_META } from '../data/brand';
 import {
-  riderStandingsFor, teamStandingsFor, saveCareer, seasonOver, runRound, advanceSeason,
+  riderStandingsFor, teamStandingsFor, saveCareer, seasonOver, runRound,
   type ApproachMap, type CareerState,
 } from '../game/state';
 import { ridersOfTeam } from '../data/universe';
@@ -23,11 +23,12 @@ interface Props {
   onOpenGarage?: () => void;
   onOpenTraining?: () => void;
   onOpenPlaceholder?: (title: string, note?: string) => void;
+  onRunOffSeason?: () => void;
 }
 
 type Tab = 'race' | 'standings' | 'team' | 'money' | 'league';
 
-export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroom, onOpenGarage, onOpenTraining, onOpenPlaceholder }: Props) {
+export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroom, onOpenGarage, onOpenTraining, onOpenPlaceholder, onRunOffSeason }: Props) {
   const [tab, setTab] = useState<Tab>('race');
   const [stClass, setStClass] = useState<ClassId>(state.focusClass);
   const [stChamp, setStChamp] = useState<ChampionshipId>(state.championship);
@@ -135,8 +136,8 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroo
             <div class="panel">
               <h3>Season complete</h3>
               <p class="mb">The {state.season} season is in the books. The off-season runs the full rulebook cycle: retirements, contract expiries, the NAMC Draft, then the Free Agent Pool.</p>
-              <button class="primary" onClick={() => { advanceSeason(state); saveCareer(state); bump(x => x + 1); }}>
-                🗓️ Run the Off-Season → Start {state.season + 1}
+              <button class="primary" onClick={onRunOffSeason}>
+                🗓️ Enter the Off-Season
               </button>
             </div>
           )
