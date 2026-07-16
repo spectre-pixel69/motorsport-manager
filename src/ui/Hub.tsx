@@ -118,7 +118,13 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroo
                 <h3>Rider approach — {classById(state.focusClass).name}</h3>
                 {myRiders.filter(r => state.discipline !== 'namc' || r.classId === state.focusClass).map(r => (
                   <div class="row mb">
-                    <span style="min-width:160px">#{r.number} {r.name} <span class="muted">OVR {r.overall}</span></span>
+                    <span style="min-width:160px">
+                      #{r.number} {r.name} <span class="muted">OVR {Math.round(r.overall)}</span>
+                      {(r.ballastKg ?? 0) > 0 && <span title="BOP success ballast" style="color:#f39c12"> ⚖️{r.ballastKg}kg</span>}
+                      {r.mental?.peakForm && <span title="Riding the wave — 3+ straight podiums"> 🔥</span>}
+                      {(r.mental?.tilt ?? 0) >= 5 && <span title={`Frustrated: ${r.mental!.lastEvents[0] ?? ''}`}> 😤</span>}
+                      {(r.mental?.angerCharge ?? 0) >= 15 && <span title="Riding angry — fast but on the edge"> 🌋</span>}
+                    </span>
                     {(['conserve', 'normal', 'push'] as const).map(a => (
                       <button
                         class={(approaches[r.id] ?? 'normal') === a ? 'primary' : ''}
