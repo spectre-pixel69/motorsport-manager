@@ -386,10 +386,32 @@ export function advanceSeason(state: CareerState): string[] {
     });
   }
 
-  // 3. Riders: age one year, apply post-32 physical decline (per training.ts
-  //    spec), heal over the winter, reset season resources and mental state.
+  // 3. Riders: age one year, DEVELOP toward hidden potential (young riders),
+  //    apply post-32 physical decline (per training.ts spec), heal over the
+  //    winter, reset season resources and mental state.
+  const devRng = mulberry32(hashString(`${state.seed}:dev:${state.season}`));
   for (const r of Object.values(u.riders)) {
     r.age += 1;
+    // Off-season development: gain scales with youth (ageMod), remaining
+    // headroom to potential, and the team's facility + coach quality.
+    if (r.age < 32 && r.overall < r.potential) {
+      const ageMod = r.age < 22 ? 1.5 : r.age <= 27 ? 1.0 : 0.5;
+      const team = r.teamId ? u.teams[r.teamId] : null;
+      const facility = team ? 0.8 + team.facilityLevel * 0.15 : 0.8;
+      const coach = team?.coachQuality ?? 0.8;
+      const headroom = Math.min(1, (r.potential - r.overall) / 12);
+      const gain = ageMod * headroom * facility * coach;   // ~0.5-2.5 pts/season
+      const grow = (k: 'pace' | 'consistency' | 'starts' | 'fitness' | 'wet') => {
+        r.stats[k] = clamp(r.stats[k] + gain * (0.7 + devRng() * 0.6), 30, 99);
+      };
+      grow('pace'); grow('consistency');
+      if (devRng() < 0.5) grow('starts');
+      if (devRng() < 0.5) grow('fitness');
+      if (devRng() < 0.3) grow('wet');
+      r.skills.pace = r.stats.pace; r.skills.consistency = r.stats.consistency;
+      r.skills.starts = r.stats.starts; r.skills.fitness = r.stats.fitness; r.skills.wet = r.stats.wet;
+      r.overall = Math.min(r.potential, overallOf(r.stats));
+    }
     if (r.age >= 32) {
       const physical = 0.1 + (r.age - 32) * 0.05;   // 0.1-0.3+/season on physical stats
       r.stats.pace = Math.max(30, r.stats.pace - physical);

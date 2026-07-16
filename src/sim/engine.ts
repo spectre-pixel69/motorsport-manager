@@ -91,6 +91,14 @@ export function simulateRace(
   const out: Record<string, { status: 'finished' | 'dnf'; lapsDone: number }> = {};
   const lapOrder: string[][] = [];
 
+  // race-day form: per-rider, per-race pace offset (seconds/lap). Champions
+  // still win seasons, but everyone has off weekends — real variance, no
+  // rubber-banding. Consistency shrinks the swing.
+  const form: Record<string, number> = {};
+  for (const e of entrants) {
+    form[e.rider.id] = gauss(rng, 0, 0.32 * (1.2 - e.rider.stats.consistency / 250));
+  }
+
   // grid start: convert grid slot into time offset + launch quality
   for (const e of entrants) {
     cumTime[e.rider.id] = e.gridPos * (track.discipline === 'namc' ? 0.18 : 0.35) + startBonus(rng, e);
@@ -128,7 +136,7 @@ export function simulateRace(
         continue;
       }
 
-      const t = lapPace(rng, e, track, wet, lap, laps);
+      const t = lapPace(rng, e, track, wet, lap, laps) + form[e.rider.id];
       cumTime[e.rider.id] += t;
       lapTimes[e.rider.id].push(cumTime[e.rider.id]);
       if (t < bestLap[e.rider.id]) bestLap[e.rider.id] = t;

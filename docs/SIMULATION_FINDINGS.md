@@ -74,6 +74,19 @@ between seasons is what's missing.**
 | 13 | **Broadcast cut-in window + lip-synced hosts** | Designed 2026-07-13 (UE5.7 client feature) | See task list; depends on #12 for scripts |
 | 14 | **Weather/track surface effects on gate + pace** | `weatherBias` works (21.6% wet); wet skill applies; but surface/drainage gate advantages unused | Pairs with #8 |
 
+## Update 2026-07-16 — development loop + race-day form (task #21)
+
+- Off-season development wired: young riders grow toward hidden potential
+  (age curve x headroom x facility x coach). League overall now RISES
+  68.7 → 69.0 over 5 seasons (was falling to 65.3). Rookies become stars.
+- Race-day form variance added (per-rider per-race pace offset, consistency
+  shrinks the swing): champion points 636 → 628 of 800.
+- Dynasty rate is STRUCTURAL, not variance-driven: raising form sigma 31%
+  changed nothing (40.3% → 41.3%). Dynasties happen when one rider's rating
+  tops a class for an era — which is authentic motocross (Carmichael, Jett).
+  If the boss wants fewer, the knob is the POTENTIAL distribution (rarer
+  95+ ceilings), not more randomness. Design decision, not a bug.
+
 ## Notes for tuning sessions (numbers to revisit)
 
 - Champion pts 746/800, margin 36 → add variance, not rubber-banding
