@@ -87,6 +87,21 @@ between seasons is what's missing.**
   If the boss wants fewer, the knob is the POTENTIAL distribution (rarer
   95+ ceilings), not more randomness. Design decision, not a bug.
 
+## Update 2026-07-17 — BOP success ballast + real atrophy (boss rulings)
+
+- **Success ballast** (Super GT model scaled for bikes; rulebook BOP glossary
+  is the in-fiction mechanism): Main Event win +2kg, podium +1kg, P4+ sheds
+  1kg, cap 8kg, ~0.07s/lap per kg, resets each season. Study: champion points
+  628 → 587, title margin 73 → 61. Seasons are tighter and winners get
+  hunted; era dynasties remain merit-driven (41.5%) — ballast prevents
+  runaways, not eras, same as real Super GT.
+- **Real atrophy**: post-32 decline steepened (~0.6/season at 32, ~1.7 at 35 —
+  visible), and retirement is now performance-based: 33+ riders whose overall
+  falls below 62 retire because the youth have passed them; 36 stays the
+  hard stop. League avg age 25.4, quality stable.
+- **Demo work HALTED** (boss ruling): no demo until all three disciplines
+  ship. Routine re-aimed at fleshing out game pages.
+
 ## Notes for tuning sessions (numbers to revisit)
 
 - Champion pts 746/800, margin 36 → add variance, not rubber-banding

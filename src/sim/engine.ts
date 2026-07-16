@@ -58,7 +58,8 @@ function lapPace(rng: RNG, e: Entrant, track: Track, wet: boolean, lap: number, 
   const fatigue = lap > laps * 0.66 ? (lap - laps * 0.66) * (0.05 * (1 - s.fitness / 110)) : 0;
   const noise = Math.abs(gauss(rng, 0, (110 - s.consistency) * 0.012));
   const wetPenalty = wet ? track.baseLapSec * 0.08 : 0;
-  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty - APPROACH_PACE[e.approach];
+  const ballast = (e.rider.ballastKg ?? 0) * 0.07;   // BOP success ballast: ~0.07s/lap per kg
+  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty + ballast - APPROACH_PACE[e.approach];
   // mental state nudges the edges (hard-capped ±1% inside the factor)
   return raw * mentalPaceFactor(e.rider);
 }

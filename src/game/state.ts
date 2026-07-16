@@ -172,10 +172,33 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   }
 
   applyInjuriesAndRecovery(state, rng, weekends);
+  if (state.discipline === 'namc') applySuccessBallast(state, weekends);
   applyPsychology(state, weekends);
   recordHistory(state, weekends);
   state.round += 1;
   return { weekends, playerWeekend };
+}
+
+/**
+ * BOP success ballast (boss ruling 2026-07-17, mechanism per rulebook BOP
+ * glossary entry; modeled on Super GT's success handicap, scaled for bikes):
+ * Main Event win +2kg, podium +1kg, P4+ sheds 1kg. Cap 8kg (~0.32s/lap).
+ * Winners get hunted; the pack gets a puncher's chance. Resets every season.
+ */
+function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): void {
+  const u = state.universe;
+  for (const w of weekends) {
+    w.finishOrder.forEach((riderId, i) => {
+      const r = u.riders[riderId];
+      if (!r) return;
+      const before = r.ballastKg ?? 0;
+      const delta = i === 0 ? 2 : i <= 2 ? 1 : -1;
+      r.ballastKg = clamp(before + delta, 0, 8);
+      if (r.teamId === state.playerTeamId && r.ballastKg !== before && r.ballastKg >= 4) {
+        state.messages.unshift(`BOP: ${r.name} now carries ${r.ballastKg}kg of success ballast.`);
+      }
+    });
+  }
 }
 
 /** Post-race mental-state pass; surfaces storylines for player-team riders + focus class. */
@@ -429,7 +452,10 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
       r.overall = Math.min(r.potential, overallOf(r.stats));
     }
     if (r.age >= 32) {
-      const physical = 0.1 + (r.age - 32) * 0.05;   // 0.1-0.3+/season on physical stats
+      // Real atrophy (boss ruling 2026-07-17): decline you can SEE. A 32yo
+      // loses ~0.6/season on physical stats, a 35yo ~1.7 — youth overtake
+      // veterans on merit, and decline is what forces retirement.
+      const physical = 0.6 + (r.age - 32) * 0.35;
       r.stats.pace = Math.max(30, r.stats.pace - physical);
       r.stats.fitness = Math.max(30, r.stats.fitness - physical);
       r.stats.starts = Math.max(30, r.stats.starts - physical);
@@ -439,6 +465,7 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
       r.overall = overallOf(r.stats);
     }
     r.stamina = 100;
+    r.ballastKg = 0;   // BOP ballast resets for the new season
     r.injuredForRounds = 0;
     r.morale = clamp(Math.round(r.morale + (70 - r.morale) * 0.5), 0, 100);
     if (r.mental) {
@@ -480,7 +507,8 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
     let retired = 0;
     for (const r of Object.values(u.riders)) {
       if (!r.classId || !NAMC_CLASS_IDS.includes(r.classId)) continue;
-      if (r.age >= 36 || (r.teamId === null && r.age >= 33)) {
+      const declined = r.age >= 33 && r.overall < 62;   // youth have passed him
+      if (r.age >= 36 || declined || (r.teamId === null && r.age >= 33)) {
         report.retired.push({ name: r.name, age: r.age, titles: r.championships });
         delete u.riders[r.id];
         retired++;

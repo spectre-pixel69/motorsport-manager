@@ -116,6 +116,8 @@ export interface Rider {
   championship: ChampionshipId;
   bench: boolean;             // NAMC reserve rider
   subbingFor?: string;        // Appendix B: active bench rider covering this injured starter
+  ballastKg?: number;         // BOP success ballast (boss ruling 2026-07-17): win +2kg,
+                              // podium +1kg, off-podium -1kg, cap 8kg, resets each season
 }
 
 export type EngineMode = 'conserve' | 'standard' | 'push' | 'attack';
