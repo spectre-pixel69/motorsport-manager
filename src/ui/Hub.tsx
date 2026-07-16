@@ -12,6 +12,7 @@ import { ridersOfTeam } from '../data/universe';
 import { NAMC_CLASS_IDS } from '../data/namc';
 import { logRaceStart, logRaceEnd, exportTelemetry } from '../util/telemetry';
 import { Logo } from './Logo';
+import { IS_DEMO, DEMO_END_PITCH, LOCK_TAG } from './demo';
 import type { WeekendResult } from '../sim/weekend';
 
 interface Props {
@@ -92,8 +93,8 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroo
         <button onClick={onOpenShowroom}>🏪 Showroom</button>
         <button onClick={onOpenGarage}>🔧 Garage</button>
         <button onClick={onOpenTraining}>🏋️ Training</button>
-        <button class="ghost" onClick={() => onOpenPlaceholder?.('R&D Center', 'Complexity / Power / Adaptability design philosophy, component budget allocation, designer risk. Opens at Round 15 per the design.')}>🧪 R&D</button>
-        <button class="ghost" onClick={() => onOpenPlaceholder?.('Off-Season HQ', 'Season review, the NAMC Draft (reverse standings, no pick trading), and the Free Agent Pool per rulebook 4.10-4.14. The sim runs it; this page makes it playable.')}>🗓️ Off-Season HQ</button>
+        <button class="ghost" onClick={() => onOpenPlaceholder?.(IS_DEMO ? 'R&D Center' + LOCK_TAG : 'R&D Center', IS_DEMO ? 'Bike design — Complexity, Power or Adaptability — is part of the full game. Your demo save carries over.' : 'Complexity / Power / Adaptability design philosophy, component budget allocation, designer risk. Opens at Round 15 per the design.')}>🧪 R&D{IS_DEMO ? ' 🔒' : ''}</button>
+        <button class="ghost" onClick={() => onOpenPlaceholder?.(IS_DEMO ? 'Off-Season HQ' + LOCK_TAG : 'Off-Season HQ', IS_DEMO ? 'The Draft, Free Agency and multi-season careers are part of the full game. Your demo save carries over.' : 'Season review, the NAMC Draft (reverse standings, no pick trading), and the Free Agent Pool per rulebook 4.10-4.14. The sim runs it; this page makes it playable.')}>🗓️ Off-Season HQ{IS_DEMO ? ' 🔒' : ''}</button>
         <button class={tab === 'race' ? 'active' : ''} onClick={() => setTab('race')}>Race Weekend</button>
         <button class={tab === 'standings' ? 'active' : ''} onClick={() => setTab('standings')}>Standings</button>
         <button class={tab === 'team' ? 'active' : ''} onClick={() => setTab('team')}>Team</button>
@@ -133,13 +134,21 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroo
               </div>
             </>
           ) : (
-            <div class="panel">
-              <h3>Season complete</h3>
-              <p class="mb">The {state.season} season is in the books. The off-season runs the full rulebook cycle: retirements, contract expiries, the NAMC Draft, then the Free Agent Pool.</p>
-              <button class="primary" onClick={onRunOffSeason}>
-                🗓️ Enter the Off-Season
-              </button>
-            </div>
+            IS_DEMO ? (
+              <div class="panel">
+                <h3>🏁 Demo season complete</h3>
+                <p class="mb">{DEMO_END_PITCH}</p>
+                <button class="primary" disabled title="Available in the full game">🗓️ Enter the Off-Season{LOCK_TAG}</button>
+              </div>
+            ) : (
+              <div class="panel">
+                <h3>Season complete</h3>
+                <p class="mb">The {state.season} season is in the books. The off-season runs the full rulebook cycle: retirements, contract expiries, the NAMC Draft, then the Free Agent Pool.</p>
+                <button class="primary" onClick={onRunOffSeason}>
+                  🗓️ Enter the Off-Season
+                </button>
+              </div>
+            )
           )
         )}
 
