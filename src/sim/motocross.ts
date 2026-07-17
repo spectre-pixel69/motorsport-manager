@@ -193,3 +193,80 @@ export const NAMC_DUAL_MOTO: MotoFormat = {
   relegationThreshold: 0,
   chaseRace: true, // moto 2 uses inverted grid from moto 1
 };
+
+/**
+ * Practice session outcome — used to model bike wear and injury risk.
+ * Practices are 30 minutes per session (2 sessions Friday AM/PM per rulebook).
+ */
+export interface PracticeSessionOutcome {
+  riderId: string;
+  crashed: boolean;        // did rider crash?
+  injury: 'none' | 'minor' | 'moderate' | 'severe'; // severity if crashed
+  injurySidelines: number; // how many rounds rider benched (0 if no injury)
+  bikeDamage: number;      // 0-1 severity (0 = fine, 1 = totaled)
+  setupQuality: number;    // 0-1 (affects race bike reliability)
+}
+
+/**
+ * Simulate a 30-minute practice session for one rider.
+ * Determines: crashes, injuries, bike damage, setup quality.
+ */
+export function simulatePracticeSession(
+  rng: RNG,
+  rider: Rider,
+  track: Track,
+  wet: boolean,
+): PracticeSessionOutcome {
+  const s = rider.stats;
+  const consistencyFactor = s.consistency / 100; // better consistency = fewer crashes
+
+  // Practice crash risk: higher than race (riders pushing/testing)
+  // Formula: base 3% crash chance per practice session, modified by consistency
+  let crashChance = 0.03 * (1.5 - consistencyFactor); // 1.5-3% range
+  if (wet) crashChance *= 1.8; // wet = much more risky
+  const crashed = rng() < crashChance;
+
+  let injury: 'none' | 'minor' | 'moderate' | 'severe' = 'none';
+  let injurySidelines = 0;
+  let bikeDamage = 0;
+
+  if (crashed) {
+    // Injury severity based on crash luck + rider durability
+    const durability = (s.fitness + (rider.traits?.includes('fragile') ? -15 : 0)) / 100;
+    const injuryRoll = rng();
+
+    if (injuryRoll < 0.4 * durability) {
+      injury = 'none'; // lucky crash, no injury
+      bikeDamage = 0.15 + rng() * 0.25; // 15-40% damage
+    } else if (injuryRoll < 0.7 * durability) {
+      injury = 'minor'; // banged up, can race
+      bikeDamage = 0.3 + rng() * 0.4; // 30-70% damage
+      injurySidelines = 0;
+    } else if (injuryRoll < 0.9 * durability) {
+      injury = 'moderate'; // significant injury
+      bikeDamage = 0.6 + rng() * 0.3; // 60-90% damage
+      injurySidelines = 1; // out 1 round
+    } else {
+      injury = 'severe'; // bad crash, rider out
+      bikeDamage = 1.0; // bike totaled
+      injurySidelines = Math.ceil(2 + rng() * 3); // out 2-5 rounds
+    }
+  } else {
+    // No crash: normal practice wear
+    bikeDamage = 0.02 + rng() * 0.05; // 2-7% normal wear
+  }
+
+  // Setup quality: better riders (racecraft/feedback skill) extract more from practice
+  // Use feedback from skills if available, otherwise use consistency as proxy
+  const feedbackSkill = rider.skills?.feedback ?? (s.consistency / 2); // fallback
+  const setupQuality = Math.min(1.0, (feedbackSkill / 100) * (0.6 + rng() * 0.4));
+
+  return {
+    riderId: rider.id,
+    crashed,
+    injury,
+    injurySidelines,
+    bikeDamage,
+    setupQuality,
+  };
+}

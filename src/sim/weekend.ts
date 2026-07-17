@@ -10,6 +10,7 @@ import { namcPointsFor, namcSprintPointsFor, roadPointsFor } from '../data/class
 import { RACE_MINUTES } from '../data/namc';
 import { gridOf } from '../data/universe';
 import { simulateQualifying, simulateRace, lapsForMinutes, type Entrant, type RaceOutcome } from './engine';
+import { simulatePracticeSession, type PracticeSessionOutcome } from './motocross';
 import { type RNG } from '../util/rng';
 import { getWeatherBiasForRound } from '../data/seasonal-weather';
 
@@ -87,24 +88,47 @@ export function runNamcWeekend(
   const weatherBias = roundNumber ? getWeatherBiasForRound(trackId, roundNumber) : track.weatherBias;
   const wet = rng() < weatherBias;
 
+  // --- FRIDAY PRACTICE (§3.5): Two 30-minute practice sessions (AM and PM)
+  // Riders can crash, sustain injuries, and dial in bike setup
+  const entrants = toEntrants(u, grid, approachFor);
+  const practiceOutcomes: Record<string, PracticeSessionOutcome> = {};
+  let injuredRiders: Set<string> = new Set();
+
+  for (let session = 0; session < 2; session++) {
+    for (const e of entrants) {
+      // Only run practice if rider not already out from first session
+      if (injuredRiders.has(e.rider.id)) continue;
+
+      const outcome = simulatePracticeSession(rng, e.rider, track, wet);
+      practiceOutcomes[e.rider.id] = outcome;
+
+      // Track severe injuries (riders who won't make qualifying/races)
+      if (outcome.injurySidelines > 0) {
+        injuredRiders.add(e.rider.id);
+      }
+    }
+  }
+
+  // Filter out severely injured riders from races
+  const activeEntrants = entrants.filter(e => !injuredRiders.has(e.rider.id));
+
   // --- Friday hot-lap qualifying (§3.7): fastest qualifier picks his gate
   // first. Grid slot = qualifying rank until rider gate-selection lands.
-  const entrants = toEntrants(u, grid, approachFor);
-  const qOrder = simulateQualifying(rng, entrants, track, wet);
-  const byId = new Map(entrants.map(e => [e.rider.id, e]));
+  const qOrder = simulateQualifying(rng, activeEntrants, track, wet);
+  const byId = new Map(activeEntrants.map(e => [e.rider.id, e]));
   const setGridFromQual = () => qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
 
   // --- SPRINT RACE (§3.6): 12 min + 1 lap, half-scale points (§11.2)
   setGridFromQual();
   const sprintLaps = lapsForMinutes(track, RACE_MINUTES.sprint) + 1;
-  const sprint = simulateRace(rng, entrants, track, sprintLaps, { wet, round: roundNumber });
+  const sprint = simulateRace(rng, activeEntrants, track, sprintLaps, { wet, round: roundNumber });
   const sprintPoints: Record<string, number> = {};
   sprint.rows.forEach(row => { sprintPoints[row.riderId] = Math.max(0.5, namcSprintPointsFor(row.pos)); });
 
   // --- MAIN EVENT (§3.6): 35 min + 2 laps, full points, gate pick from Friday qual
   setGridFromQual();
   const mainLaps = lapsForMinutes(track, RACE_MINUTES.main) + 2;
-  const main = simulateRace(rng, entrants, track, mainLaps, { wet, round: roundNumber });
+  const main = simulateRace(rng, activeEntrants, track, mainLaps, { wet, round: roundNumber });
   const finishOrder = main.rows.map(r => r.riderId);
   const mainPoints: Record<string, number> = {};
   finishOrder.forEach((id, i) => { mainPoints[id] = Math.max(1, namcPointsFor(i + 1)); });

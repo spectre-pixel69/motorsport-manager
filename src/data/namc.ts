@@ -86,10 +86,12 @@ export const BENCH_SIZE = 3;      // 2 male + 1 female (4.8.1)
 // Tier weighting order: 350 > 250 > Women's > 250P Restricted
 export const NAMC_CLASS_IDS: ClassId[] = ['c350', 'c250', 'women', 'c250p'];
 
-// Race lengths — rulebook v15.1 §3.6: Sprint 12 min + 1 lap (0.5x),
-// Main Event 35 min + 2 laps (1.0x). ALL four classes run identical
-// durations (Appendix A) — the old 60% "scaled classes" rule does not exist.
-export const RACE_MINUTES = { sprint: 12, main: 35 };
+// Practice and race lengths — rulebook v15.3 §3.5: Two 30-minute practice
+// sessions (Friday AM/PM), then qualifying, sprint, main on same day format.
+// §3.6: Sprint 12 min + 1 lap (0.5x), Main Event 35 min + 2 laps (1.0x).
+// ALL four classes run identical durations (Appendix A).
+export const RACE_MINUTES = { practice: 30, sprint: 12, main: 35 };
+export const PRACTICE_SESSIONS_PER_WEEKEND = 2; // Friday AM and PM
 
 /**
  * 2027 Master Racing Calendar — rulebook v15.1 §10.2, all 20 venues in order.
