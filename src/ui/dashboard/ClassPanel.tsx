@@ -36,7 +36,9 @@ export function ClassPanel({
   const classInfo = classById(classId);
   const champ = getChampionshipForClass(classId);
   const standings = riderStandingsFor(state, classId, champ);
-  const myRiders = ridersOfTeam(u, team.id).filter(r => r.classId === classId && !r.bench);
+  const allRiders = ridersOfTeam(u, team.id).filter(r => r.classId === classId);
+  const myRiders = allRiders.filter(r => !r.bench);
+  const benchRiders = allRiders.filter(r => r.bench);
 
   const classColor = getClassColor(classId);
   const panelStyle = {
@@ -54,6 +56,7 @@ export function ClassPanel({
         <div class="panel-section roster-section">
           <RiderRoster
             riders={myRiders}
+            benchRiders={benchRiders}
             team={team}
             onSelectRider={onSelectRider}
             isExpanded={expandedRiderId !== null}
@@ -73,6 +76,7 @@ export function ClassPanel({
             myRiders={myRiders}
             classId={classId}
             standings={standings}
+            state={state}
             onOpenModal={onOpenModal}
           />
         </div>

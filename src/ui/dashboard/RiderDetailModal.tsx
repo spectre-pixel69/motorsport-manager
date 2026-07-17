@@ -112,6 +112,7 @@ function StrengthsWeaknesses({ rider }: { rider: Rider }) {
 export function RiderDetailModal({ rider, universe, onClose }: Props) {
   const potentialStar = Math.round((rider.potential / 100) * 5);
   const overallStar = Math.round((rider.overall / 100) * 5);
+  const team = rider.teamId ? universe.teams[rider.teamId] : null;
 
   return (
     <div class="rider-detail-modal">
@@ -119,13 +120,9 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
         <div class="rider-header-top">
           <div class="rider-number">#{rider.number}</div>
           <div class="rider-name-big">{rider.name}</div>
-          <div class="rider-nationality">{rider.nationality}</div>
+          <div class="rider-nationality">{rider.nationality} {rider.isFemale ? '♀️' : '♂️'} · {rider.age}yo</div>
         </div>
         <div class="rider-header-stats">
-          <div class="header-stat">
-            <span class="label">Age</span>
-            <span class="value">{rider.age}</span>
-          </div>
           <div class="header-stat">
             <span class="label">OVR</span>
             <span class="value">
@@ -141,8 +138,8 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
             </span>
           </div>
           <div class="header-stat">
-            <span class="label">Salary</span>
-            <span class="value">${Math.round(rider.salary).toLocaleString()}</span>
+            <span class="label">Headroom</span>
+            <span class="value">{Math.max(0, rider.potential - rider.overall).toFixed(0)} pts</span>
           </div>
         </div>
       </div>
@@ -151,13 +148,26 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
         <div class="left-column">
           <OVRPillars rider={rider} />
           <CareerStats rider={rider} />
+
+          {/* Skills & Development */}
+          <div class="skills-section">
+            <h3>Advanced Skills</h3>
+            <div class="skill-bars">
+              <PillarBar label="Racecraft" value={rider.skills?.racecraft ?? 50} />
+              <PillarBar label="Braking" value={rider.skills?.braking ?? 50} />
+              <PillarBar label="Feedback" value={rider.skills?.feedback ?? 50} />
+            </div>
+          </div>
         </div>
 
         <div class="right-column">
           <StrengthsWeaknesses rider={rider} />
 
-          <div class="morale-section">
+          {/* Current Status */}
+          <div class="status-section">
             <h3>Current Status</h3>
+
+            {/* Morale */}
             <div class="status-item">
               <span class="label">Morale</span>
               <div class="morale-bar">
@@ -165,17 +175,89 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
               </div>
               <span class="value">{Math.round(rider.morale)}%</span>
             </div>
+
+            {/* Stamina */}
+            <div class="status-item">
+              <span class="label">Stamina</span>
+              <div class="stamina-bar">
+                <div class="stamina-fill" style={{ width: `${rider.stamina}%` }} />
+              </div>
+              <span class="value">{Math.round(rider.stamina)}%</span>
+            </div>
+
+            {/* Mental State */}
+            {(rider.mental?.peakForm || (rider.mental?.tilt ?? 0) > 0 || (rider.mental?.angerCharge ?? 0) > 0) && (
+              <div class="mental-state">
+                <span class="label">Mental State</span>
+                <div class="mental-badges">
+                  {rider.mental?.peakForm && <span class="badge">🔥 Peak Form</span>}
+                  {(rider.mental?.tilt ?? 0) > 0 && <span class="badge">😤 Frustrated ({rider.mental?.tilt})</span>}
+                  {(rider.mental?.angerCharge ?? 0) > 0 && <span class="badge">🌋 Fired Up ({rider.mental?.angerCharge})</span>}
+                </div>
+              </div>
+            )}
+
+            {/* Injury */}
             {rider.injuredForRounds > 0 && (
-              <div class="status-injury">
+              <div class="status-injury alert">
                 🏥 Injured for {rider.injuredForRounds} round{rider.injuredForRounds !== 1 ? 's' : ''}
               </div>
             )}
+
+            {/* Bench Status */}
             {rider.bench && (
               <div class="status-bench">
-                📋 Reserve/Bench Rider
+                📋 Reserve/Bench Rider — $50k/wk retainer
+              </div>
+            )}
+
+            {/* Traits */}
+            {rider.traits && rider.traits.length > 0 && (
+              <div class="traits-section">
+                <span class="label">Traits</span>
+                <div class="trait-badges">
+                  {rider.traits.map(t => (
+                    <span class="badge trait" key={t}>{t}</span>
+                  ))}
+                </div>
               </div>
             )}
           </div>
+
+          {/* Contract Info */}
+          {team && (
+            <div class="contract-section">
+              <h3>Contract</h3>
+              <div class="contract-item">
+                <span class="label">Annual Salary</span>
+                <span class="value">${Math.round(rider.salary / 1000)}k</span>
+              </div>
+              <div class="contract-item">
+                <span class="label">Weekly Cost</span>
+                <span class="value">${Math.round(rider.salary / 52 / 1000)}k</span>
+              </div>
+              {rider.contract && (
+                <>
+                  <div class="contract-item">
+                    <span class="label">Contract Length</span>
+                    <span class="value">{rider.contract.length} year{rider.contract.length !== 1 ? 's' : ''}</span>
+                  </div>
+                  {rider.contract.releaseClause > 0 && (
+                    <div class="contract-item">
+                      <span class="label">Buyout Cost</span>
+                      <span class="value">${(rider.contract.releaseClause / 1000).toFixed(0)}k</span>
+                    </div>
+                  )}
+                  {rider.contract.isNo1Rider && (
+                    <div class="contract-item highlight">
+                      <span class="label">Status</span>
+                      <span class="value">👑 No. 1 Rider</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
