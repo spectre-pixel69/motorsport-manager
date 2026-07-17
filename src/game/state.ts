@@ -223,12 +223,58 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
         // Aggressive riders who crash have a small risk of penalty
         if (ev.kind === 'crash') {
           const r = u.riders[ev.riderId];
-          if (!r?.teamId || r.stats.aggression < 70) continue; // only aggressive riders at risk
-          if (rng() < 0.08) { // 8% chance per crash
-            const team = u.teams[r.teamId];
-            // Tier 1: Warning for reckless riding
-            const penalty = issuePenalty(team, 'aggressive-riding', state.round, 1);
-            state.messages.unshift(`⚠️ PENALTY: ${team.name} receives warning (Tier 1) for ${r.name}'s aggressive riding. Incident #${team.penalties.length}.`);
+          if (!r?.teamId) continue;
+
+          const team = u.teams[r.teamId];
+          if (!team) continue;
+
+          // Escalating penalties based on aggression and repeat infractions
+          if (r.stats.aggression >= 85) {
+            // Very aggressive rider: 12% chance per crash
+            if (rng() < 0.12) {
+              const existingWarnings = team.penalties.filter(
+                p => p.reason === 'aggressive-riding' && p.issuedRound > state.round - 5,
+              ).length;
+
+              let tier: 1 | 2 | 3 = 1;
+              if (existingWarnings >= 2) tier = 3; // Tier 3: Suspension
+              else if (existingWarnings >= 1) tier = 2; // Tier 2: Fine
+
+              const penalty = issuePenalty(team, 'reckless-conduct', state.round, tier);
+              state.messages.unshift(
+                `⚠️ PENALTY: ${team.name} receives Tier ${tier} penalty for ${r.name}'s reckless conduct. Incident #${team.penalties.length}.`,
+              );
+            }
+          } else if (r.stats.aggression >= 70) {
+            // Aggressive rider: 8% chance per crash
+            if (rng() < 0.08) {
+              const penalty = issuePenalty(team, 'aggressive-riding', state.round, 1);
+              state.messages.unshift(`⚠️ PENALTY: ${team.name} receives warning (Tier 1) for ${r.name}'s aggressive riding.`);
+            }
+          }
+        }
+
+        // Technical violations
+        if (ev.kind === 'mechanical') {
+          const r = u.riders[ev.riderId];
+          if (!r?.teamId) continue;
+
+          const team = u.teams[r.teamId];
+          if (!team) continue;
+
+          // Check for repeated mechanical failures (may indicate non-compliant engine)
+          const recentDNFs = weekends
+            .filter(w => w.finishOrder.find(id => id === r.id) === undefined)
+            .length;
+
+          if (recentDNFs >= 3) {
+            // Three DNFs could indicate technical rule violation
+            if (rng() < 0.15) {
+              const penalty = issuePenalty(team, 'technical-violation', state.round, 2);
+              state.messages.unshift(
+                `⚠️ PENALTY: ${team.name} fined for technical violation - excessive DNF rate on ${r.name}'s bike.`,
+              );
+            }
           }
         }
       }
