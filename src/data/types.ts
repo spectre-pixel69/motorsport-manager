@@ -265,6 +265,8 @@ export interface Track {
   lengthKm: number;     // road course length (motocross: lap length)
   baseLapSec: number;   // reference lap time for a 100-rated rider
   weatherBias: number;  // 0-1 chance-of-rain modifier (deprecated: use TrackDetails)
+  baseGrip?: number;    // 0.7-1.2 terrain grip baseline (motocross only)
+  dustiness?: number;   // 0.0-0.4 track dust factor (motocross only)
 }
 
 /**

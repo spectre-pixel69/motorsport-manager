@@ -4,6 +4,7 @@
 import type { Rider, Team, Track, TireBrand, Universe } from '../data/types';
 import { clamp, gauss, type RNG } from '../util/rng';
 import { mentalPaceFactor, mentalCrashFactor, mentalStartAdjust } from '../game/psychology';
+import { simulateGateStart } from './motocross';
 
 export interface Entrant {
   rider: Rider;
@@ -100,16 +101,35 @@ export function simulateRace(
     form[e.rider.id] = gauss(rng, 0, 0.32 * (1.2 - e.rider.stats.consistency / 250));
   }
 
-  // grid start: convert grid slot into time offset + launch quality
-  for (const e of entrants) {
-    cumTime[e.rider.id] = e.gridPos * (track.discipline === 'namc' ? 0.18 : 0.35) + startBonus(rng, e);
-    lapTimes[e.rider.id] = [];
-    bestLap[e.rider.id] = Infinity;
-    out[e.rider.id] = { status: 'finished', lapsDone: 0 };
+  // grid start: motocross uses gate starts (all riders launch simultaneously)
+  // road disciplines use staggered starts (grid position → time offset)
+  let holeshot: Entrant;
+  if (track.discipline === 'namc') {
+    const gateStart = simulateGateStart(rng, entrants, track);
+    for (const e of entrants) {
+      cumTime[e.rider.id] = gateStart.startAdjustments[e.rider.id];
+      lapTimes[e.rider.id] = [];
+      bestLap[e.rider.id] = Infinity;
+      out[e.rider.id] = { status: 'finished', lapsDone: 0 };
+    }
+    holeshot = entrants.find(e => e.rider.id === gateStart.holeshotter)!;
+    events.push({
+      lap: 0,
+      kind: 'fastLap',
+      riderId: holeshot.rider.id,
+      text: `${holeshot.rider.name} grabs the holeshot! (gap to last: ${gateStart.startSpread.toFixed(2)}s)`,
+    });
+  } else {
+    // road: staggered start based on grid position
+    for (const e of entrants) {
+      cumTime[e.rider.id] = e.gridPos * 0.35 + startBonus(rng, e);
+      lapTimes[e.rider.id] = [];
+      bestLap[e.rider.id] = Infinity;
+      out[e.rider.id] = { status: 'finished', lapsDone: 0 };
+    }
+    holeshot = entrants.slice().sort((a, b) => cumTime[a.rider.id] - cumTime[b.rider.id])[0];
+    events.push({ lap: 0, kind: 'fastLap', riderId: holeshot.rider.id, text: `${holeshot.rider.name} grabs the holeshot!` });
   }
-
-  const holeshot = entrants.slice().sort((a, b) => cumTime[a.rider.id] - cumTime[b.rider.id])[0];
-  events.push({ lap: 0, kind: 'fastLap', riderId: holeshot.rider.id, text: `${holeshot.rider.name} grabs the holeshot!` });
 
   let prevOrder: string[] = [];
   for (let lap = 1; lap <= laps; lap++) {
