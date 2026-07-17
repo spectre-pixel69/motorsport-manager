@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 import type { CareerState } from '../../game/state';
 import type { ElectronicsSystem } from '../../data/setups';
 import { ELECTRONICS_SYSTEMS } from '../../data/setups';
+import { ElectronicsDetailView } from './ElectronicsDetailView';
 import './showroom.css';
 
 interface Props {
@@ -24,12 +25,35 @@ export function ElectronicsShowroom({ state, onExit }: Props) {
     mixed: '',
   });
 
+  const [detailSystem, setDetailSystem] = useState<ElectronicsSystem | null>(null);
+
   const team = state.universe.teams[state.playerTeamId];
   const systems = Object.values(ELECTRONICS_SYSTEMS);
 
   const handleSelectSystem = (trackType: TrackType, systemId: string) => {
     setSelections({ ...selections, [trackType]: systemId });
   };
+
+  if (detailSystem) {
+    const isLeased = Object.values(selections).some(id => id === detailSystem.id);
+    return (
+      <div class="showroom-container">
+        <ElectronicsDetailView
+          system={detailSystem}
+          team={team}
+          leased={isLeased}
+          onLease={() => setSelections({
+            loam: detailSystem.id,
+            sand: detailSystem.id,
+            hardpack: detailSystem.id,
+            wet: detailSystem.id,
+            mixed: detailSystem.id,
+          })}
+          onBack={() => setDetailSystem(null)}
+        />
+      </div>
+    );
+  }
 
   const calculateTotalCost = (): number => {
     const selectedSystems = new Set(Object.values(selections).filter(s => s));
@@ -76,6 +100,10 @@ export function ElectronicsShowroom({ state, onExit }: Props) {
                   {system.ovrBonus && Object.keys(system.ovrBonus).length > 0 && (
                     <div class="ovr-note">+OVR bonuses</div>
                   )}
+                  <button
+                    class="detail-link"
+                    onClick={(e: Event) => { e.stopPropagation(); setDetailSystem(system); }}
+                  >Details →</button>
                   {selections[trackType] === system.id && (
                     <div class="selected-badge">✓ Selected</div>
                   )}

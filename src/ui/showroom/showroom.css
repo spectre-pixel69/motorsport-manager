@@ -603,3 +603,89 @@
 .detail-content::-webkit-scrollbar-thumb:hover {
   background: #3a3f4a;
 }
+
+/* ============================================================
+   Detail-view extensions: meters, trait lists, badges, links
+   (Tire / Suspension / Electronics / Staff detail views)
+   ============================================================ */
+
+.meter {
+  width: 100%;
+  height: 6px;
+  background: rgba(52, 152, 219, 0.12);
+  border-radius: 3px;
+  overflow: hidden;
+  margin: 2px 0 12px;
+}
+
+.meter-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.meter-fill.grip { background: linear-gradient(90deg, #2ecc71, #27ae60); }
+.meter-fill.dur { background: linear-gradient(90deg, #3498db, #2980b9); }
+.meter-fill.wear { background: linear-gradient(90deg, #f39c12, #e74c3c); }
+
+.trait-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.surface-badge {
+  background: rgba(52, 152, 219, 0.15);
+  border: 1px solid rgba(52, 152, 219, 0.4);
+  color: #3498db;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 3px 10px;
+  border-radius: 10px;
+  text-transform: capitalize;
+}
+
+.trait-good {
+  color: #2ecc71;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.trait-bad {
+  color: #e74c3c;
+  font-size: 12px;
+  margin: 2px 0;
+}
+
+.detail-link {
+  background: none;
+  border: none;
+  color: #3498db;
+  font-size: 11px;
+  font-weight: 600;
+  cursor: pointer;
+  padding: 4px 0 0;
+  text-align: left;
+}
+
+.detail-link:hover {
+  color: #5dade2;
+  text-decoration: underline;
+}
+
+.qty-btn {
+  background: rgba(52, 152, 219, 0.12);
+  border: 1px solid rgba(52, 152, 219, 0.4);
+  color: #e6ecf2;
+  font-weight: 700;
+  padding: 4px 12px;
+  margin-left: 6px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.qty-btn.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: #fff;
+}

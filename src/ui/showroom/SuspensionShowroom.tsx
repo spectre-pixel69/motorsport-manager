@@ -2,14 +2,15 @@
 
 import { useState } from 'preact/hooks';
 import type { CareerState } from '../../game/state';
+import type { TrackSurface } from '../../data/setups';
+import { SUSPENSION_PRESETS } from '../../data/setups';
+import { SuspensionDetailView } from './SuspensionDetailView';
 import './showroom.css';
 
 interface Props {
   state: CareerState;
   onExit: () => void;
 }
-
-type TrackSurface = 'loam' | 'sand' | 'hardpack' | 'wet' | 'mixed';
 
 const TRACK_SURFACES: TrackSurface[] = ['loam', 'sand', 'hardpack', 'wet', 'mixed'];
 
@@ -21,8 +22,33 @@ const SUSPENSION_PROFILES = {
   mixed: { name: 'Mixed Terrain', stiffness: 'Variable', desc: 'Transitional setup for varied surfaces' },
 };
 
+// Map showroom surface -> tuning preset in data/setups.ts
+const PRESET_KEYS: Record<TrackSurface, string> = {
+  loam: 'loam-standard',
+  sand: 'sand-compliant',
+  hardpack: 'hardpack-stiff',
+  wet: 'wet-recovery',
+  mixed: 'mixed-balanced',
+};
+
 export function SuspensionShowroom({ state, onExit }: Props) {
   const [selectedProfile, setSelectedProfile] = useState<TrackSurface | null>(null);
+  const [detailSurface, setDetailSurface] = useState<TrackSurface | null>(null);
+
+  if (detailSurface) {
+    return (
+      <div class="showroom-container">
+        <SuspensionDetailView
+          surface={detailSurface}
+          displayName={SUSPENSION_PROFILES[detailSurface].name}
+          preset={SUSPENSION_PRESETS[PRESET_KEYS[detailSurface]]}
+          selected={selectedProfile === detailSurface}
+          onSelect={() => setSelectedProfile(detailSurface)}
+          onBack={() => setDetailSurface(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div class="showroom-container">
@@ -48,6 +74,10 @@ export function SuspensionShowroom({ state, onExit }: Props) {
               <div class="profile-name">{profile.name}</div>
               <div class="profile-stiffness">Stiffness: {profile.stiffness}</div>
               <p class="profile-description">{profile.desc}</p>
+              <button
+                class="detail-link"
+                onClick={(e: Event) => { e.stopPropagation(); setDetailSurface(surface); }}
+              >Details →</button>
               {selectedProfile === surface && (
                 <div class="selected-badge">✓ Selected</div>
               )}

@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 import type { CareerState } from '../../game/state';
 import type { Tire } from '../../data/bikes';
 import { TIRES } from '../../data/bikes';
+import { TireDetailView } from './TireDetailView';
 import './showroom.css';
 
 interface Props {
@@ -22,6 +23,7 @@ export function TiresShowroom({ state, onExit }: Props) {
     '250p': '',
     'womens-250': '',
   });
+  const [detailTire, setDetailTire] = useState<Tire | null>(null);
 
   const team = state.universe.teams[state.playerTeamId];
   const tires = Object.values(TIRES);
@@ -29,6 +31,26 @@ export function TiresShowroom({ state, onExit }: Props) {
   const handleSelectTire = (classType: ClassType, tireId: string) => {
     setSelections({ ...selections, [classType]: tireId });
   };
+
+  if (detailTire) {
+    const isSupplier = Object.values(selections).some(id => id === detailTire.id);
+    return (
+      <div class="showroom-container">
+        <TireDetailView
+          tire={detailTire}
+          team={team}
+          selected={isSupplier}
+          onSelect={() => setSelections({
+            '350-pro': detailTire.id,
+            '250': detailTire.id,
+            '250p': detailTire.id,
+            'womens-250': detailTire.id,
+          })}
+          onBack={() => setDetailTire(null)}
+        />
+      </div>
+    );
+  }
 
   return (
     <div class="showroom-container">
@@ -56,6 +78,10 @@ export function TiresShowroom({ state, onExit }: Props) {
                     <div class="spec">Grip: {tire.gripRating}</div>
                     <div class="spec">Wear Rate: {Math.round(tire.wearRate * 100)}%</div>
                   </div>
+                  <button
+                    class="detail-link"
+                    onClick={(e: Event) => { e.stopPropagation(); setDetailTire(tire); }}
+                  >Details →</button>
                   {selections[classType] === tire.id && (
                     <div class="selected-badge">✓ Selected</div>
                   )}

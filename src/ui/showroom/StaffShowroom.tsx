@@ -4,6 +4,7 @@ import { useState } from 'preact/hooks';
 import type { CareerState } from '../../game/state';
 import { ALL_STAFF } from '../../data/staff';
 import type { Staff, StaffRole } from '../../data/staff';
+import { StaffDetailView } from './StaffDetailView';
 import './showroom.css';
 
 interface Props {
@@ -21,6 +22,7 @@ const ROLE_LABELS = {
 
 export function StaffShowroom({ state, onExit }: Props) {
   const [selectedStaff, setSelectedStaff] = useState<Set<string>>(new Set());
+  const [detailStaff, setDetailStaff] = useState<Staff | null>(null);
   const team = state.universe.teams[state.playerTeamId];
 
   const handleToggleStaff = (staffId: string) => {
@@ -32,6 +34,20 @@ export function StaffShowroom({ state, onExit }: Props) {
     }
     setSelectedStaff(updated);
   };
+
+  if (detailStaff) {
+    return (
+      <div class="showroom-container">
+        <StaffDetailView
+          staff={detailStaff}
+          team={team}
+          hired={selectedStaff.has(detailStaff.id)}
+          onToggleHire={() => handleToggleStaff(detailStaff.id)}
+          onBack={() => setDetailStaff(null)}
+        />
+      </div>
+    );
+  }
 
   const calculateTotalCost = (): number => {
     return Array.from(selectedStaff).reduce((sum, staffId) => {
@@ -72,6 +88,10 @@ export function StaffShowroom({ state, onExit }: Props) {
                       <div class="staff-info">
                         <h4>{staff.name}</h4>
                         <span class="experience">{staff.experience}</span>
+                        <button
+                          class="detail-link"
+                          onClick={(e: Event) => { e.stopPropagation(); setDetailStaff(staff); }}
+                        >Full Profile →</button>
                       </div>
                       <input
                         type="checkbox"
