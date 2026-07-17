@@ -31,8 +31,10 @@ type Screen =
   | { id: 'offseason'; state: CareerState; report: OffSeasonReport };
 
 function App() {
-  const [screen, setScreen] = useState<Screen>({ id: 'title' });
-  const hasSave = loadCareer() !== null;
+  const savedCareer = loadCareer();
+  const [screen, setScreen] = useState<Screen>(
+    savedCareer ? { id: 'hub', state: savedCareer } : { id: 'new' }
+  );
 
   return (
     <>
@@ -48,16 +50,8 @@ function App() {
           <div class="title-tag">{BRAND.tagline}</div>
           <div style="height:18px" />
           <div class="row">
-            {hasSave && (
-              <button class="primary" onClick={() => {
-                const s = loadCareer();
-                if (s) setScreen({ id: 'hub', state: s });
-              }}>Continue Career</button>
-            )}
-            <button class={hasSave ? '' : 'primary'} onClick={() => setScreen({ id: 'new' })}>New Career</button>
-            {hasSave && (
-              <button class="ghost" onClick={() => { deleteSave(); setScreen({ id: 'title' }); }}>Delete Save</button>
-            )}
+            <button class="primary" onClick={() => setScreen({ id: 'new' })}>New Career</button>
+            <button class="ghost" onClick={() => { deleteSave(); location.reload(); }}>Delete Save</button>
           </div>
           <div style="height:10px" />
           <p class="muted">v0.1 — GP &middot; SBK &middot; NAMC</p>
@@ -66,7 +60,10 @@ function App() {
 
       {screen.id === 'new' && (
         <NewGame
-          onBack={() => setScreen({ id: 'title' })}
+          onBack={() => {
+            if (savedCareer) setScreen({ id: 'hub', state: savedCareer });
+            else setScreen({ id: 'title' });
+          }}
           onStart={state => setScreen({ id: 'hub', state })}
         />
       )}
