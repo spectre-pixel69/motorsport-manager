@@ -8,7 +8,7 @@
 // GP: Grid penalties (position loss), concession tier deduction, development token revocation
 // SBK: Grid penalties (race-specific), ballast manipulation, BoP violation fines
 
-import type { Penalty, PenaltyTier, PenaltyReason, Rider, Team, RiderWelfareFund } from '../data/types';
+import type { CharterPenalty, PenaltyTier, PenaltyReason, Rider, Team, RiderWelfareFund } from '../data/types';
 
 let penaltySeq = 0;
 
@@ -30,13 +30,17 @@ export function issuePenalty(
   currentRound: number,
   tier?: PenaltyTier,
   suspensionRounds?: number,
-): Penalty {
+  rider?: Rider,
+): CharterPenalty {
   // Auto-determine tier if not specified
   const resolvedTier: PenaltyTier = tier ?? autoTier(reason);
   const fineAmount = resolveFineAmount(resolvedTier, reason);
-  const suspRounds = suspensionRounds ?? (resolvedTier === 3 ? 1 : undefined);
+  // §13.1 Tier 3: barred from 1-4 consecutive rounds
+  const suspRounds = resolvedTier === 3
+    ? Math.max(1, Math.min(4, suspensionRounds ?? 1))
+    : undefined;
 
-  const penalty: Penalty = {
+  const penalty: CharterPenalty = {
     id: `p${penaltySeq++}`,
     issuedRound: currentRound,
     tier: resolvedTier,
@@ -50,12 +54,11 @@ export function issuePenalty(
   team.penalties.push(penalty);
 
   // Apply immediate consequences
-  if (resolvedTier === 1) {
-    // Tier 1: Warning only, logged
-  } else if (resolvedTier === 2) {
-    // Tier 2: Fine paid to welfare fund (handled by caller in economy.ts)
-  } else if (resolvedTier === 3) {
-    // Tier 3: Suspension (handled by caller when running race)
+  if (resolvedTier === 3 && rider) {
+    // §13.1 Tier 3: the offending rider is barred from the next 1-4 rounds.
+    // gridOf() excludes suspended riders and promotes a bench substitute.
+    rider.suspendedForRounds = Math.max(rider.suspendedForRounds ?? 0, suspRounds!);
+    penalty.affectedRiders = [rider.id];
   } else if (resolvedTier === 4) {
     // Tier 4: Charter Revocation (permanent)
     team.charterRevoked = true;
@@ -145,7 +148,7 @@ export function trackTerminalViolation(
   reason: 'ballast-manipulation' | 'non-homologated-engine' | 'technical-violation',
   currentRound: number,
   affectedRiders?: string[],
-): Penalty {
+): CharterPenalty {
   const tier: PenaltyTier =
     reason === 'ballast-manipulation' ? 3 :  // Tier 3 suspension
     reason === 'non-homologated-engine' ? 2 : // Tier 2 DQ + fine

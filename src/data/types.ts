@@ -39,6 +39,12 @@ export interface Penalty {
   pointsForfeitedByRound?: Record<string, number>; // riderId -> points lost in this round
 }
 
+/**
+ * §13.1: a penalty logged in a team's charter record. Same shape as Penalty —
+ * the alias names the ledger entry the rulebook calls the "charter record".
+ */
+export type CharterPenalty = Penalty;
+
 export interface RiderWelfareFund {
   totalAccumulated: number;        // sum of all fines collected
   fineHistory: Array<{
@@ -226,7 +232,7 @@ export interface Team {
   classIds: ClassId[];  // classes this team fields riders in
   facilityLevel: number;// training facility level 1-5
   coachQuality: number; // coach skill modifier (0.8-1.5)
-  penalties: Penalty[]; // §13.1: all penalties issued to this team
+  penalties: CharterPenalty[]; // §13.1: the team's charter record of penalties
   charterRevoked?: boolean; // §13.1 Tier 4: charter permanently revoked (forces team fold)
   // MotoGP-specific
   developmentTokensUsed?: number;  // concession development tokens spent this season

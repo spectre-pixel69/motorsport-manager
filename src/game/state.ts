@@ -304,9 +304,11 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
               if (existingWarnings >= 2) tier = 3; // Tier 3: Suspension
               else if (existingWarnings >= 1) tier = 2; // Tier 2: Fine
 
-              const penalty = issuePenalty(team, 'reckless-conduct', state.round, tier);
+              const penalty = issuePenalty(team, 'reckless-conduct', state.round, tier, undefined, r);
               state.messages.unshift(
-                `⚠️ PENALTY: ${team.name} receives Tier ${tier} penalty for ${r.name}'s reckless conduct. Incident #${team.penalties.length}.`,
+                tier === 3
+                  ? `⚠️ PENALTY: ${team.name} receives Tier 3 — ${r.name} suspended ${penalty.suspensionRounds} round(s) for repeat reckless conduct.`
+                  : `⚠️ PENALTY: ${team.name} receives Tier ${tier} penalty for ${r.name}'s reckless conduct. Incident #${team.penalties.length}.`,
               );
             }
           } else if (r.stats.aggression >= 70) {
