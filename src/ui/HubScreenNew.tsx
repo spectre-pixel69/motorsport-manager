@@ -56,7 +56,7 @@ export function HubScreenNew({
   const nextTrack = nextRound ? u.tracks[nextRound.trackId] : null;
   const myRiders = ridersOfTeam(u, team.id).filter(r => !r.bench);
   const standings = riderStandingsFor(state, stClass, stChamp);
-  const teamStanding = teamStandingsFor(state, stClass);
+  const teamStanding = teamStandingsFor(state, stChamp, stClass);
   const playerTeamRank = teamStanding.findIndex(t => t.team.id === team.id) + 1;
   const meta = DISCIPLINE_META[state.discipline];
 
@@ -199,7 +199,7 @@ export function HubScreenNew({
                 {nextTrack.name}
               </div>
               <div style={{ fontSize: '0.85rem', color: '#b0b8c0', marginBottom: '0.8rem' }}>
-                {nextTrack.kind} • {nextTrack.terrain}
+                {nextTrack.kind} • {nextTrack.location}
               </div>
               <button class="primary" onClick={goRacing} style={{ width: '100%', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
                 🚀 Go Racing
@@ -317,6 +317,3 @@ export function HubScreenNew({
   );
 }
 
-function seasonOver(state: CareerState): boolean {
-  return state.round >= state.universe.calendars[state.discipline].length;
-}
