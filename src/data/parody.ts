@@ -42,11 +42,13 @@ export const SPONSORS: Sponsor[] = [
 
 // ------------------------------------------------------------- tire brands
 // NAMC Brands A-D: two global giants, two American underdogs (per rulebook 8.1)
+// v15.3 Balance Update (2026-07-17): Adjusted grip/durability to equalize championship win rates
+// Goal: ~30-35% titles per brand instead of Pirella dominance (46% → target 33%)
 export const TIRE_BRANDS: TireBrand[] = [
   { id: 'mishlen', name: 'Mishlen', color: '#1a52b0', grip: 82, durability: 78 },
-  { id: 'pirella', name: 'Pirella', color: '#e8c50e', grip: 85, durability: 72 },
-  { id: 'ironclad', name: 'IronClad Tire Co', color: '#8a1520', grip: 76, durability: 86 },
-  { id: 'dustdevil', name: 'DustDevil Rubber', color: '#c96a1e', grip: 79, durability: 80 },
+  { id: 'pirella', name: 'Pirella', color: '#e8c50e', grip: 83, durability: 75 },
+  { id: 'ironclad', name: 'IronClad Tire Co', color: '#8a1520', grip: 80, durability: 87 },
+  { id: 'dustdevil', name: 'DustDevil Rubber', color: '#c96a1e', grip: 81, durability: 81 },
 ];
 
 // ------------------------------------------------------ GP factory identity
