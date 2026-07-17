@@ -6,6 +6,7 @@ import { classById, CLASSES } from '../data/classes';
 import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended } from './penalties';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
+import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
 import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
 import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
@@ -555,6 +556,35 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
         }
       }
     }
+  }
+
+  // 4b. Parts Economy: Manufacturer Financial Health & Engine Orders (§8.2-8.5)
+  //     Manufacturers track cash flow, may enter crisis (reduced capacity, price premiums).
+  //     Teams place engine orders off-season; orders fulfilled based on capacity.
+  if (state.discipline === 'namc') {
+    const partsRng = mulberry32(hashString(`${state.seed}:parts:${state.season}`));
+
+    // Update manufacturer financial state based on order volume
+    const orderCount = u.engineOrders.filter(o => o.orderedSeason === state.season).length;
+    for (const mfg of Object.values(u.manufacturers)) {
+      updateManufacturerFinance(mfg, orderCount, partsRng);
+    }
+
+    // Fulfill engine orders based on manufacturer capacity
+    for (const order of u.engineOrders) {
+      if (!order.fulfilled) {
+        const mfg = u.manufacturers[order.manufacturerId];
+        if (mfg && fulfillEngineOrder(order, mfg, partsRng, state.season)) {
+          const team = u.teams[order.teamId];
+          if (team) {
+            notes.push(`✓ ${team.name} receives new engine from ${mfg.name}.`);
+          }
+        }
+      }
+    }
+
+    // Clear fulfilled orders older than 2 seasons
+    u.engineOrders = u.engineOrders.filter(o => state.season - o.expectedArrivalSeason < 2);
   }
 
   // 5. The full off-season cycle (rulebook §4.10-4.14), in league order:

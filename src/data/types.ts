@@ -224,6 +224,7 @@ export interface Team {
 }
 
 export type ManufacturerReliability = 'fragile' | 'balanced' | 'bulletproof';
+export type ManufacturerFinancialState = 'stable' | 'stressed' | 'crisis' | 'recovering';
 
 export interface Manufacturer {
   id: string;
@@ -232,6 +233,12 @@ export interface Manufacturer {
   strokes?: '2S' | '4S' | 'both';              // NAMC engine types offered
   reliabilityBias: ManufacturerReliability;    // personality: fragile (40-60), balanced (60-75), bulletproof (80-95)
   performanceCeiling: number;                   // 0-100: peak engine output (inverse correlation with reliability)
+  // Financial system (supply chain dynamics)
+  cashOnHand: number;                          // manufacturer liquidity (seed-based RNG)
+  financialState: ManufacturerFinancialState; // stable/stressed/crisis/recovering
+  productionCapacity: number;                  // 0-1: fraction of orders fulfilled (1.0 = all, 0.5 = half)
+  baseEngineCost: number;                      // base cost before premiums (e.g. $80k)
+  costMultiplier: number;                      // crisis = 1.5x, stressed = 1.2x, stable = 1.0x
 }
 
 export interface Sponsor {
@@ -320,6 +327,18 @@ export interface ClassDef {
   womenOnly?: boolean;
 }
 
+export interface EngineOrder {
+  id: string;
+  teamId: string;
+  manufacturerId: string;
+  orderedSeason: number;
+  expectedArrivalSeason: number;  // arrives next season (or mid-current if rush)
+  cost: number;
+  rushOrder: boolean;             // 40% premium for expedited delivery
+  fulfilled: boolean;             // did it actually arrive? (affected by manufacturer capacity)
+  delayedRounds?: number;         // if delayed mid-season, how many rounds?
+}
+
 export interface Universe {
   seed: number;
   season: number; // year
@@ -330,4 +349,5 @@ export interface Universe {
   tireBrands: Record<string, TireBrand>;
   tracks: Record<string, Track>;
   calendars: Record<DisciplineId, CalendarRound[]>;
+  engineOrders: EngineOrder[];     // active parts orders (lead time tracking)
 }

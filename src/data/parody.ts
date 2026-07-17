@@ -3,9 +3,11 @@
 // evoke — but never copy — the real world. All logos are our own shapes.
 
 import type { Manufacturer, Sponsor, TireBrand } from './types';
+import { mulberry32, hashString } from '../util/rng';
 
 // ---------------------------------------------------------------- makers
-export const MANUFACTURERS: Manufacturer[] = [
+// Base manufacturers (financial state added at universe creation time)
+export const MANUFACTURERS_BASE: Omit<Manufacturer, 'cashOnHand' | 'financialState' | 'productionCapacity' | 'baseEngineCost' | 'costMultiplier'>[] = [
   { id: 'ducetti', name: 'Ducetti', color: '#d0021b', strokes: '4S', reliabilityBias: 'fragile', performanceCeiling: 95 },
   { id: 'hondra', name: 'Hondra', color: '#e8501e', strokes: 'both', reliabilityBias: 'balanced', performanceCeiling: 88 },
   { id: 'yamawa', name: 'Yamawa', color: '#1a49c4', strokes: 'both', reliabilityBias: 'balanced', performanceCeiling: 90 },
@@ -19,6 +21,24 @@ export const MANUFACTURERS: Manufacturer[] = [
   { id: 'triumf', name: 'Triumf', color: '#0e2a3a', strokes: '4S', reliabilityBias: 'bulletproof', performanceCeiling: 81 },
   { id: 'betta', name: 'Betta', color: '#b01d2e', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 86 },
 ];
+
+/**
+ * Initialize manufacturers with seed-based financial health.
+ */
+export function initializeManufacturers(seed: number): Manufacturer[] {
+  const rng = mulberry32(hashString(`${seed}:manufacturers`));
+
+  return MANUFACTURERS_BASE.map(base => ({
+    ...base,
+    cashOnHand: 400_000 + Math.floor(rng() * 200_000),  // $400k-$600k starting cash
+    financialState: 'stable' as const,
+    productionCapacity: 1.0,  // all manufacturers start at full capacity
+    baseEngineCost: 80_000,   // baseline engine cost
+    costMultiplier: 1.0,      // no premium at start
+  }));
+}
+
+export const MANUFACTURERS: Manufacturer[] = [];
 
 // ---------------------------------------------------------------- sponsors
 export const SPONSORS: Sponsor[] = [

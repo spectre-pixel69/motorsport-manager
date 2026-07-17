@@ -5,7 +5,7 @@ import type {
 } from './types';
 import { CLASSES, classById } from './classes';
 import {
-  MANUFACTURERS, SPONSORS, TIRE_BRANDS, GP_TEAMS, GP_STARS, SBK_TEAMS, SBK_STARS,
+  MANUFACTURERS_BASE, initializeManufacturers, SPONSORS, TIRE_BRANDS, GP_TEAMS, GP_STARS, SBK_TEAMS, SBK_STARS,
   GP_TRACKS, SBK_TRACKS,
 } from './parody';
 import { FIRST_M, FIRST_F, LAST, NAT_WEIGHTS, TEAM_ADJ, TEAM_NOUN, NAMC_TEAM_CITIES } from './names';
@@ -380,14 +380,16 @@ function buildTracks(u: Universe): void {
 export function buildUniverse(seed: number, season = 2027): Universe {
   riderSeq = 0; teamSeq = 0;
   const rng = mulberry32(seed);
+  const mfgs = initializeManufacturers(seed);
   const u: Universe = {
     seed, season,
     riders: {}, teams: {},
-    manufacturers: Object.fromEntries(MANUFACTURERS.map(m => [m.id, m])),
+    manufacturers: Object.fromEntries(mfgs.map(m => [m.id, m])),
     sponsors: Object.fromEntries(SPONSORS.map(s => [s.id, s])),
     tireBrands: Object.fromEntries(TIRE_BRANDS.map(t => [t.id, t])),
     tracks: {},
     calendars: { gp: [], sbk: [], namc: [] },
+    engineOrders: [],
   };
   buildTracks(u);
   buildRoadDiscipline(rng, u, 'gp', GP_TEAMS, GP_STARS);
