@@ -76,35 +76,57 @@ export function HubScreenNew({
   const budgetPercent = (team.budget / 2_500_000) * 100;
 
   return (
-    <div class="screen" style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', padding: '1rem' }}>
-      {/* HEADER: Command Center Title */}
-      <div
-        style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          paddingBottom: '0.8rem',
-          borderBottom: '1px solid rgba(52, 152, 219, 0.2)',
-          animation: 'slideInUp 0.5s ease-out',
-        }}
-      >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-          <div style={{ fontSize: '2rem', animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>🏭</div>
-          <div>
-            <h1 style={{ margin: 0, fontSize: '1.8rem', color: '#e8e8e8', animation: 'glowBlue 2.5s ease-in-out infinite' }}>{team.name}</h1>
-            <div style={{ fontSize: '0.85rem', color: '#8892a0' }}>
-              Season {state.season} • Round {state.round + 1}/{cal.length} • {meta.name}
-            </div>
-          </div>
+    <div style={{
+      width: '100%',
+      height: '100%',
+      display: 'flex',
+      flexDirection: 'column',
+      background: '#0a0e27',
+      color: '#fff',
+      fontFamily: 'Segoe UI, system-ui, sans-serif',
+      overflow: 'hidden'
+    }}>
+      {/* HEADER */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        padding: '1rem 1.5rem',
+        borderBottom: '1px solid rgba(42, 58, 90, 0.5)',
+        background: 'rgba(21, 25, 46, 0.8)',
+        backdropFilter: 'blur(10px)'
+      }}>
+        <div>
+          <h1 style={{ margin: 0, fontSize: '2rem', fontWeight: 'bold', color: '#f39c12' }}>
+            🏭 {team.name}
+          </h1>
+          <p style={{ margin: '4px 0 0 0', fontSize: '0.85rem', color: '#8892a0' }}>
+            Season {state.season} • Round {state.round + 1}/{cal.length} • {meta.name}
+          </p>
         </div>
         <div style={{ display: 'flex', gap: '0.5rem' }}>
-          <button class="ghost" onClick={onViewDashboard} style={{ transition: 'all 0.3s ease' }}>📊 Dashboard</button>
-          <button class="ghost" onClick={onExit} style={{ transition: 'all 0.3s ease' }}>← Exit</button>
+          <button onClick={onViewDashboard} style={{
+            padding: '8px 12px', fontSize: '12px', background: 'rgba(26, 31, 58, 0.8)',
+            border: '1px solid rgba(42, 58, 90, 0.5)', color: '#fff', borderRadius: '6px',
+            cursor: 'pointer', transition: 'all 0.2s'
+          }}>📊 Dashboard</button>
+          <button onClick={onExit} style={{
+            padding: '8px 12px', fontSize: '12px', background: 'rgba(231, 76, 60, 0.3)',
+            border: '1px solid rgba(231, 76, 60, 0.5)', color: '#fff', borderRadius: '6px',
+            cursor: 'pointer', transition: 'all 0.2s'
+          }}>← Exit</button>
         </div>
       </div>
 
-      {/* MAIN GRID */}
-      <div style={{ display: 'grid', gridTemplateColumns: '2fr 1fr', gap: '0.8rem', flex: 1, minHeight: 0 }}>
+      {/* MAIN CONTENT: 2-PANEL LAYOUT */}
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '2fr 1fr',
+        gap: '1rem',
+        padding: '1rem 1.5rem',
+        flex: 1,
+        overflow: 'hidden'
+      }}>
         {/* LEFT: Core Info */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', overflow: 'auto' }}>
           {/* TEAM VITALS — 4-column metric grid */}
