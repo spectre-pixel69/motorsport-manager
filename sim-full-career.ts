@@ -15,6 +15,10 @@ interface SeasonReport {
   offSeason: OffSeasonReport;
   playerTeamBudget: number;
   playerTeamStanding: number;
+  rosterMoves: {
+    graduated: string[];      // riders promoted 250→350
+    freeAgentSignings: Array<{ rider: string; fromTeam: string; toTeam: string; classId: ClassId }>;
+  };
 }
 
 const seasonReports: SeasonReport[] = [];
@@ -179,6 +183,22 @@ for (let seasonNum = 0; seasonNum < 5; seasonNum++) {
 
   console.log(`\n  Free Agents Remaining: ${offSeasonReport.poolLeft}`);
 
+  // Track roster moves: who graduated 250P→250, who signed where
+  const graduated: string[] = [];
+  const signingDetails: Array<{ rider: string; fromTeam: string; toTeam: string; classId: ClassId }> = [];
+
+  // Extract graduation info (riders who moved to 250)
+  for (const sig of offSeasonReport.faSignings) {
+    if (sig.classId === 'c250') {
+      signingDetails.push({
+        rider: sig.rider,
+        fromTeam: 'Free Agent',
+        toTeam: sig.toTeam,
+        classId: sig.classId,
+      });
+    }
+  }
+
   // Store season report
   seasonReports.push({
     season: state.season,
@@ -186,6 +206,10 @@ for (let seasonNum = 0; seasonNum < 5; seasonNum++) {
     offSeason: offSeasonReport,
     playerTeamBudget: playerTeam.budget,
     playerTeamStanding: playerRank,
+    rosterMoves: {
+      graduated,
+      freeAgentSignings: signingDetails,
+    },
   });
 
   console.log(`\n💰 PLAYER TEAM STATUS (${playerTeam.name}):`);
@@ -267,6 +291,87 @@ if (dynasties.length > 0) {
 
 console.log(`\nTotal Career Retirements: ${allRetirements.size} riders`);
 console.log(`Total Draft Selections: ${allDraftees.size} rookies (across 5 seasons)`);
+
+// Roster movement analysis
+console.log('\n\n📊 ROSTER MOVEMENT ECOSYSTEM:\n');
+console.log('Free Agent Signing Activity by Class (all seasons):\n');
+
+const c250Signings: string[] = [];
+const c350Signings: string[] = [];
+const womenSignings: string[] = [];
+const c125Signings: string[] = [];
+
+seasonReports.forEach(season => {
+  season.offSeason.faSignings.forEach(sig => {
+    if (sig.classId === 'c250') c250Signings.push(`${sig.rider} → ${sig.toTeam}`);
+    if (sig.classId === 'c350') c350Signings.push(`${sig.rider} → ${sig.toTeam}`);
+    if (sig.classId === 'women') womenSignings.push(`${sig.rider} → ${sig.toTeam}`);
+    if (sig.classId === 'c125') c125Signings.push(`${sig.rider} → ${sig.toTeam}`);
+  });
+});
+
+if (c350Signings.length > 0) {
+  console.log(`🏆 350 CLASS FA SIGNINGS (${c350Signings.length} total):`);
+  c350Signings.forEach(sig => console.log(`   • ${sig}`));
+  console.log();
+}
+
+if (c250Signings.length > 0) {
+  console.log(`🏁 250 CLASS FA SIGNINGS (${c250Signings.length} total):`);
+  c250Signings.forEach(sig => console.log(`   • ${sig}`));
+  console.log();
+}
+
+if (womenSignings.length > 0) {
+  console.log(`👩 WOMEN'S CLASS FA SIGNINGS (${womenSignings.length} total):`);
+  womenSignings.forEach(sig => console.log(`   • ${sig}`));
+  console.log();
+}
+
+if (c125Signings.length > 0) {
+  console.log(`🔰 250P FEEDER CLASS FA SIGNINGS (${c125Signings.length} total):`);
+  c125Signings.slice(0, 8).forEach(sig => console.log(`   • ${sig}`));
+  if (c125Signings.length > 8) console.log(`   ... and ${c125Signings.length - 8} more`);
+  console.log();
+}
+
+console.log('\n\n🏆 TEAM CHAMPIONSHIP & PRIZE MONEY:\n');
+console.log('Season | Winner | Prize | Next Season Signings');
+console.log('─────────────────────────────────────────────────────────────');
+
+seasonReports.forEach((season, idx) => {
+  if (season.offSeason.teamTitle) {
+    const nextSeason = seasonReports[idx + 1];
+    const nextSignings = nextSeason ? nextSeason.offSeason.faSignings.length : 0;
+    const prize = (season.offSeason.teamTitle.prize / 1000).toFixed(0);
+    console.log(
+      `${season.season}    | ${season.offSeason.teamTitle.teamName.padEnd(25)} | $${prize}k | ${nextSignings} FA signings`
+    );
+  }
+});
+
+console.log('\n\n💰 BUDGET & COMPETITIVE CORRELATION:\n');
+console.log('Season | Budget | Team Rank | Notes');
+console.log('───────────────────────────────────────────────────────────────────');
+
+seasonReports.forEach((season, idx) => {
+  const budgetM = (season.playerTeamBudget / 1_000_000).toFixed(2);
+  const budgetChange = idx > 0
+    ? ((season.playerTeamBudget - seasonReports[idx-1].playerTeamBudget) / 1_000_000).toFixed(2)
+    : '—';
+
+  const rankChange = idx > 0
+    ? (seasonReports[idx-1].playerTeamStanding - season.playerTeamStanding)
+    : 0;
+
+  const rankNote = rankChange > 0 ? `⬆ Improved ${rankChange} spots` :
+                   rankChange < 0 ? `⬇ Dropped ${Math.abs(rankChange)} spots` :
+                   'Stable';
+
+  console.log(
+    `${season.season}    | $${budgetM}M (+$${budgetChange}M) | #${season.playerTeamStanding} | ${rankNote}`
+  );
+});
 
 console.log('\n═'.repeat(70));
 console.log('✅ FULL CAREER SIMULATION COMPLETE\n');
