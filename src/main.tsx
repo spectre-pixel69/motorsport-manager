@@ -5,7 +5,7 @@ import { BRAND } from './data/brand';
 import { loadCareer, deleteSave, saveCareer, advanceSeason, type CareerState, type OffSeasonReport } from './game/state';
 import { getTelemetry } from './util/telemetry';
 import { NewGame } from './ui/NewGame';
-import { HubScreen } from './ui/HubScreen';
+import { HubScreenNew } from './ui/HubScreenNew';
 import { TeamDashboard } from './ui/TeamDashboard';
 import { RaceView } from './ui/RaceView';
 import { Showroom } from './ui/Showroom';
@@ -69,7 +69,7 @@ function App() {
       )}
 
       {screen.id === 'hub' && (
-        <HubScreen
+        <HubScreenNew
           state={screen.state}
           onExit={() => { saveCareer(screen.state); setScreen({ id: 'title' }); }}
           onRaceReady={(weekends, player) => {
