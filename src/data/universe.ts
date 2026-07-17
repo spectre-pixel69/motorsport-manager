@@ -395,10 +395,32 @@ export function buildUniverse(seed: number, season = 2027): Universe {
 
 // ------------------------------------------------------------ helpers
 export function gridOf(u: Universe, classId: ClassId, championship: ChampionshipId): Rider[] {
-  return Object.values(u.riders).filter(r =>
+  const starters = Object.values(u.riders).filter(r =>
     r.classId === classId && r.championship === championship && !r.bench &&
-    r.injuredForRounds === 0 && r.teamId !== null,   // free agents don't take gates
+    r.teamId !== null,
   );
+
+  // NAMC bench substitution: injured starters promoted by bench rider from same team.
+  // Rulebook 4.8.1 requires 2M+1F bench. If injured, next available bench replaces.
+  const grid: Rider[] = [];
+  for (const starter of starters) {
+    if (starter.injuredForRounds === 0) {
+      grid.push(starter);
+    } else {
+      // Look for an available bench rider from the same team, same class/championship
+      const bench = Object.values(u.riders).find(b =>
+        b.bench && b.teamId === starter.teamId &&
+        b.classId === classId && b.championship === championship &&
+        b.injuredForRounds === 0 && !b.subbingFor,  // not already subbing
+      );
+      if (bench) {
+        bench.subbingFor = starter.id;  // Track who they're covering
+        grid.push(bench);
+      }
+      // If no bench available, that grid slot goes unfilled (smaller field)
+    }
+  }
+  return grid;
 }
 
 export function teamsOf(u: Universe, discipline: DisciplineId, championship?: ChampionshipId): Team[] {
