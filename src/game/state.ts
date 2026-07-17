@@ -3,7 +3,7 @@
 import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe, RiderWelfareFund } from '../data/types';
 import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf, makeDraftRookie } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
-import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended } from './penalties';
+import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended, applyCharterRevocation } from './penalties';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
@@ -240,6 +240,13 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
     const collected = collectFines(state, team, state.round);
     if (collected > 0) {
       state.messages.unshift(`💰 WELFARE FUND: ${team.name} fined $${collected.toLocaleString()}. Total fund: $${state.welfareFund.totalAccumulated.toLocaleString()}.`);
+    }
+  }
+
+  // Apply charter revocation consequences (§13.1 Tier 4)
+  for (const team of Object.values(u.teams)) {
+    if (team.charterRevoked) {
+      applyCharterRevocation(state, team);
     }
   }
 

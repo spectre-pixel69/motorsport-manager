@@ -13,6 +13,7 @@ import { DraftPool } from './dashboard/DraftPool';
 import { FreeAgents } from './dashboard/FreeAgents';
 import { SeasonCalendar } from './dashboard/SeasonCalendar';
 import { RiderDetailModal } from './dashboard/RiderDetailModal';
+import { LeagueHealth } from './dashboard/LeagueHealth';
 import './dashboard.css';
 
 interface Props {
@@ -21,11 +22,13 @@ interface Props {
 }
 
 type ModalType = null | 'draft' | 'freeagents' | 'calendar' | 'rider';
+type TabType = 'overview' | 'league-health';
 
 export function TeamDashboard({ state, onExit }: Props) {
   const [selectedClass, setSelectedClass] = useState<ClassId>(state.focusClass);
   const [expandedRider, setExpandedRider] = useState<string | null>(null);
   const [openModal, setOpenModal] = useState<ModalType>(null);
+  const [tab, setTab] = useState<TabType>('overview');
   const u = state.universe;
   const team = u.teams[state.playerTeamId];
   const cal = u.calendars[state.discipline];
@@ -47,24 +50,49 @@ export function TeamDashboard({ state, onExit }: Props) {
         </div>
       </div>
 
-      {/* Overall Championship & Season Progress */}
-      <OverallChampionship state={state} />
-      <SeasonProgress state={state} currentRound={state.round} totalRounds={cal.length} />
-
-      {/* Four Class Panels */}
-      <div class="class-panels-grid">
-        {NAMC_CLASS_IDS.map(classId => (
-          <ClassPanel
-            key={classId}
-            state={state}
-            classId={classId}
-            isSelected={selectedClass === classId}
-            onSelectRider={(riderId) => setExpandedRider(riderId)}
-            expandedRiderId={expandedRider}
-            onOpenModal={(modalType) => setOpenModal(modalType)}
-          />
-        ))}
+      {/* Tab Navigation */}
+      <div class="dashboard-tabs">
+        <button
+          class={`tab ${tab === 'overview' ? 'active' : ''}`}
+          onClick={() => setTab('overview')}
+        >
+          📊 Team Overview
+        </button>
+        <button
+          class={`tab ${tab === 'league-health' ? 'active' : ''}`}
+          onClick={() => setTab('league-health')}
+        >
+          ⚖️ League Health
+        </button>
       </div>
+
+      {/* Tab Content */}
+      {tab === 'overview' && (
+        <>
+          {/* Overall Championship & Season Progress */}
+          <OverallChampionship state={state} />
+          <SeasonProgress state={state} currentRound={state.round} totalRounds={cal.length} />
+
+          {/* Four Class Panels */}
+          <div class="class-panels-grid">
+            {NAMC_CLASS_IDS.map(classId => (
+              <ClassPanel
+                key={classId}
+                state={state}
+                classId={classId}
+                isSelected={selectedClass === classId}
+                onSelectRider={(riderId) => setExpandedRider(riderId)}
+                expandedRiderId={expandedRider}
+                onOpenModal={(modalType) => setOpenModal(modalType)}
+              />
+            ))}
+          </div>
+        </>
+      )}
+
+      {tab === 'league-health' && (
+        <LeagueHealth state={state} />
+      )}
 
       {/* Modal Backdrop & Content */}
       {openModal && (

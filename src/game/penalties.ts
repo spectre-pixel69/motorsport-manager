@@ -61,6 +61,29 @@ export function issuePenalty(
 }
 
 /**
+ * Apply charter revocation consequences (§13.1 Tier 4).
+ * Riders become free agents; team cannot compete.
+ */
+export function applyCharterRevocation(state: PenaltyState, team: Team): void {
+  if (!team.charterRevoked) return;
+
+  // Release all riders to free agency
+  const rosterRiders = Object.values(state.universe.riders).filter(r => r.teamId === team.id);
+  for (const rider of rosterRiders) {
+    rider.teamId = null;
+    rider.classId = null;
+    rider.bench = false;
+    state.messages.unshift(
+      `🚫 CHARTER REVOKED: ${rider.name} released to free agency (${team.name} charter permanently revoked).`,
+    );
+  }
+
+  state.messages.unshift(
+    `❌ CHARTER REVOCATION: ${team.name} permanently revoked. Team may no longer compete in the championship.`,
+  );
+}
+
+/**
  * Collect fines to the Rider Welfare Fund (§13.5).
  */
 export function collectFines(state: PenaltyState, team: Team, currentRound: number): number {
