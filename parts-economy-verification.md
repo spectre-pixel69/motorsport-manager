@@ -33,48 +33,62 @@
 
 ## System Architecture
 
+### Why Manufacturers Race
+Manufacturers don't just make engines — they generate **FICTITIOUS SALES** based on racing performance:
+- **Win** = Brand halo effect = +$100k revenue
+- **Championship Points** = Sponsorship/licensing tied to performance = +$500 per point
+- **DNF** = Brand damage from reliability failures = -$50k penalty
+
+This is why they race: winning = money, failure = loans.
+
+### Engine Order Flow
 ```
-Engine Order Flow:
   1. Team places order (off-season or mid-season rush)
      - Orderer specifies: manufacturerId, rushOrder flag
      - Cost calculated: base * state multiplier + rush premium (1.2-1.4x)
-     - expectedArrivalSeason set based on lead time
+     - expectedArrivalSeason set based on lead time (1-2 weeks)
 
   2. Each season: advanceSeason() processes fulfillment
-     - updateManufacturerFinance(): simulate cash flow, determine state
+     - calculateMfgPerformance(): sum wins/points/DNFs from all teams using this mfg
+     - updateManufacturerFinance(): calculate fictitious revenue, determine state
      - fulfillEngineOrder(): check if order can be fulfilled
      - ATK: always fulfilled
      - Others: random check against productionCapacity (50%-100%)
 
-  3. Manufacturer Financial Dynamics (non-ATK):
-     - Revenue: $50k per fulfilled order
-     - Costs: $200k/season infrastructure
-     - States:
-       - Crisis (<$100k): 50% capacity, +50% cost premium
-       - Stressed ($100k-$300k): 70% capacity, +20% cost premium
-       - Stable ($300k+): 100% capacity, baseline cost
-       - Recovering (crisis→stable): 80% capacity, +15% cost
+  3. Manufacturer Financial States (non-ATK, NEVER BANKRUPT):
+     - Crisis (<$50k): needs loans = 50% capacity, 60% cost premium (loan interest)
+     - Stressed ($50k-$300k): high financing costs = 70% capacity, 25% cost premium
+     - Stable ($300k+): healthy reserves = 100% capacity, baseline cost (1.0x)
+     - Recovering (crisis→stable): refinancing = 80% capacity, 18% cost premium
 ```
 
 ## Competitive Impact
 
+### Racing Performance Drives Revenue
+- Manufacturers earn more when their teams WIN (not from engine sales)
+- Crisis ≠ bankruptcy — it means they're taking loans (simulated by cost premium)
+- Manufacturers NEVER go out of business — loans always available
+- Poor racing performance = need financing = higher engine costs
+- Good racing performance = strong sales = lower costs, better supply
+
 ### Winning Teams Advantage
 - Prize money accumulates
 - Can order ATK engines (guaranteed, cheaper)
-- Gain mid-season performance boost
-- Create funding gap vs struggling teams
+- If manufacturer is winning too = engines get more expensive (high demand)
+- Create strategic partnership: successful teams benefit their suppliers
 
 ### Supply Chain Realism
-- Manufacturer crisis creates supply shortages
-- Teams must plan engine purchases carefully
-- No "guaranteed" parts supplier except ATK
-- Creates year-to-year uncertainty, prevents dynasties
+- Winning manufacturer has more capital for production = faster fulfillment
+- Struggling manufacturer needs loans = delays, cost premiums
+- ATK stable regardless of racing = always reliable fallback
+- Creates year-to-year uncertainty based on racing results, not bankruptcy
 
 ### 100-Season Sustainability
-- ATK ensures at least one reliable manufacturer exists
-- Other manufacturers cycle through financial states
-- No single team can dominate indefinitely
-- Competitive balance improves over long careers
+- Manufacturers never truly fail (loans available in crisis)
+- Other manufacturers cycle through financial states based on their teams' results
+- ATK provides consistency while others fluctuate
+- No single team/manufacturer can dominate indefinitely
+- Competitive balance tied to racing — winners pay more for parts (self-limiting)
 
 ## Code Changes Summary
 
