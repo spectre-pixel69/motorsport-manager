@@ -25,10 +25,23 @@ if (result.championshipSwings.length > 0) {
   console.log('  (None recorded)');
 }
 
-console.log('\n🏭 MANUFACTURER RANKINGS:');
-result.manufacturerDominance.slice(0, 5).forEach((m, i) => {
-  console.log(`  ${(i + 1)}. ${m.manufacturer.padEnd(15)} ${m.wins}W/${m.points}pts (${m.finalState})`);
+console.log('\n🏭 MANUFACTURER RANKINGS (End of Season):');
+result.manufacturerDominance.slice(0, 8).forEach((m, i) => {
+  console.log(`  ${(i + 1)}. ${m.manufacturer.padEnd(18)} ${m.wins}W/${m.points}pts (${m.finalState})`);
 });
+
+console.log('\n💰 MANUFACTURER CASH RESERVES (End of Season):');
+const finalRound = result.rounds[result.rounds.length - 1];
+if (finalRound) {
+  finalRound.manufacturerStates.forEach(m => {
+    const cash = m.cash.toLocaleString();
+    const capacity = (m.capacity * 100).toFixed(0);
+    const program = m.cash >= 100_000_000 ? '✅ CAN START ENGINE PROGRAM' :
+                    m.cash >= 150_000_000 ? '✅ CAN START ENGINE + CHASSIS' :
+                    m.cash >= 50_000_000 ? '⚠️  Growing (50M+)' : '📉 Limited (<50M)';
+    console.log(`  ${m.name.padEnd(18)} $${cash.padStart(12)}  [${program}]  (${capacity}% capacity)`);
+  });
+}
 
 console.log(`\n🛞 TIRE DOMINANCE:`);
 if (result.tireWinner) {
