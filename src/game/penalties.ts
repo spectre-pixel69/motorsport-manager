@@ -117,13 +117,44 @@ export function trackTerminalViolation(
   team: Team,
   reason: 'ballast-manipulation' | 'non-homologated-engine' | 'technical-violation',
   currentRound: number,
+  affectedRiders?: string[],
 ): Penalty {
   const tier: PenaltyTier =
     reason === 'ballast-manipulation' ? 3 :  // Tier 3 suspension
     reason === 'non-homologated-engine' ? 2 : // Tier 2 DQ + fine
     3; // Default to Tier 3
 
-  return issuePenalty(team, reason, currentRound, tier, 1);
+  const penalty = issuePenalty(team, reason, currentRound, tier, 1);
+
+  // Mark as terminal violation
+  penalty.isTerminalViolation = true;
+  penalty.affectedRiders = affectedRiders ?? [];
+  penalty.pointsForfeitedByRound = {};
+
+  return penalty;
+}
+
+/**
+ * Apply disqualification to riders for a technical violation.
+ * Forfeits all points earned in the affected round.
+ */
+export function applyDisqualification(
+  state: PenaltyState,
+  rider: Rider,
+  riderPointsThisRound: number,
+  currentRound: number,
+): void {
+  if (!rider.teamId) return;
+
+  const team = state.universe.riders[rider.id]?.teamId
+    ? state.universe.riders[rider.id]
+    : null;
+
+  if (!team) return;
+
+  state.messages.unshift(
+    `🚫 DISQUALIFIED: ${rider.name} (${team}) forfeited all ${riderPointsThisRound} points from Round ${currentRound + 1} due to technical violation.`
+  );
 }
 
 // ============================================================================

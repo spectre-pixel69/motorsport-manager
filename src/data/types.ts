@@ -33,6 +33,10 @@ export interface Penalty {
   suspensionStart?: number;        // round to begin suspension
   pointsForfeited?: number;        // points stripped if applicable
   resolvedRound?: number;          // when suspension ends (if applicable)
+  // Terminal Technical Violations (§12.4)
+  isTerminalViolation?: boolean;   // terminal tech violation (DQ, point forfeit)
+  affectedRiders?: string[];       // riderId[] disqualified this round
+  pointsForfeitedByRound?: Record<string, number>; // riderId -> points lost in this round
 }
 
 export interface RiderWelfareFund {
