@@ -1,34 +1,44 @@
-# Paddock Boss — NAMC v15.1 Manager Game
+# Paddock Boss — NAMC v15.3 Manager Game
 ## Documentation & Knowledge Base
 
 **Project**: spectre-pixel69/motorsport-manager  
 **Branch**: claude/motorsport-manager-jn6ugx  
 **Tech Stack**: TypeScript, Preact, Vite, Node.js/Express  
-**Status**: v0.1.0 — Core systems implemented, NAMC v15.1 rulebook locked  
+**Status**: v0.1.0 — Core systems implemented, NAMC v15.3 rulebook locked  
 
 ---
 
 ## ⚠️ SOURCE OF TRUTH
-The ONLY authority for NAMC rules is **docs/NAMC_RULEBOOK_v15.1_06232026.pdf**
-(in this repo). Sections of this CLAUDE.md are known to contain stale/wrong
-summaries (see docs/RULEBOOK_DISCREPANCIES.md). When this file and the PDF
-disagree, THE PDF WINS. Read the PDF before implementing any league rule.
-Key corrections: points are 25/22/20/18/16... + Sprint half-scale (§11.2), NOT
-F1 and NOT 40→1; every round = Sprint + Main Event (§3.6); all-outdoor 20-round
-calendar (§10.2); four-tier penalties (§13.1), not three strikes; purse money
-belongs to the RIDER (team cut ≤25% via contract); S4-only in Year One (§1.6).
+The ONLY authority for NAMC rules is **docs/NAMC_RULEBOOK_v15.3_07162026.pdf**
+(in this repo). When this file and CLAUDE.md disagree, THE PDF WINS. Read the
+PDF before implementing any league rule. Current compliance: v15.3 points scale
+(§11.2), dynamic ballast (§8.6), all-outdoor 20-round calendar (§10.0), unified
+40-rider single gate (§3.4), four-class structure (§3.1).
 
 ## LOCKED SPECIFICATIONS (superseded by the PDF above where they conflict)
 
-These are contractual constraints from the NAMC v15.1 rulebook. All game mechanics must honor these.
+These are contractual constraints from the NAMC v15.3 rulebook. All game mechanics must honor these.
 
 ### Championship Format
 - **20-round all-outdoor S4-only championship** (future: 2S championship parallel)
 - **Unified 40-rider single gate** (no motos, no relegation)
-- **F1-style championship points**: 25 pts (1st), 20 (2nd), 18 (3rd), 16, 15, 14, 13, 12, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1
-- **4 independent NAMC classes**: 350 Pro (4S), 250 Men (2S), 250P Restricted, Women's 250
-- **Rounds 1-12**: Stadium (mixed terrain)  
-- **Rounds 13-20**: Outdoor nationals (all dirt)
+- **v15.3 championship points** (§11.2):
+  - **Main Event** (1.0x): 75/60/52/37/36/35/34/33/32/31/30/29/28/27/26/25/24/23/22/21/20/19/18/17/16/15/14/13/12/11/10/9/8/7/6/5/4/3/2/1
+  - **Sprint** (0.5x): Each value halved (37.5/30/26/18.5/18/17.5/...)
+  - **Podium Cliff**: 3rd→4th = 15 point gap (52→37) intentional
+- **4 independent NAMC classes**: 350 Pro (4S), 250 Men (4S), 250P Restricted (4S), Women's 250 (4S)
+- **All rounds**: Outdoor natural terrain (§10.0, eliminated stadium/supercross format)
+
+### Dynamic Ballast System (§8.6, v15.2+)
+- **Success handicap applied per round** based on **final Sunday Main Event standings**:
+  - Win = +2kg at next round
+  - Podium (2nd–3rd) = +1kg at next round
+  - Off-podium (4th+) = -1kg at next round (minimum 0kg)
+- **Pace effect**: 0.07 seconds/lap per kg of ballast
+- **Cap**: 8kg maximum per rider (~0.56s/lap penalty)
+- **Reset**: Ballast resets to 0kg every season
+- **Verification**: Mandatory weigh-in before Sprint and Main Event
+- **All classes**: 350 Pro, 250, 250P, Women's 250
 
 ### Budget & Purse
 - **$2.5M seasonal budget per team** (fixed capital, no mid-season funding)
@@ -588,6 +598,6 @@ For **architecture questions**, reference the folder structure and integration c
 
 ---
 
-**Last Updated**: 2026-07-09  
+**Last Updated**: 2026-07-17 — v15.3 compliance migration complete  
 **Documentation Agent**: Claude, Documentation & Knowledge Base  
-**Status**: Active — Living document, updated per team consensus
+**Status**: Active — v15.3 rulebook locked, living document updated per team consensus
