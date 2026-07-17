@@ -13,13 +13,41 @@ export interface FailureEvent {
 
 const FAILURE_BASE_CALC = 0.0025; // (100 - reliability) * 0.0025 = fail rate
 
-// Engine mode multipliers on failure rate
-const ENGINE_MODE_MULTIPLIERS: Record<EngineMode, number> = {
+// Engine mode multipliers on failure rate AND wear accumulation (spec: §Engine Modes)
+export const ENGINE_MODE_MULTIPLIERS: Record<EngineMode, number> = {
   conserve: 0.6,
   standard: 1.0,
   push: 1.6,
   attack: 2.2,
 };
+
+/**
+ * Standard six-component loadout derived from a team's headline bike
+ * reliability. The engine carries the base rate; ancillaries run a little
+ * more reliable. Used at universe creation and to migrate older saves.
+ */
+export function defaultBikeComponents(baseReliability: number): Record<string, BikeComponent> {
+  const spec: [string, BikeComponent['type'], number][] = [
+    ['engine', 'engine', 0],
+    ['gearbox', 'gearbox', 4],
+    ['suspension', 'suspension', 6],
+    ['brakes', 'brakes', 8],
+    ['chassis', 'chassis', 10],
+    ['electronics', 'electronics', 2],
+  ];
+  const out: Record<string, BikeComponent> = {};
+  for (const [id, type, offset] of spec) {
+    out[id] = {
+      id,
+      name: id.charAt(0).toUpperCase() + id.slice(1),
+      type,
+      reliability: Math.min(98, baseReliability + offset),
+      wear: 0,
+      mileageMiles: 0,
+    };
+  }
+  return out;
+}
 
 export function calculateBaseFail(reliability: number): number {
   // baseFail% = max(1, (100 - reliability) × 0.25)

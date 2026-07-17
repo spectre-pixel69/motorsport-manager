@@ -12,6 +12,7 @@ import { FIRST_M, FIRST_F, LAST, NAT_WEIGHTS, TEAM_ADJ, TEAM_NOUN, NAMC_TEAM_CIT
 import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NAMC_CLASS_IDS, NAMC_2027_CALENDAR } from './namc';
 import { mulberry32, hashString, pick, irange, gauss, clamp, shuffle, type RNG } from '../util/rng';
 import { makeGatePreferenceProfile } from './gatePreference';
+import { defaultBikeComponents } from '../game/reliability';
 import { seededLogo } from '../logo/logos';
 import { getSeasonalWeatherBias, roundToMonth } from './seasonal-weather';
 
@@ -157,6 +158,7 @@ function makeTeam(rng: RNG, opts: {
   manufacturerId?: string; prestige?: number; classIds: ClassId[]; tireBrandId?: string;
 }, manufacturers: ReturnType<typeof initializeManufacturers>): Team {
   const id = `t${teamSeq++}`;
+  const bikeReliability = clamp(Math.round(gauss(rng, 70, 10)), 40, 98);
   const primary = opts.primary ?? pick(rng, ['#e2261f', '#f07000', '#1a49c4', '#3fb950', '#e8b23a', '#8a2be2', '#00b3ad', '#c8102e', '#2f9de0', '#59c118']);
   const secondary = opts.secondary ?? pick(rng, ['#101214', '#ffffff', '#12294a', '#e8e8e8']);
   const initials = (opts.shortName ?? opts.name.split(/\s+/).map(w => w[0]).join('')).slice(0, 3);
@@ -175,11 +177,11 @@ function makeTeam(rng: RNG, opts: {
     bike: {
       engine: clamp(Math.round(gauss(rng, 55 + (opts.prestige ?? 50) * 0.35, 8)), 30, 98),
       handling: clamp(Math.round(gauss(rng, 55 + (opts.prestige ?? 50) * 0.35, 8)), 30, 98),
-      reliability: clamp(Math.round(gauss(rng, 70, 10)), 40, 98),
+      reliability: bikeReliability,
     },
     bikeSetup: {
       engineMode: 'standard',
-      components: {},
+      components: defaultBikeComponents(bikeReliability),
       mileageThisRound: 0,
     },
     budget: Math.round(500_000 + (opts.prestige ?? 50) * 40_000),

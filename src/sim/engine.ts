@@ -1,9 +1,10 @@
 // Race simulation engine — lap-by-lap, deterministic under a seeded RNG.
 // One engine serves all disciplines; formats differ in laps, grids and points.
 
-import type { Rider, Team, Track, TireBrand, Universe } from '../data/types';
+import type { BikeComponent, Rider, Team, Track, TireBrand, Universe } from '../data/types';
 import { clamp, gauss, type RNG } from '../util/rng';
 import { mentalPaceFactor, mentalCrashFactor, mentalStartAdjust } from '../game/psychology';
+import { calculateFailureChance } from '../game/reliability';
 import { simulateGateStart, terrainProfileForRound, fitnessPenalty, aggressionCrashMod } from './motocross';
 
 export interface Entrant {
@@ -47,6 +48,31 @@ export interface RaceOutcome {
 const APPROACH_PACE: Record<Entrant['approach'], number> = { push: 0.35, normal: 0, conserve: -0.3 };
 const APPROACH_RISK: Record<Entrant['approach'], number> = { push: 1.6, normal: 1.0, conserve: 0.55 };
 
+// Engine mode: seconds/lap pace edge bought with failure risk + wear
+// (conserve trades pace for parts life; attack is race-day-only maximum).
+const ENGINE_MODE_PACE: Record<string, number> = { conserve: 0.10, standard: 0, push: -0.12, attack: -0.25 };
+// Global scale on per-component race failure chance so league-wide mechanical
+// rates stay near the tuned ~3-5% DNF per race (severity split adds non-DNF
+// minor/moderate issues on top).
+const MECH_EVENT_SCALE = 0.5;
+
+/** Per-race mechanical risk from the team's component set + engine mode. */
+function mechProfile(e: Entrant, laps: number): number {
+  const setup = e.team.bikeSetup;
+  const mode = setup?.engineMode ?? 'standard';
+  const comps: BikeComponent[] = setup?.components && Object.keys(setup.components).length > 0
+    ? Object.values(setup.components)
+    : [{
+        id: 'engine', name: 'Engine', type: 'engine',
+        reliability: e.team.bike.reliability, wear: 0, mileageMiles: 0,
+      }];
+  let raceChance = 0;
+  for (const c of comps) {
+    raceChance += calculateFailureChance(c, mode, false, e.rider.traits.includes('reckless'), 0, 1.0) / 100;
+  }
+  return Math.min(0.4, raceChance * MECH_EVENT_SCALE) / laps;
+}
+
 /** Per-lap pace in seconds for one rider (lower = faster). */
 function lapPace(
   rng: RNG,
@@ -73,7 +99,8 @@ function lapPace(
   const fitnessCost = track.discipline === 'namc' ? fitnessPenalty(e.rider, lap, laps, stamina) : 0;
   // Grip variance affects pace (tracks with lower grip = slower, dusty = less consistent)
   const gripVariance = track.discipline === 'namc' ? (1.0 - terrain.gripMod) * 0.02 : 0;
-  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty + ballast + fitnessCost + gripVariance - APPROACH_PACE[e.approach];
+  const modePace = ENGINE_MODE_PACE[e.team.bikeSetup?.engineMode ?? 'standard'] ?? 0;
+  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty + ballast + fitnessCost + gripVariance + modePace - APPROACH_PACE[e.approach];
   // mental state nudges the edges (hard-capped ±1% inside the factor)
   return raw * mentalPaceFactor(e.rider);
 }
@@ -119,9 +146,13 @@ export function simulateRace(
   // rubber-banding. Consistency shrinks the swing.
   const form: Record<string, number> = {};
   const stamina: Record<string, number> = {}; // rider stamina per race (0-100)
+  // per-rider mechanical state: per-lap failure odds + accumulated pace
+  // penalty from minor/moderate failures (graduated failure spec)
+  const mech: Record<string, { perLap: number; penalty: number }> = {};
   for (const e of entrants) {
     form[e.rider.id] = gauss(rng, 0, 0.32 * (1.2 - e.rider.stats.consistency / 250));
     stamina[e.rider.id] = 100; // start at full stamina
+    mech[e.rider.id] = { perLap: mechProfile(e, laps), penalty: 0 };
   }
 
   // grid start: motocross uses gate starts (all riders launch simultaneously)
@@ -173,14 +204,26 @@ export function simulateRace(
           events.push({ lap, kind: 'crash', riderId: e.rider.id, text: p ? `${e.rider.name} CRASHES OUT of P${p}!` : `${e.rider.name} CRASHES OUT on the opening lap!` });
           continue;
         }
-      } else if (rng() < (100 - e.team.bike.reliability) * 0.00012) {
-        st.status = 'dnf';
-        st.lapsDone = lap - 1;
-        events.push({ lap, kind: 'mechanical', riderId: e.rider.id, text: `${e.rider.name} — mechanical failure. The ${teamMakerName(e)} lets go.` });
-        continue;
+      } else if (rng() < mech[e.rider.id].perLap) {
+        // Graduated failure (spec): 50% minor / 30% moderate / 20% terminal
+        const sev = rng();
+        if (sev < 0.5) {
+          const loss = 1.2 + rng() * 2.0;
+          mech[e.rider.id].penalty += loss;
+          events.push({ lap, kind: 'mechanical', riderId: e.rider.id, text: `${e.rider.name}'s ${teamMakerName(e)} is smoking — nursing it home ~${loss.toFixed(1)}s/lap down.` });
+        } else if (sev < 0.8) {
+          const loss = 2.8 + rng() * 2.0;
+          mech[e.rider.id].penalty += loss;
+          events.push({ lap, kind: 'mechanical', riderId: e.rider.id, text: `${e.rider.name} forced to dial the engine right back — ~${loss.toFixed(1)}s/lap slower.` });
+        } else {
+          st.status = 'dnf';
+          st.lapsDone = lap - 1;
+          events.push({ lap, kind: 'mechanical', riderId: e.rider.id, text: `${e.rider.name} — mechanical failure. The ${teamMakerName(e)} lets go.` });
+          continue;
+        }
       }
 
-      const t = lapPace(rng, e, track, wet, lap, laps, stamina[e.rider.id], terrain) + form[e.rider.id];
+      const t = lapPace(rng, e, track, wet, lap, laps, stamina[e.rider.id], terrain) + form[e.rider.id] + mech[e.rider.id].penalty;
       cumTime[e.rider.id] += t;
       lapTimes[e.rider.id].push(cumTime[e.rider.id]);
       if (t < bestLap[e.rider.id]) bestLap[e.rider.id] = t;

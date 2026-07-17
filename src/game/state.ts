@@ -14,6 +14,7 @@ import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
 import { seededLogo } from '../logo/logos';
 import { restoreTelemetryFromState } from '../util/telemetry';
+import { applyWear, defaultBikeComponents, ENGINE_MODE_MULTIPLIERS } from './reliability';
 
 export interface Standings {
   /** riderId -> points, per class+championship key */
@@ -198,6 +199,7 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   }
 
   applyInjuriesAndRecovery(state, rng, weekends);
+  applyComponentWear(state);
   if (state.discipline === 'namc') {
     applySuccessBallast(state, weekends);
     applyRaceStrikeRisks(state, rng, weekends);
@@ -225,6 +227,27 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
 
   state.round += 1;
   return { weekends, playerWeekend };
+}
+
+/**
+ * Per-round component wear (spec: 1% wear per 100 miles; engine mode
+ * multiplies wear — conserve 0.6x through attack 2.2x). A race round is
+ * ~60 miles of running across practice, qualifying and motos. Rebuilds in
+ * the garage reset wear to 0.
+ */
+const ROUND_MILEAGE = 60;
+
+function applyComponentWear(state: CareerState): void {
+  for (const team of Object.values(state.universe.teams)) {
+    if (team.discipline !== state.discipline) continue;
+    const setup = team.bikeSetup;
+    if (!setup?.components) continue;
+    const effectiveMiles = ROUND_MILEAGE * (ENGINE_MODE_MULTIPLIERS[setup.engineMode] ?? 1.0);
+    for (const key of Object.keys(setup.components)) {
+      setup.components[key] = applyWear(setup.components[key], effectiveMiles);
+    }
+    setup.mileageThisRound = effectiveMiles;
+  }
 }
 
 /**
@@ -476,6 +499,16 @@ export function loadCareer(): CareerState | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as any;
     if (parsed.version !== 1) return null;
+    // Migration: older saves have teams with empty component sets — seed the
+    // standard six-component loadout from headline bike reliability.
+    for (const team of Object.values(parsed.universe?.teams ?? {}) as any[]) {
+      if (!team.bikeSetup) {
+        team.bikeSetup = { engineMode: 'standard', components: {}, mileageThisRound: 0 };
+      }
+      if (!team.bikeSetup.components || Object.keys(team.bikeSetup.components).length === 0) {
+        team.bikeSetup.components = defaultBikeComponents(team.bike?.reliability ?? 70);
+      }
+    }
     // Restore telemetry from saved state
     restoreTelemetryFromState(parsed);
     return parsed as CareerState;
