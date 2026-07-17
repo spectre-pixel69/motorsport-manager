@@ -19,6 +19,7 @@ import type { WeekendResult } from '../sim/weekend';
 import './hub.css';
 
 type PanelView = 'overview' | 'race' | 'standings' | 'team' | 'money' | 'league' | 'dashboard' | 'garage';
+type OverlayView = null | 'showroom' | 'garage' | 'training' | 'dashboard' | 'placeholder';
 
 interface Props {
   state: CareerState;
@@ -44,9 +45,12 @@ export function HubScreen({
   onViewDashboard,
 }: Props) {
   const [panel, setPanel] = useState<PanelView>('overview');
+  const [overlay, setOverlay] = useState<OverlayView>(null);
   const [stClass, setStClass] = useState<ClassId>(state.focusClass);
   const [stChamp, setStChamp] = useState<ChampionshipId>(state.championship);
   const [approaches, setApproaches] = useState<ApproachMap>({});
+  const [placeholderTitle, setPlaceholderTitle] = useState('');
+  const [placeholderNote, setPlaceholderNote] = useState('');
 
   const u = state.universe;
   const team = u.teams[state.playerTeamId];
@@ -147,16 +151,16 @@ export function HubScreen({
 
         {/* Quick nav buttons */}
         <div class="quick-nav">
-          <button onClick={() => onViewDashboard?.()} class={panel === 'dashboard' ? 'active' : ''}>📊</button>
-          <button onClick={() => onOpenShowroom()} class={panel === 'garage' ? 'active' : ''}>🛍️</button>
-          <button onClick={() => onOpenGarage()} class={panel === 'garage' ? 'active' : ''}>🔧</button>
-          <button onClick={() => onOpenTraining()}>🏋️</button>
-          <button onClick={() => onOpenPlaceholder('R&D Center', 'Complexity / Power / Adaptability design.')}>🧪</button>
-          <button onClick={() => setPanel('race')} class={panel === 'race' ? 'active' : ''}>🏁</button>
-          <button onClick={() => setPanel('standings')} class={panel === 'standings' ? 'active' : ''}>📈</button>
-          <button onClick={() => setPanel('team')} class={panel === 'team' ? 'active' : ''}>👥</button>
-          <button onClick={() => setPanel('money')} class={panel === 'money' ? 'active' : ''}>💰</button>
-          {state.discipline === 'namc' && <button onClick={() => setPanel('league')} class={panel === 'league' ? 'active' : ''}>🏛️</button>}
+          <button onClick={() => setOverlay('dashboard')} class={overlay === 'dashboard' ? 'active' : ''} title="Team Dashboard">📊</button>
+          <button onClick={() => setOverlay('showroom')} class={overlay === 'showroom' ? 'active' : ''} title="Shop">🛍️</button>
+          <button onClick={() => setOverlay('garage')} class={overlay === 'garage' ? 'active' : ''} title="Garage">🔧</button>
+          <button onClick={() => setOverlay('training')} title="Training">🏋️</button>
+          <button onClick={() => { setOverlay('placeholder'); setPlaceholderTitle('R&D Center'); setPlaceholderNote('Complexity / Power / Adaptability design.'); }}>🧪</button>
+          <button onClick={() => setPanel('race')} class={panel === 'race' ? 'active' : ''} title="Race">🏁</button>
+          <button onClick={() => setPanel('standings')} class={panel === 'standings' ? 'active' : ''} title="Standings">📈</button>
+          <button onClick={() => setPanel('team')} class={panel === 'team' ? 'active' : ''} title="Team">👥</button>
+          <button onClick={() => setPanel('money')} class={panel === 'money' ? 'active' : ''} title="Finances">💰</button>
+          {state.discipline === 'namc' && <button onClick={() => setPanel('league')} class={panel === 'league' ? 'active' : ''} title="League">🏛️</button>}
         </div>
 
         {/* Content panels */}
@@ -285,6 +289,51 @@ export function HubScreen({
           )}
         </div>
       </div>
+
+      {/* Overlay modal layer for full-screen panels */}
+      {overlay && (
+        <div class="hub-overlay">
+          <div class="overlay-backdrop" onClick={() => setOverlay(null)} />
+          <div class="overlay-panel">
+            <button class="overlay-close" onClick={() => setOverlay(null)}>✕</button>
+            {overlay === 'showroom' && (
+              <div class="overlay-content">
+                <h2>Showroom</h2>
+                <p class="muted">Shop for engines, chassis, and tires.</p>
+                <button class="btn-primary" onClick={() => { onOpenShowroom(); setOverlay(null); }}>Open in Detail</button>
+              </div>
+            )}
+            {overlay === 'garage' && (
+              <div class="overlay-content">
+                <h2>Garage</h2>
+                <p class="muted">Manage bike setup, components, and engine mode.</p>
+                <button class="btn-primary" onClick={() => { onOpenGarage(); setOverlay(null); }}>Open in Detail</button>
+              </div>
+            )}
+            {overlay === 'training' && (
+              <div class="overlay-content">
+                <h2>Training Center</h2>
+                <p class="muted">Develop rider skills and manage stamina.</p>
+                <button class="btn-primary" onClick={() => { onOpenTraining(); setOverlay(null); }}>Open in Detail</button>
+              </div>
+            )}
+            {overlay === 'dashboard' && (
+              <div class="overlay-content">
+                <h2>Team Dashboard</h2>
+                <p class="muted">Team management for NAMC multi-class operations.</p>
+                <button class="btn-primary" onClick={() => { onViewDashboard?.(); setOverlay(null); }}>Open in Detail</button>
+              </div>
+            )}
+            {overlay === 'placeholder' && (
+              <div class="overlay-content">
+                <h2>{placeholderTitle}</h2>
+                {placeholderNote && <p class="muted">{placeholderNote}</p>}
+                <button class="btn-primary" onClick={() => { onOpenPlaceholder(placeholderTitle, placeholderNote); setOverlay(null); }}>Full View</button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -888,6 +888,103 @@
   font-size: 10px;
 }
 
+/* Overlay Modal */
+.hub-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10;
+}
+
+.overlay-backdrop {
+  position: absolute;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.7);
+  backdrop-filter: blur(4px);
+  cursor: pointer;
+}
+
+.overlay-panel {
+  position: relative;
+  width: 90%;
+  max-width: 500px;
+  background: linear-gradient(135deg, rgba(15, 20, 32, 0.98) 0%, rgba(10, 14, 39, 0.99) 100%);
+  border: 2px solid rgba(52, 152, 219, 0.3);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+  padding: 24px;
+  z-index: 11;
+  max-height: 80vh;
+  overflow-y: auto;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.overlay-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 20px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+  z-index: 12;
+}
+
+.overlay-close:hover {
+  color: #e74c3c;
+}
+
+.overlay-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.overlay-content h2 {
+  margin: 0;
+  font-size: 18px;
+  color: #fff;
+}
+
+.overlay-content p {
+  margin: 0;
+  color: #888;
+  line-height: 1.5;
+}
+
+.overlay-panel::-webkit-scrollbar {
+  width: 6px;
+}
+
+.overlay-panel::-webkit-scrollbar-track {
+  background: rgba(26, 31, 58, 0.3);
+}
+
+.overlay-panel::-webkit-scrollbar-thumb {
+  background: rgba(52, 152, 219, 0.3);
+  border-radius: 3px;
+}
+
+.overlay-panel::-webkit-scrollbar-thumb:hover {
+  background: rgba(52, 152, 219, 0.5);
+}
+
 /* Responsive */
 @media (max-width: 1200px) {
   .hub-panel {
