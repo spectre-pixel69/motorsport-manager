@@ -415,13 +415,17 @@ interface BikeComponent {
 - [ ] Hidden potential ceiling (display ceiling vs. actual)
 - [ ] Injury system (overtraining penalty)
 
-### Parts Reliability
+### Parts Reliability & Economy
 - [x] Component wear accumulation
 - [x] Engine mode wear multipliers
 - [x] Failure chance calculation
 - [x] Graduated failure severity (minor/moderate/terminal)
+- [x] Manufacturer financial health (stable/stressed/crisis/recovering)
+- [x] Engine order system (off-season ordering, lead times 1-2 weeks)
+- [x] Order fulfillment based on manufacturer capacity
+- [x] ATK manufacturer (always-available parts company)
 - [ ] Rebuild system (reset wear, cost budget)
-- [ ] Performance ceiling by manufacturer
+- [ ] Performance ceiling by manufacturer (getEnginePerformanceModifier wired into sim)
 - [ ] Mid-race pit-stop strategy (future)
 
 ### Race Simulation
@@ -598,6 +602,6 @@ For **architecture questions**, reference the folder structure and integration c
 
 ---
 
-**Last Updated**: 2026-07-17 — v15.3 compliance migration complete  
+**Last Updated**: 2026-07-17 — Parts economy system wired (manufacturer financial health, 1-2 week lead times, ATK always-available)  
 **Documentation Agent**: Claude, Documentation & Knowledge Base  
-**Status**: Active — v15.3 rulebook locked, living document updated per team consensus
+**Status**: Active — v15.3 rulebook locked, parts economy live, long-career testing phase
