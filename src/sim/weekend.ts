@@ -1,8 +1,8 @@
 // Race weekend formats.
 // Road (GP/SBK): qualifying -> race. Points top 15.
-// NAMC (rulebook v15.1 §3.5-3.7, §11.2, Appendix A): Friday hot-lap
-// qualifying (sets gate pick order) -> SPRINT RACE (12 min + 1 lap, half-scale
-// points) -> MAIN EVENT (35 min + 2 laps, full points) on a unified 40-rider
+// NAMC (rulebook v15.3 §3.5-3.7, §11.2, Appendix A): Friday hot-lap
+// qualifying (sets gate pick order) -> SPRINT RACE (12 min + 1 lap, 0.5x
+// points) -> MAIN EVENT (35 min + 2 laps, 1.0x points) on a unified 40-rider
 // single gate. All four classes run identical formats.
 
 import type { ChampionshipId, ClassId, Rider, Track, Universe } from '../data/types';

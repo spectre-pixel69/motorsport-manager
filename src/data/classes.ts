@@ -26,21 +26,26 @@ export const classById = (id: ClassId): ClassDef => CLASSES.find(c => c.id === i
 export const ROAD_POINTS = [25, 20, 16, 13, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1];
 
 /**
- * NAMC Rider's Cup points — rulebook v15.1 §11.2, full 40-position scale.
- * Main Event (1.0x): 25/22/20/18/16/15/14/13/12/11, then 10..1 (P11-P20),
- * then 1 point each P21-P40. Every finisher scores.
+ * NAMC Rider's Cup points — rulebook v15.3 §11.2, full 40-position scale.
+ * Main Event (1.0x): Every position unique, podium cliff 3rd→4th (52→37 = 15pt gap).
+ * P1-P10: 75/60/52/37/36/35/34/33/32/31
+ * P11-P20: 30/29/28/27/26/25/24/23/22/21
+ * P21-P30: 20/19/18/17/16/15/14/13/12/11
+ * P31-P40: 10/9/8/7/6/5/4/3/2/1
  */
 export const NAMC_MAIN_POINTS = [
-  25, 22, 20, 18, 16, 15, 14, 13, 12, 11,
+  75, 60, 52, 37, 36, 35, 34, 33, 32, 31,
+  30, 29, 28, 27, 26, 25, 24, 23, 22, 21,
+  20, 19, 18, 17, 16, 15, 14, 13, 12, 11,
   10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
-  ...Array.from({ length: 20 }, () => 1),
 ];
 
-/** Sprint Race (0.5x weight, §11.2): 12.5/11/10/9/8/7.5/7/6.5/6/5.5, then 5..0.5, then 0.5 each P21-P40. */
+/** Sprint Race (exactly 0.5x Main Event, §11.2 v15.3): every position value halved. */
 export const NAMC_SPRINT_POINTS = [
-  12.5, 11, 10, 9, 8, 7.5, 7, 6.5, 6, 5.5,
-  5, 4.5, 4, 3.5, 3, 2.5, 2, 1.5, 1, 0.5,
-  ...Array.from({ length: 20 }, () => 0.5),
+  37.5, 30.0, 26.0, 18.5, 18.0, 17.5, 17.0, 16.5, 16.0, 15.5,
+  15.0, 14.5, 14.0, 13.5, 13.0, 12.5, 12.0, 11.5, 11.0, 10.5,
+  10.0, 9.5, 9.0, 8.5, 8.0, 7.5, 7.0, 6.5, 6.0, 5.5,
+  5.0, 4.5, 4.0, 3.5, 3.0, 2.5, 2.0, 1.5, 1.0, 0.5,
 ];
 
 export function roadPointsFor(pos: number): number {
