@@ -498,8 +498,8 @@ When spawned, each agent receives this context and focuses narrowly:
 ```
 [Main Menu]
   ├─ NAMC Career (motocross)
-  │   ├─ c125 (limited entry, 125cc)
-  │   ├─ c250 (open, 250cc)
+  │   ├─ c250p (restricted, 250cc limited capacity)
+  │   ├─ c250 (open, 250cc full power)
   │   └─ c350 (pro, 350cc)
   │
   ├─ GP Career (road racing)
@@ -526,7 +526,7 @@ When spawned, each agent receives this context and focuses narrowly:
 
 [Demo Loop]:
   1. Create career (pick NAMC/GP/SBK)
-  2. Pick class (c350 in NAMC, Moto3 in GP, SSP300 in SBK)
+  2. Pick class (c250p in NAMC, Moto3 in GP, SSP300 in SBK)
   3. Create team
   4. Play season 1-3 (see progression, budget growth, R&D)
   5. Progress to higher class (Moto3→Moto2, SSP300→SSP)
