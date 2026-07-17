@@ -26,7 +26,7 @@ public:
 	FOnRaceStarted OnRaceStarted;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "API")
-	FString BackendURL = FString(TEXT("http://localhost:3001"));
+	FString BackendURL = FString(TEXT("http://localhost:3000"));
 
 	UFUNCTION(BlueprintCallable, Category = "Hub")
 	void LoadHubScreenData();
