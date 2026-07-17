@@ -11,6 +11,40 @@ export type ClassId =
 /** NAMC runs two parallel championships. Road disciplines use 'road'. */
 export type ChampionshipId = 'road' | 'fourStroke' | 'twoStroke';
 
+// ============================================================================
+// PENALTY SYSTEM (v15.3 §13.1, §13.5, §12.4)
+// ============================================================================
+
+export type PenaltyTier = 1 | 2 | 3 | 4;
+
+export type PenaltyReason =
+  | 'aggressive-riding' | 'reckless-conduct' | 'unsportsmanlike'
+  | 'ballast-manipulation' | 'non-homologated-engine' | 'technical-violation'
+  | 'rules-infraction' | 'pit-lane-infraction' | 'driver-aid-violation';
+
+export interface Penalty {
+  id: string;
+  issuedRound: number;             // round number when penalty issued
+  tier: PenaltyTier;               // 1=warning, 2=fine, 3=suspension, 4=charter revocation
+  reason: PenaltyReason;
+  description: string;             // human-readable explanation
+  fineAmount?: number;             // for Tier 2 (all to Welfare Fund)
+  suspensionRounds?: number;       // for Tier 3 (1-4 consecutive rounds)
+  suspensionStart?: number;        // round to begin suspension
+  pointsForfeited?: number;        // points stripped if applicable
+  resolvedRound?: number;          // when suspension ends (if applicable)
+}
+
+export interface RiderWelfareFund {
+  totalAccumulated: number;        // sum of all fines collected
+  fineHistory: Array<{
+    round: number;
+    teamId: string;
+    amount: number;
+    reason: string;
+  }>;
+}
+
 export type RiderTrait =
   | 'wet-master' | 'holeshot-king' | 'late-braker' | 'ice-veins' | 'development-guru' | 'fan-favorite'
   | 'fragile' | 'reckless' | 'slow-starter';
@@ -118,6 +152,8 @@ export interface Rider {
   subbingFor?: string;        // Appendix B: active bench rider covering this injured starter
   ballastKg?: number;         // BOP success ballast (boss ruling 2026-07-17): win +2kg,
                               // podium +1kg, off-podium -1kg, cap 8kg, resets each season
+  suspendedForRounds?: number;// §13.1: suspension penalty countdown
+  suspensionReason?: string;  // reason for suspension
 }
 
 export type EngineMode = 'conserve' | 'standard' | 'push' | 'attack';
@@ -174,10 +210,12 @@ export interface Team {
   budget: number;       // cash on hand
   prestige: number;     // 1-100
   isPlayer: boolean;
-  strikes: number;      // NAMC three-strike system
+  strikes: number;      // NAMC three-strike system (legacy)
   classIds: ClassId[];  // classes this team fields riders in
   facilityLevel: number;// training facility level 1-5
   coachQuality: number; // coach skill modifier (0.8-1.5)
+  penalties: Penalty[]; // §13.1: all penalties issued to this team
+  charterRevoked?: boolean; // §13.1 Tier 4: charter permanently revoked (forces team fold)
 }
 
 export type ManufacturerReliability = 'fragile' | 'balanced' | 'bulletproof';

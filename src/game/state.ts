@@ -1,8 +1,9 @@
 // Game state: career save, standings, season progression, persistence.
 
-import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe } from '../data/types';
+import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe, RiderWelfareFund } from '../data/types';
 import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf, makeDraftRookie } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
+import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended } from './penalties';
 import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
@@ -43,6 +44,7 @@ export interface CareerState {
   history: { round: number; classId: ClassId; championship: ChampionshipId; winnerName: string; playerBest: string }[];
   leagueHealth: LeagueHealthRow[];
   messages: string[];
+  welfareFund: RiderWelfareFund;      // §13.5: Rider Welfare Fund ledger
 }
 
 export interface NewCareerOptions {
@@ -116,6 +118,7 @@ export function newCareer(opts: NewCareerOptions): CareerState {
     history: [],
     leagueHealth: [],
     messages: [`Welcome to the ${universe.season} season, boss. The paddock is yours.`],
+    welfareFund: { totalAccumulated: 0, fineHistory: [] },
   };
 }
 
@@ -205,32 +208,42 @@ function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): voi
 }
 
 /**
- * NAMC three-strike penalty system (rulebook §13.1): reckless riders or
- * unsportsmanlike teams may draw strikes. Each strike bumps the counter;
- * Strike 3 triggers suspension (handled at off-season).
- * Strikes reset each season.
+ * NAMC penalty enforcement (rulebook §13.1, §13.5): Four-Tier Graduated Penalties
+ * - Tier 1: Warning (reckless riders who crash)
+ * - Tier 2: Fine (unsportsmanlike conduct, rules infractions)
+ * - Tier 3: Suspension (ballast manipulation, deliberate violations)
+ * - Tier 4: Charter Revocation (terminal violations)
  */
 function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: WeekendResult[]): void {
   const u = state.universe;
   for (const w of weekends) {
     for (const s of w.sessions) {
       for (const ev of s.outcome.events) {
-        // Aggressive riders who crash have a small risk of a strike
+        // Aggressive riders who crash have a small risk of penalty
         if (ev.kind === 'crash') {
           const r = u.riders[ev.riderId];
           if (!r?.teamId || r.stats.aggression < 70) continue; // only aggressive riders at risk
-          if (rng() < 0.08) { // 8% chance per crash for aggressive riders
+          if (rng() < 0.08) { // 8% chance per crash
             const team = u.teams[r.teamId];
-            if (team.strikes < 3) {
-              team.strikes += 1;
-              const penalty = team.strikes === 1 ? 'warning' : team.strikes === 2 ? '5-point deduction' : 'suspension';
-              state.messages.unshift(`PENALTY: ${team.name} receives strike #{team.strikes} (${penalty}) for ${r.name}'s aggressive riding.`);
-            }
+            // Tier 1: Warning for reckless riding
+            const penalty = issuePenalty(team, 'aggressive-riding', state.round, 1);
+            state.messages.unshift(`⚠️ PENALTY: ${team.name} receives warning (Tier 1) for ${r.name}'s aggressive riding. Incident #${team.penalties.length}.`);
           }
         }
       }
     }
   }
+
+  // Collect any Tier 2 fines to welfare fund
+  for (const team of Object.values(u.teams)) {
+    const collected = collectFines(state, team, state.round);
+    if (collected > 0) {
+      state.messages.unshift(`💰 WELFARE FUND: ${team.name} fined $${collected.toLocaleString()}. Total fund: $${state.welfareFund.totalAccumulated.toLocaleString()}.`);
+    }
+  }
+
+  // Decrement all active suspensions
+  decrementSuspensions(state);
 }
 
 /** Post-race mental-state pass; surfaces storylines for player-team riders + focus class. */

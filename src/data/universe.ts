@@ -187,6 +187,8 @@ function makeTeam(rng: RNG, opts: {
     classIds: opts.classIds,
     facilityLevel: Math.max(1, Math.min(5, Math.floor((opts.prestige ?? 50) / 20))),
     coachQuality: 0.8 + ((opts.prestige ?? 50) / 100) * 0.7,
+    penalties: [],
+    charterRevoked: false,
   };
 }
 
@@ -400,18 +402,21 @@ export function gridOf(u: Universe, classId: ClassId, championship: Championship
     r.teamId !== null,
   );
 
-  // NAMC bench substitution: injured starters promoted by bench rider from same team.
-  // Rulebook 4.8.1 requires 2M+1F bench. If injured, next available bench replaces.
+  // NAMC bench substitution: injured/suspended starters promoted by bench rider.
+  // Rulebook 4.8.1 requires 2M+1F bench. If injured/suspended, next bench replaces.
   const grid: Rider[] = [];
   for (const starter of starters) {
-    if (starter.injuredForRounds === 0) {
+    // §13.1: Exclude suspended riders
+    const isSuspended = starter.suspendedForRounds && starter.suspendedForRounds > 0;
+    if (starter.injuredForRounds === 0 && !isSuspended) {
       grid.push(starter);
     } else {
       // Look for an available bench rider from the same team, same class/championship
       const bench = Object.values(u.riders).find(b =>
         b.bench && b.teamId === starter.teamId &&
         b.classId === classId && b.championship === championship &&
-        b.injuredForRounds === 0 && !b.subbingFor,  // not already subbing
+        b.injuredForRounds === 0 && !b.subbingFor &&
+        (!b.suspendedForRounds || b.suspendedForRounds <= 0),  // not suspended either
       );
       if (bench) {
         bench.subbingFor = starter.id;  // Track who they're covering
