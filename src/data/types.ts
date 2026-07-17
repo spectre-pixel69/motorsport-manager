@@ -152,10 +152,11 @@ export interface Rider {
   teamId: string | null;
   classId: ClassId | null;    // class they race in
   championship: ChampionshipId;
+  seasonsInCurrentClass: number; // tracks 250P max 2-season limit (rulebook §3.2)
   bench: boolean;             // NAMC reserve rider
   subbingFor?: string;        // Appendix B: active bench rider covering this injured starter
   ballastKg?: number;         // BOP success ballast (boss ruling 2026-07-17): win +2kg,
-                              // podium +1kg, off-podium -1kg, cap 8kg, resets each season
+                              // podium +1kg, off-podium -1kg, cap 12kg, resets each season
   suspendedForRounds?: number;// §13.1: suspension penalty countdown
   suspensionReason?: string;  // reason for suspension
 }

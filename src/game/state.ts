@@ -533,6 +533,30 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
     }
   }
 
+  // 4a. 250P Career Progression (rulebook §3.2): Restricted class max 2 seasons.
+  //     After 2 seasons in 250P, riders must graduate to open 250 class.
+  if (state.discipline === 'namc') {
+    for (const r of Object.values(u.riders)) {
+      if (!r.classId || !NAMC_CLASS_IDS.includes(r.classId)) continue;
+
+      // Increment seasons-in-class at off-season start
+      if (r.classId !== null) {
+        r.seasonsInCurrentClass = (r.seasonsInCurrentClass ?? 1) + 1;
+      }
+
+      // 250P graduation: after 2 seasons, must move to open 250 or retire
+      if (r.classId === 'c125') {  // c125 is the 250P restricted class
+        if (r.seasonsInCurrentClass > 2) {
+          // Force graduation to open 250
+          const prevClass = r.classId;
+          r.classId = 'c250';
+          r.seasonsInCurrentClass = 1;  // reset counter for new class
+          notes.push(`${r.name} graduates from 250P to open 250 class after ${r.seasonsInCurrentClass + 1} seasons`);
+        }
+      }
+    }
+  }
+
   // 5. The full off-season cycle (rulebook §4.10-4.14), in league order:
   //    retirements -> contract expiries (lockdown: no signings until Draft
   //    Day) -> the NAMC Draft (reverse standings, no pick trading) -> Free

@@ -125,6 +125,7 @@ function makeRider(
     teamId: opts.teamId,
     classId: opts.classId,
     championship: opts.championship,
+    seasonsInCurrentClass: 1,  // starts at 1 for their first season
     bench: opts.bench ?? false,
   };
 
