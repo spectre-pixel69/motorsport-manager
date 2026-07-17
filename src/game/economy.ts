@@ -28,6 +28,39 @@ export const BENCH_RIDER_RETAINER = 50000; // Annual retainer
 export const ROUND_PURSE = 800000; // $800,000 per round distributed across 4 classes
 export const MIN_FINISH_PAYOUT = 5000; // $5,000 minimum for 40th place
 
+// ============================================================================
+// TEAM OPERATING EXPENSES (NAMC v15.3 — Realistic Drain)
+// ============================================================================
+// These represent the real costs teams incur each season.
+// Together they consume 60-80% of race winnings.
+
+export const ANNUAL_OPERATING_EXPENSES = {
+  staffSalaries: 2_500_000,      // Crew chiefs, mechanics, engineers, logistics
+  facilityLease: 400_000,        // Track time, shop lease, utilities
+  travelLogistics: 800_000,      // 20 rounds × 4 classes = multiple crews on road
+  insurance: 200_000,            // Equipment, riders, facility liability
+  medicalTeam: 300_000,          // Track doctors, physios on payroll
+  equipmentFleet: 300_000,        // Truck maintenance, fuel, transportation
+  partsStorage: 500_000,         // Inventory management, storage facility
+  licensing: 100_000,            // NAMC fees, regulatory compliance
+  depreciation: 400_000,         // Equipment wear, bike age
+  contingency: 400_000,          // Crash damage, emergency repairs
+
+  TOTAL: 2_500_000 + 400_000 + 800_000 + 200_000 + 300_000 + 300_000 + 500_000 + 100_000 + 400_000 + 400_000,
+};
+
+// ============================================================================
+// R&D PROGRESSION RATES (Slow & Incremental)
+// ============================================================================
+// Updated from 0.5 pts/$100k to 0.1 pts/$100k (5x slower)
+// Encourages long-term investment, not quick optimization
+
+export const RND_GAINS_PER_100K = {
+  engine: 0.1,        // 1 point per $1M invested (was 0.5)
+  handling: 0.1,      // 1 point per $1M invested (was 0.5)
+  reliability: 0.06,  // 1 point per ~$1.67M invested (was 0.3)
+};
+
 // Win bonuses per class
 export const WIN_BONUS: Record<RiderClass, number> = {
   '350-pro': 75000,

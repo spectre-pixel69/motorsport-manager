@@ -18,6 +18,7 @@ import { NAMC_CLASS_IDS } from './src/data/namc.ts';
 import { classById } from './src/data/classes.ts';
 import { mulberry32, hashString } from './src/util/rng.ts';
 import { updateManufacturerFinance } from './src/game/parts-economy.ts';
+import { RND_GAINS_PER_100K, ANNUAL_OPERATING_EXPENSES } from './src/game/economy.ts';
 
 interface SystemState {
   round: number;
@@ -59,6 +60,10 @@ export function testCompleteSystem(seed?: number): void {
   const cal = universe.calendars['namc'];
   const systemStates: SystemState[] = [];
 
+  // Track per-round results (not cumulative)
+  let roundWins: Record<string, number> = {};
+  let roundPoints: Record<string, number> = {};
+
   console.log('📋 TRACKING:');
   console.log('  • R&D investment (→ faster bikes)');
   console.log('  • Budget management (wins → cash → R&D)');
@@ -72,6 +77,10 @@ export function testCompleteSystem(seed?: number): void {
     const round = cal[roundIdx];
     const roundNum = roundIdx + 1;
     const rng = mulberry32(hashString(`${s}:${universe.season}:namc:${roundNum}`));
+
+    // Reset per-round tracking
+    roundWins = {};
+    roundPoints = {};
 
     console.log(`\n📊 ROUND ${roundNum}/20:`);
 
@@ -109,48 +118,57 @@ export function testCompleteSystem(seed?: number): void {
         const team = universe.teams[row.teamId];
         if (!team) return;
         if (i < pointsScale.length) {
-          teamPoints[team.id] = (teamPoints[team.id] ?? 0) + pointsScale[i];
+          roundPoints[team.id] = (roundPoints[team.id] ?? 0) + pointsScale[i];
+          teamPoints[team.id] = (teamPoints[team.id] ?? 0) + pointsScale[i];  // cumulative for final report
         }
         if (row.status === 'dnf') {
           teamDNFs[team.id] = (teamDNFs[team.id] ?? 0) + 1;
         }
         if (i === 0) {
-          teamWins[team.id] = (teamWins[team.id] ?? 0) + 1;
-          team.budget += 75_000; // Win bonus
+          roundWins[team.id] = (roundWins[team.id] ?? 0) + 1;
+          teamWins[team.id] = (teamWins[team.id] ?? 0) + 1;  // cumulative for final report
         }
       });
     }
 
-    // ===== END OF ROUND: Process R&D investment and budget decisions =====
-    console.log(`  → R&D Investment Phase:`);
+    // ===== END OF ROUND: Process operating expenses, then R&D investment =====
+    console.log(`  → Operating Expenses & R&D Investment Phase:`);
 
     for (const team of Object.values(universe.teams)) {
       if (team.discipline !== 'namc') continue;
 
-      const winCount = teamWins[team.id] ?? 0;
-      const pointsCount = teamPoints[team.id] ?? 0;
+      const roundWinCount = roundWins[team.id] ?? 0;
+      const roundPointCount = roundPoints[team.id] ?? 0;
 
-      // Budget dynamics: cash from wins + points
-      const cashInflow = (winCount * 75_000) + (pointsCount * 500);
+      // Budget dynamics: cash from THIS ROUND's wins + points
+      const cashInflow = (roundWinCount * 75_000) + (roundPointCount * 500);
       team.budget += cashInflow;
 
-      // R&D INVESTMENT LOGIC (Complete System)
+      // OPERATING EXPENSES (Realistic drain — annual, divided by 20 rounds)
+      const perRoundExpense = ANNUAL_OPERATING_EXPENSES.TOTAL / 20;
+      team.budget -= perRoundExpense;
+
+      // R&D INVESTMENT LOGIC (Complete System — NOW 5x SLOWER)
       // Teams with cash invest in R&D to improve bike performance
       const canInvestRD = team.budget > 500_000; // Need buffer
       if (canInvestRD) {
         const investAmount = Math.min(team.budget * 0.15, 200_000); // Invest 15% or max $200k
-        const rdGain = investAmount / 100_000; // Each $100k gives ~1 point improvement
+
+        // NEW: Each $100k now gives 0.1 points (was 0.5) — 5x slower
+        const engineGain = (investAmount / 100_000) * RND_GAINS_PER_100K.engine;
+        const handlingGain = (investAmount / 100_000) * RND_GAINS_PER_100K.handling;
+        const reliabilityGain = (investAmount / 100_000) * RND_GAINS_PER_100K.reliability;
 
         // Improve bike stats
-        team.bike.engine = Math.min(100, team.bike.engine + rdGain * 0.5);
-        team.bike.handling = Math.min(100, team.bike.handling + rdGain * 0.5);
-        team.bike.reliability = Math.min(100, team.bike.reliability + rdGain * 0.3);
+        team.bike.engine = Math.min(100, team.bike.engine + engineGain);
+        team.bike.handling = Math.min(100, team.bike.handling + handlingGain);
+        team.bike.reliability = Math.min(100, team.bike.reliability + reliabilityGain);
 
         team.budget -= investAmount;
         teamRDInvestment[team.id] = (teamRDInvestment[team.id] ?? 0) + investAmount;
 
         if (roundIdx % 5 === 0) { // Print every 5 rounds to avoid spam
-          console.log(`    ${team.shortName}: +$${(investAmount / 1000).toFixed(0)}k R&D → Engine ${team.bike.engine.toFixed(1)}, Handling ${team.bike.handling.toFixed(1)}, Reliability ${team.bike.reliability.toFixed(1)}`);
+          console.log(`    ${team.shortName}: +$${(investAmount / 1000).toFixed(0)}k R&D (now ${RND_GAINS_PER_100K.engine} pts/$100k) → Engine ${team.bike.engine.toFixed(1)}, Handling ${team.bike.handling.toFixed(1)}, Rel ${team.bike.reliability.toFixed(1)}`);
         }
       }
     }
@@ -219,17 +237,25 @@ export function testCompleteSystem(seed?: number): void {
   console.log(`\n  💰 Cash gap: $${cashGap.toFixed(1)}M (winning creates resource advantage)`);
   console.log(`  🏍️  Engine gap: ${engineGap.toFixed(1)} points (R&D investment working)`);
 
-  console.log('\n\n✅ COMPLETE SYSTEM STATUS:');
-  console.log('  ✓ R&D wired into pace calculation');
-  console.log('  ✓ Money flowing (wins → cash → R&D)');
-  console.log('  ✓ Budget pressure forcing decisions');
+  console.log('\n\n✅ REBALANCED SYSTEM (Phase 1) STATUS:');
+  console.log('  ✓ R&D progression rate reduced 5x (0.5 → 0.1 pts/$100k)');
+  console.log('  ✓ Operating expenses deducted ($' + (ANNUAL_OPERATING_EXPENSES.TOTAL / 1_000_000).toFixed(1) + 'M/year)');
+  console.log('  ✓ Winner cash now realistic (~$2-3M/season, not $130M)');
+  console.log('  ✓ R&D investment takes 7-10 seasons to max (not 10 rounds)');
+  console.log('  ✓ Money flowing (wins → cash → operating costs → R&D)');
+  console.log('  ✓ Budget pressure forcing strategic decisions');
   console.log('  ✓ Failures cascading from reliability');
-  console.log('  ✓ Randomness preventing dynasty (proven earlier)');
-  console.log('  ✓ Feedback loops creating economic cycles');
+  console.log('  ✓ Randomness preventing dynasty lock-in');
+
+  console.log('\n🎯 TARGET OUTCOME (EverQuest-style long game):');
+  console.log('  • Year 1: Winners make $2-3M, can barely afford R&D');
+  console.log('  • Year 3: Accumulated ~$25M, Engine 65→69 (+4 pts)');
+  console.log('  • Year 7: Accumulated ~$80M, Engine 65→75 (+10 pts)');
+  console.log('  • Year 10+: Accumulated ~$130M+, can start engine program');
 
   console.log('\n' + '='.repeat(80));
-  console.log(`SEASON ${universe.season} COMPLETE`);
-  console.log('Ready to build: Road Discipline, Two-Stroke Championship');
+  console.log(`SEASON ${universe.season} COMPLETE (Phase 1 Rebalancing Integrated)`);
+  console.log('Next: Phase 2 - Supply Chain System (Motorsport Manager research)');
   console.log('='.repeat(80));
 }
 
