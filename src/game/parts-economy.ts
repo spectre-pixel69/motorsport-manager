@@ -7,19 +7,35 @@ import { clamp } from '../util/rng';
 
 /**
  * Simulate manufacturer financial state each season.
- * Cash flow comes from engine sales revenue. In crisis, they can't fulfill orders.
- * ATK (parts company origin) is more resilient: higher cash buffer, lower cost multipliers.
+ * Revenue is FICTITIOUS: based on racing performance (wins/podiums/DNF).
+ * Manufacturers never go bankrupt — crisis means taking loans (simulated by cost premium).
+ * ATK (parts company) is more resilient: higher cash buffer, lower operating costs.
+ *
+ * @param mfg Manufacturer to update
+ * @param racePoints Cumulative championship points this season (measure of performance)
+ * @param raceWins Number of wins by this manufacturer's teams this season
+ * @param raceDNFs Number of DNF/failures by this manufacturer's teams
+ * @param rng Random number generator (for loan interest variance)
  */
 export function updateManufacturerFinance(
   mfg: Manufacturer,
-  orderCount: number,
+  racePoints: number,
+  raceWins: number,
+  raceDNFs: number,
   rng: () => number,
 ): void {
-  // Revenue from engine orders (simplified: $50k per fulfilled order)
-  const revenue = orderCount * 50_000;
-  mfg.cashOnHand += revenue;
+  // FICTITIOUS REVENUE: based on racing results (brand value from wins)
+  // Win = $100k per win (brand halo)
+  // Points = $500 per championship point (sponsorship/licensing tied to standing)
+  // DNF = -$50k per failure (brand damage)
+  const winRevenue = raceWins * 100_000;
+  const pointsRevenue = racePoints * 500;
+  const dnfPenalty = raceDNFs * 50_000;
+  const ficttiousRevenue = winRevenue + pointsRevenue - dnfPenalty;
 
-  // Operating costs (fixed: ~$200k/season for infrastructure; ATK $150k due to efficiency)
+  mfg.cashOnHand += ficttiousRevenue;
+
+  // Operating costs (fixed infrastructure: $200k/season; ATK $150k due to efficiency)
   const operatingCost = mfg.id === 'atk' ? 150_000 : 200_000;
   mfg.cashOnHand -= operatingCost;
 
@@ -32,30 +48,31 @@ export function updateManufacturerFinance(
   }
 
   // Determine financial state based on cash reserves (for non-ATK manufacturers)
+  // Crisis doesn't mean bankruptcy — it means they're taking loans (simulated by cost premium)
   const threshold = {
-    crisis: 100_000,      // below $100k = crisis
-    stressed: 300_000,    // $100k-$300k = stressed
-    stable: 500_000,      // $300k+ = stable
+    crisis: 50_000,       // below $50k = crisis (needs loans)
+    stressed: 300_000,    // $50k-$300k = stressed (high financing costs)
+    stable: 600_000,      // $300k+ = stable (healthy reserves)
   };
 
   const prevState = mfg.financialState;
 
   if (mfg.cashOnHand < threshold.crisis) {
     mfg.financialState = 'crisis';
-    mfg.productionCapacity = 0.5;    // only fulfill 50% of orders
-    mfg.costMultiplier = 1.5;        // 50% price increase
+    mfg.productionCapacity = 0.5;    // only fulfill 50% of orders (loan constraints)
+    mfg.costMultiplier = 1.6;        // 60% price increase (loan interest premium)
   } else if (mfg.cashOnHand < threshold.stressed) {
     mfg.financialState = 'stressed';
     mfg.productionCapacity = 0.7;    // fulfill 70% of orders
-    mfg.costMultiplier = 1.2;        // 20% price increase
+    mfg.costMultiplier = 1.25;       // 25% price increase (financing costs)
   } else if (mfg.cashOnHand > 800_000) {
     mfg.financialState = 'stable';
     mfg.productionCapacity = 1.0;    // fulfill all orders
-    mfg.costMultiplier = 1.0;        // no premium
+    mfg.costMultiplier = 1.0;        // no premium (strong cash position)
   } else if (prevState === 'crisis' && mfg.cashOnHand > threshold.stressed) {
     mfg.financialState = 'recovering';
     mfg.productionCapacity = 0.8;    // coming back online
-    mfg.costMultiplier = 1.15;
+    mfg.costMultiplier = 1.18;       // reduced financing costs
   }
 }
 

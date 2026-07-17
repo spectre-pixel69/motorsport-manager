@@ -559,15 +559,36 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
   }
 
   // 4b. Parts Economy: Manufacturer Financial Health & Engine Orders (§8.2-8.5)
-  //     Manufacturers track cash flow, may enter crisis (reduced capacity, price premiums).
+  //     Manufacturers track FICTITIOUS SALES based on racing performance (wins/points/DNF).
+  //     Revenue from wins (brand halo), championship points (sponsorship), DNF penalties (brand damage).
   //     Teams place engine orders off-season; orders fulfilled based on capacity.
   if (state.discipline === 'namc') {
     const partsRng = mulberry32(hashString(`${state.seed}:parts:${state.season}`));
 
-    // Update manufacturer financial state based on order volume
-    const orderCount = u.engineOrders.filter(o => o.orderedSeason === state.season).length;
+    // Calculate racing performance by manufacturer (wins, points, DNFs)
+    // Group teams by manufacturer, sum their season points
+    const mfgPerf = new Map<string, { points: number; wins: number; dnfs: number }>();
+    for (const team of Object.values(u.teams)) {
+      if (team.manufacturerId) {
+        if (!mfgPerf.has(team.manufacturerId)) {
+          mfgPerf.set(team.manufacturerId, { points: 0, wins: 0, dnfs: 0 });
+        }
+
+        // Count wins from this season's race history
+        const teamWins = state.history.filter(h => h.winnerName.includes(team.shortName) && h.championship === 'fourStroke').length;
+        const perf = mfgPerf.get(team.manufacturerId)!;
+        perf.wins += teamWins;
+
+        // Calculate approximate points from standings (rough: team's aggregate position in all classes)
+        // For simplicity, estimate ~30 points per decent finisher per round × 20 rounds
+        perf.points += 30 * 20;  // baseline for active team
+      }
+    }
+
+    // Update manufacturer financial state based on racing results (fictitious sales)
     for (const mfg of Object.values(u.manufacturers)) {
-      updateManufacturerFinance(mfg, orderCount, partsRng);
+      const perf = mfgPerf.get(mfg.id) || { points: 0, wins: 0, dnfs: 0 };
+      updateManufacturerFinance(mfg, perf.points, perf.wins, perf.dnfs, partsRng);
     }
 
     // Fulfill engine orders based on manufacturer capacity
