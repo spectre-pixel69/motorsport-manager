@@ -8,6 +8,7 @@ import { runNamcWeekend, runRoadWeekend, runGPWeekend, runSBKWeekend, type Weeke
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
 import { generateNewsForRound } from './news';
+import { generateTrackDaysForRound } from './trackDays';
 import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
 import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
@@ -211,6 +212,15 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
     // Show a brief note if there's big news from other leagues
     const headlines = newsThisRound.slice(0, 2).map(n => n.headline).join(' • ');
     state.messages.unshift(`📺 Ryan's reporting: ${headlines}`);
+  }
+
+  // Generate technical track days commentary for player's team
+  const trackDaysThisRound = generateTrackDaysForRound(u, rng, round.round, state.playerTeamId);
+  u.trackDaysArchive.push(...trackDaysThisRound);
+  if (trackDaysThisRound.length > 0) {
+    // Show a brief note about technical updates
+    const headlines = trackDaysThisRound.slice(0, 1).map(t => t.headline).join(' • ');
+    state.messages.unshift(`🔧 Dustin's update: ${headlines}`);
   }
 
   state.round += 1;

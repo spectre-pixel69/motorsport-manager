@@ -393,6 +393,7 @@ export function buildUniverse(seed: number, season = 2027): Universe {
     calendars: { gp: [], sbk: [], namc: [] },
     engineOrders: [],
     newsArchive: [],
+    trackDaysArchive: [],
   };
   buildTracks(u);
   buildRoadDiscipline(rng, u, 'gp', GP_TEAMS, GP_STARS, mfgs);

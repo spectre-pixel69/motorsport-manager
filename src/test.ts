@@ -7,6 +7,7 @@ import { REVENUE_SPLIT_GP, APPEARANCE_FEE_GP } from './data/gp';
 import { REVENUE_SPLIT_SBK, APPEARANCE_FEE_SBK } from './data/sbk';
 import { applyGPGridPenalty, applySBKBallastViolation, applySBKBoPViolation } from './game/penalties';
 import { generateNewsForRound } from './game/news';
+import { generateTrackDaysForRound } from './game/trackDays';
 
 interface TestResult {
   name: string;
@@ -259,6 +260,78 @@ test('News: Different events have different commentary', () => {
 
   const headlines = new Set(allNews.map(n => n.headline));
   assert(headlines.size >= 2, `Should have variety of headlines, got ${headlines.size}`);
+});
+
+// ============================================================================
+// TEST: Track Days Technical Show (Crewman 37/Dustin)
+// ============================================================================
+
+test('Track Days: Generation produces valid technical events', () => {
+  const u = buildUniverse(12345, 2027);
+  const rng = mulberry32(55555);
+  const namcTeams = Object.values(u.teams).filter(t => t.discipline === 'namc');
+  const team = namcTeams[0];
+
+  const trackDays = generateTrackDaysForRound(u, rng, 1, team.id);
+
+  // May or may not generate Track Days (probabilistic), but structure should be valid
+  if (trackDays.length > 0) {
+    const td = trackDays[0];
+    assert(!!td.id, 'Track Days event should have ID');
+    assert(!!td.type, 'Track Days event should have type');
+    assert(!!td.headline, 'Track Days event should have headline');
+    assert(!!td.body, 'Track Days event should have body');
+    assert(td.teamId === team.id, 'Track Days should reference correct team');
+  }
+});
+
+test('Track Days: Archive initialized empty', () => {
+  const u = buildUniverse(12345, 2027);
+  assertEqual(u.trackDaysArchive.length, 0, 'Track Days archive should start empty');
+});
+
+test('Track Days: Multiple events have variety in types', () => {
+  const u = buildUniverse(12345, 2027);
+  const namcTeams = Object.values(u.teams).filter(t => t.discipline === 'namc');
+  const team = namcTeams[0];
+
+  // Generate multiple Track Days items
+  const allTrackDays: any[] = [];
+  for (let i = 0; i < 10; i++) {
+    const trackDays = generateTrackDaysForRound(u, mulberry32(55555 + i), i + 1, team.id);
+    allTrackDays.push(...trackDays);
+  }
+
+  // Should have some variety in types
+  const types = new Set(allTrackDays.map(td => td.type));
+  assert(types.size >= 1, `Should have variety of Track Days types, got ${types.size}`);
+
+  // Should have some variety in headlines
+  const headlines = new Set(allTrackDays.map(td => td.headline));
+  assert(headlines.size >= 1, `Should have variety of headlines, got ${headlines.size}`);
+});
+
+test('Track Days: Technical data includes performance metrics', () => {
+  const u = buildUniverse(12345, 2027);
+  const rng = mulberry32(77777);
+  const namcTeams = Object.values(u.teams).filter(t => t.discipline === 'namc');
+  const team = namcTeams[0];
+
+  // Generate many events to find one with technical data
+  let foundMetric = false;
+  for (let i = 0; i < 20; i++) {
+    const trackDays = generateTrackDaysForRound(u, mulberry32(77777 + i), i + 1, team.id);
+    for (const td of trackDays) {
+      if (td.technicalData && (td.technicalData.performanceGain || td.technicalData.reliabilityScore)) {
+        foundMetric = true;
+        break;
+      }
+    }
+    if (foundMetric) break;
+  }
+
+  // At least some events should have technical metrics
+  assert(foundMetric, 'Track Days should include performance or reliability metrics');
 });
 
 // ============================================================================

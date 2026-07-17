@@ -413,6 +413,8 @@ export interface Universe {
   champExtension?: ChampionshipExtension;
   // Inter-league news archive
   newsArchive: NewsEvent[];
+  // Track Days technical commentary archive
+  trackDaysArchive: TrackDaysEvent[];
 }
 
 // ============================================================================
@@ -445,5 +447,37 @@ export interface NewsEvent {
   impact?: {
     riderMoraleShift?: Record<string, number>;  // teamId -> morale delta
     playerTeamSentiment?: number;               // -10 to +10 (bad news / good news for player)
+  };
+}
+
+// ============================================================================
+// TRACK DAYS TECHNICAL SHOW (Crewman 37/Dustin - Bike & Setup Analysis)
+// ============================================================================
+
+export type TrackDaysEventType =
+  | 'engine-optimization'   // Engine mode tuning, power output
+  | 'setup-breakthrough'    // Suspension/geometry improvement
+  | 'parts-upgrade'         // New engine/chassis/tire installation
+  | 'reliability-concern'   // Part wear, failure risk, rebuild needed
+  | 'performance-delta'     // Speed comparison vs. competitors
+  | 'tire-strategy'         // Tire choice performance analysis
+  | 'wear-analysis'         // Component mileage and degradation
+  | 'fuel-efficiency'       // Fuel burn rate and strategy
+  | 'technical-insight';    // Chassis balance, rider feedback, tuning notes
+
+export interface TrackDaysEvent {
+  id: string;
+  round: number;
+  type: TrackDaysEventType;
+  teamId: string;                  // player's team
+  riderId?: string;                // if rider-specific
+  componentType?: string;          // engine | chassis | tires | suspension | etc.
+  headline: string;               // brief technical headline
+  body: string;                   // Dustin's technical commentary
+  technicalData?: {
+    performanceGain?: number;      // lap time gain in milliseconds (can be negative)
+    reliabilityScore?: number;     // 0-100
+    estimatedMileage?: number;
+    setupAdjustments?: string[];   // ["compression +2", "rebound -1", etc.]
   };
 }
