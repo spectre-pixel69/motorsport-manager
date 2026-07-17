@@ -232,10 +232,10 @@ seasonReports.forEach(season => {
   const c350 = season.racingSummary.classChampions['c350']?.name || '(no data)';
   const c250 = season.racingSummary.classChampions['c250']?.name || '(no data)';
   const women = season.racingSummary.classChampions['women']?.name || '(no data)';
-  const c125 = season.racingSummary.classChampions['c125']?.name || '(no data)';
+  const c250p = season.racingSummary.classChampions['c250p']?.name || '(no data)';
 
   console.log(
-    `${season.season}    | ${c350.padEnd(15)} | ${c250.padEnd(11)} | ${women.padEnd(14)} | ${c125}`
+    `${season.season}    | ${c350.padEnd(15)} | ${c250.padEnd(11)} | ${women.padEnd(14)} | ${c250p}`
   );
 });
 
@@ -299,14 +299,14 @@ console.log('Free Agent Signing Activity by Class (all seasons):\n');
 const c250Signings: string[] = [];
 const c350Signings: string[] = [];
 const womenSignings: string[] = [];
-const c125Signings: string[] = [];
+const c250pSignings: string[] = [];
 
 seasonReports.forEach(season => {
   season.offSeason.faSignings.forEach(sig => {
     if (sig.classId === 'c250') c250Signings.push(`${sig.rider} → ${sig.toTeam}`);
     if (sig.classId === 'c350') c350Signings.push(`${sig.rider} → ${sig.toTeam}`);
     if (sig.classId === 'women') womenSignings.push(`${sig.rider} → ${sig.toTeam}`);
-    if (sig.classId === 'c125') c125Signings.push(`${sig.rider} → ${sig.toTeam}`);
+    if (sig.classId === 'c250p') c250pSignings.push(`${sig.rider} → ${sig.toTeam}`);
   });
 });
 
@@ -328,10 +328,10 @@ if (womenSignings.length > 0) {
   console.log();
 }
 
-if (c125Signings.length > 0) {
-  console.log(`🔰 250P FEEDER CLASS FA SIGNINGS (${c125Signings.length} total):`);
-  c125Signings.slice(0, 8).forEach(sig => console.log(`   • ${sig}`));
-  if (c125Signings.length > 8) console.log(`   ... and ${c125Signings.length - 8} more`);
+if (c250pSignings.length > 0) {
+  console.log(`🔰 250P FEEDER CLASS FA SIGNINGS (${c250pSignings.length} total):`);
+  c250pSignings.slice(0, 8).forEach(sig => console.log(`   • ${sig}`));
+  if (c250pSignings.length > 8) console.log(`   ... and ${c250pSignings.length - 8} more`);
   console.log();
 }
 

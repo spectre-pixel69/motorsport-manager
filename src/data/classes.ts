@@ -15,9 +15,8 @@ export const CLASSES: ClassDef[] = [
   { id: 'c350', name: '350 Class', shortName: '350', discipline: 'namc', tier: 1, gridSize: 40, salaryFloor: 400_000 },
   { id: 'c250', name: '250 Class', shortName: '250', discipline: 'namc', tier: 2, gridSize: 40, salaryFloor: 200_000 },
   { id: 'women', name: "Women's Pro Class", shortName: 'WPRO', discipline: 'namc', tier: 3, gridSize: 40, salaryFloor: 100_000, womenOnly: true },
-  // 250P: a 250 tuned down to 125-spec output — the "P" denotes the restriction.
-  // (Internal id stays 'c125' for save/key compatibility.)
-  { id: 'c125', name: '250P Restricted', shortName: '250P', discipline: 'namc', tier: 4, gridSize: 40, salaryFloor: 100_000 },
+  // 250P: a 250 tuned down to restricted output — the "P" denotes the restriction.
+  { id: 'c250p', name: '250P Restricted', shortName: '250P', discipline: 'namc', tier: 4, gridSize: 40, salaryFloor: 100_000 },
 ];
 
 export const classById = (id: ClassId): ClassDef => CLASSES.find(c => c.id === id)!;

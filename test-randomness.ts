@@ -31,7 +31,7 @@ console.log('='.repeat(80));
 
 console.log('\n📊 CHAMPIONSHIP WINNERS BY CLASS (Season 1-5):');
 
-const classes = ['c350', 'c250', 'women', 'c125'];
+const classes = ['c350', 'c250', 'women', 'c250p'];
 for (const cls of classes) {
   console.log(`\n  ${cls.toUpperCase()}:`);
   results.forEach((r, i) => {

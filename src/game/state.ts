@@ -102,7 +102,7 @@ export function newCareer(opts: NewCareerOptions): CareerState {
   }
 
   const focusClass: ClassId = opts.discipline === 'namc'
-    ? 'c125'
+    ? 'c250p'
     : opts.discipline === 'gp' ? (opts.mode === 'takeover' ? 'gp1' : 'gp3') : (opts.mode === 'takeover' ? 'sbk' : 'ss300');
 
   return {
@@ -546,7 +546,7 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
       }
 
       // 250P graduation: after 2 seasons, must move to open 250 or retire
-      if (r.classId === 'c125') {  // c125 is the 250P restricted class
+      if (r.classId === 'c250p') {  // c250p is the 250P restricted class
         if (r.seasonsInCurrentClass > 2) {
           // Force graduation to open 250
           const prevClass = r.classId;

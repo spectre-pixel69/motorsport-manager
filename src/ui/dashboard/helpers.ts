@@ -9,7 +9,7 @@ export function getChampionshipForClass(classId: ClassId): 'fourStroke' | 'twoSt
   switch (classId) {
     case 'c350':
     case 'c250':
-    case 'c125':
+    case 'c250p':
     case 'women':
       return 'fourStroke';
     default:
@@ -23,7 +23,7 @@ export function getClassColor(classId: ClassId): string {
       return '#FF9800'; // Orange
     case 'c250':
       return '#2196F3'; // Blue
-    case 'c125':
+    case 'c250p':
       return '#E91E63'; // Pink/Red
     case 'women':
       return '#9C27B0'; // Purple

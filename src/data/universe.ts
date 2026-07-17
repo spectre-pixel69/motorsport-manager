@@ -290,7 +290,7 @@ function buildNAMC(rng: RNG, u: Universe, manufacturers: ReturnType<typeof initi
         const female = cls === 'women';
         const base = cls === 'c350' ? 66 + prestige * 0.2 : cls === 'c250' ? 60 + prestige * 0.18 : 52 + prestige * 0.16;
         const rider = makeRider(rng, { discipline: 'namc', base, classId: cls, championship, teamId: team.id, female, usedNumbers: numbersFor(championship, cls) });
-        if (cls === 'c125') rider.age = irange(rng, 18, 22);
+        if (cls === 'c250p') rider.age = irange(rng, 18, 22);
         u.riders[rider.id] = rider;
       }
     }

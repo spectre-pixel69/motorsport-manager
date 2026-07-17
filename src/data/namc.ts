@@ -38,13 +38,13 @@ export const PURSE_250P = scaledPurse(20_000);   // win $20,000 (§5.2), sum ~$1
 export const PURSES: Record<string, number[]> = {
   c350: PURSE_350,
   c250: PURSE_250,
-  c125: PURSE_250P,   // 250P Restricted (internal id c125)
+  c250p: PURSE_250P,   // 250P Restricted
   women: PURSE_WOMEN,
 };
 
 // ---- 4.3 / 4.4 rider compensation
 export const SALARY_FLOORS: Record<string, number> = {
-  c350: 400_000, c250: 200_000, c125: 100_000, women: 100_000,
+  c350: 400_000, c250: 200_000, c250p: 100_000, women: 100_000,
 };
 export const APPEARANCE_FEE = 1_000;        // per round
 export const RESERVE_RETAINER = 50_000;     // bench riders
@@ -83,8 +83,8 @@ export const CHARTERS_PER_CHAMPIONSHIP = 20;
 export const RIDERS_PER_CLASS_PER_TEAM = 2;
 export const BENCH_SIZE = 3;      // 2 male + 1 female (4.8.1)
 
-// Tier weighting order: 350 > 250 > Women's > 250P (c125 = 250P internal id)
-export const NAMC_CLASS_IDS: ClassId[] = ['c350', 'c250', 'women', 'c125'];
+// Tier weighting order: 350 > 250 > Women's > 250P Restricted
+export const NAMC_CLASS_IDS: ClassId[] = ['c350', 'c250', 'women', 'c250p'];
 
 // Race lengths — rulebook v15.1 §3.6: Sprint 12 min + 1 lap (0.5x),
 // Main Event 35 min + 2 laps (1.0x). ALL four classes run identical

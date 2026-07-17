@@ -2,11 +2,11 @@
 
 export type DisciplineId = 'gp' | 'sbk' | 'namc';
 
-/** GP: gp3 -> gp2 -> gp1 ; SBK: ss300 -> ss600 -> sbk ; NAMC: c125 -> c250 -> c350 (+ women) */
+/** GP: gp3 -> gp2 -> gp1 ; SBK: ss300 -> ss600 -> sbk ; NAMC: c250p -> c250 -> c350 (+ women) */
 export type ClassId =
   | 'gp1' | 'gp2' | 'gp3'
   | 'sbk' | 'ss600' | 'ss300'
-  | 'c350' | 'c250' | 'c125' | 'women';
+  | 'c350' | 'c250' | 'c250p' | 'women';
 
 /** NAMC runs two parallel championships. Road disciplines use 'road'. */
 export type ChampionshipId = 'road' | 'fourStroke' | 'twoStroke';
