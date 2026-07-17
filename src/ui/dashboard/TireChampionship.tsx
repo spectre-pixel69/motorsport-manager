@@ -1,30 +1,42 @@
 // Tire Championship - Shows which tire brand is leading in this class
 
+import type { Rider, Universe } from '../../data/types';
+
 interface StandingEntry {
-  rider: any;
+  rider: Rider;
   pts: number;
 }
 
 interface Props {
   standings: StandingEntry[];
+  universe: Universe;
 }
 
-export function TireChampionship({ standings }: Props) {
-  // Aggregate tire brand points from all riders
+export function TireChampionship({ standings, universe }: Props) {
+  // Aggregate tire brand points from all riders based on their team's tire brand
   const tireBrands = new Map<string, {
-    brand: string;
+    brandId: string;
+    brandName: string;
     points: number;
   }>();
 
   standings.forEach(entry => {
-    // Riders should have tire info if available
-    const brand = entry.rider.tireId || 'Unknown';
-    const existing = tireBrands.get(brand);
+    if (!entry.rider.teamId) return;
+
+    const team = universe.teams[entry.rider.teamId];
+    if (!team) return;
+
+    const brand = universe.tireBrands[team.tireBrandId];
+    const brandId = team.tireBrandId;
+    const brandName = brand?.name || 'Unknown';
+
+    const existing = tireBrands.get(brandId);
     if (existing) {
       existing.points += entry.pts;
     } else {
-      tireBrands.set(brand, {
-        brand,
+      tireBrands.set(brandId, {
+        brandId,
+        brandName,
         points: entry.pts,
       });
     }
@@ -48,9 +60,9 @@ export function TireChampionship({ standings }: Props) {
             <div class="col-podiums">Podiums</div>
           </div>
           {sorted.slice(0, 6).map((entry, idx) => (
-            <div class="table-row" key={entry.brand}>
+            <div class="table-row" key={entry.brandId}>
               <div class="col-pos">{idx + 1}</div>
-              <div class="col-brand">{entry.brand}</div>
+              <div class="col-brand">{entry.brandName}</div>
               <div class="col-points">{entry.points}</div>
               <div class="col-wins">—</div>
               <div class="col-podiums">—</div>

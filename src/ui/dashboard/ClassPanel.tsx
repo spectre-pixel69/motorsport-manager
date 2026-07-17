@@ -66,7 +66,7 @@ export function ClassPanel({
         {/* Center: Standings + Tire Championship */}
         <div class="panel-section standings-section">
           <ChampionshipStandings standings={standings} />
-          <TireChampionship standings={standings} />
+          <TireChampionship standings={standings} universe={u} />
         </div>
 
         {/* Right: Financial Tracker */}
