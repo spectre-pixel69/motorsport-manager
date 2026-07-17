@@ -229,10 +229,10 @@ test('News: Generation produces valid news events', () => {
   // May or may not generate news (probabilistic), but if it does, structure is valid
   if (news.length > 0) {
     const n = news[0];
-    assert(n.id, 'News should have ID');
-    assert(n.type, 'News should have type');
-    assert(n.headline, 'News should have headline');
-    assert(n.body, 'News should have body');
+    assert(!!n.id, 'News should have ID');
+    assert(!!n.type, 'News should have type');
+    assert(!!n.headline, 'News should have headline');
+    assert(!!n.body, 'News should have body');
     assert(n.discipline !== 'namc', 'News should be from different discipline');
   }
 });

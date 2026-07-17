@@ -1,6 +1,7 @@
 // API Client - Calls to Express backend for team operations
 
-const API_BASE = process.env.API_URL || 'http://localhost:3000/api';
+// Default to localhost (can be overridden via Vite environment variables)
+const API_BASE = 'http://localhost:3000/api';
 
 export interface TeamUpdateResponse {
   success: boolean;
