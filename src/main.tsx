@@ -13,6 +13,7 @@ import { Placeholder } from './ui/Placeholder';
 import { OffSeason } from './ui/OffSeason';
 import { TrainingCenter } from './ui/training/TrainingCenter';
 import { PartsManager } from './ui/garage/PartsManager';
+import { RDCenter } from './ui/RDCenter';
 import { ridersOfTeam } from './data/universe';
 import type { WeekendResult } from './sim/weekend';
 
@@ -25,6 +26,7 @@ type Screen =
   | { id: 'showroom'; state: CareerState }
   | { id: 'garage'; state: CareerState }
   | { id: 'training'; state: CareerState }
+  | { id: 'rdcenter'; state: CareerState }
   | { id: 'placeholder'; state: CareerState; title: string; note?: string }
   | { id: 'offseason'; state: CareerState; report: OffSeasonReport };
 
@@ -81,6 +83,7 @@ function App() {
           onOpenShowroom={() => setScreen({ id: 'showroom', state: screen.state })}
           onOpenGarage={() => setScreen({ id: 'garage', state: screen.state })}
           onOpenTraining={() => setScreen({ id: 'training', state: screen.state })}
+          onOpenRDCenter={() => setScreen({ id: 'rdcenter', state: screen.state })}
           onOpenPlaceholder={(title, note) => setScreen({ id: 'placeholder', state: screen.state, title, note })}
           onRunOffSeason={() => {
             const report = advanceSeason(screen.state);
@@ -133,6 +136,10 @@ function App() {
           />
         );
       })()}
+
+      {screen.id === 'rdcenter' && (
+        <RDCenter state={screen.state} onExit={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }} />
+      )}
 
       {screen.id === 'offseason' && (
         <OffSeason state={screen.state} report={screen.report} onDone={() => { saveCareer(screen.state); setScreen({ id: 'hub', state: screen.state }); }} />

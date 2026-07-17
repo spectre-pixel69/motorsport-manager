@@ -28,6 +28,7 @@ interface Props {
   onOpenShowroom: () => void;
   onOpenGarage: () => void;
   onOpenTraining: () => void;
+  onOpenRDCenter: () => void;
   onOpenPlaceholder: (title: string, note?: string) => void;
   onRunOffSeason: () => void;
   onViewDashboard?: () => void;
@@ -40,6 +41,7 @@ export function HubScreen({
   onOpenShowroom,
   onOpenGarage,
   onOpenTraining,
+  onOpenRDCenter,
   onOpenPlaceholder,
   onRunOffSeason,
   onViewDashboard,
@@ -155,7 +157,7 @@ export function HubScreen({
           <button onClick={() => setOverlay('showroom')} class={overlay === 'showroom' ? 'active' : ''} title="Shop">🛍️</button>
           <button onClick={() => setOverlay('garage')} class={overlay === 'garage' ? 'active' : ''} title="Garage">🔧</button>
           <button onClick={() => setOverlay('training')} title="Training">🏋️</button>
-          <button onClick={() => { setOverlay('placeholder'); setPlaceholderTitle('R&D Center'); setPlaceholderNote('Complexity / Power / Adaptability design.'); }}>🧪</button>
+          <button onClick={onOpenRDCenter} title="R&D Center">🧪</button>
           <button onClick={() => setPanel('race')} class={panel === 'race' ? 'active' : ''} title="Race">🏁</button>
           <button onClick={() => setPanel('standings')} class={panel === 'standings' ? 'active' : ''} title="Standings">📈</button>
           <button onClick={() => setPanel('team')} class={panel === 'team' ? 'active' : ''} title="Team">👥</button>
