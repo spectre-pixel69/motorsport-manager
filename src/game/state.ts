@@ -3,7 +3,7 @@
 import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe, RiderWelfareFund } from '../data/types';
 import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf, makeDraftRookie } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
-import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended, applyCharterRevocation } from './penalties';
+import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended, applyCharterRevocation, trackTerminalViolation } from './penalties';
 import { runNamcWeekend, runRoadWeekend, runGPWeekend, runSBKWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
@@ -347,6 +347,56 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
     }
   }
 
+  // §12.4 Terminal Technical Violations — rare scrutineering catches
+  for (const w of weekends) {
+    // Deliberate ballast manipulation: teams whose riders carry heavy BOP
+    // ballast have a small chance of being caught shaving it at weigh-in
+    const heavyBallastByTeam: Record<string, string[]> = {};
+    for (const riderId of w.finishOrder) {
+      const r = u.riders[riderId];
+      if (r?.teamId && (r.ballastKg ?? 0) >= 6) (heavyBallastByTeam[r.teamId] ??= []).push(riderId);
+    }
+    for (const [teamId, riderIds] of Object.entries(heavyBallastByTeam)) {
+      const team = u.teams[teamId];
+      if (!team || team.charterRevoked) continue;
+      if (rng() < 0.004) {
+        const penalty = trackTerminalViolation(team, 'ballast-manipulation', state.round, riderIds);
+        if (penalty.tier === 4) {
+          state.messages.unshift(`🚨 §12.4 SECOND OFFENSE: ${team.name} caught manipulating ballast again — CHARTER REVOKED.`);
+        } else {
+          const offender = u.riders[riderIds[0]];
+          if (offender) offender.suspendedForRounds = Math.max(offender.suspendedForRounds ?? 0, penalty.suspensionRounds ?? 1);
+          state.messages.unshift(`🚨 §12.4: ${team.name} caught deliberately manipulating ballast — Tier 3: $75k fine, ${penalty.suspensionRounds}-round suspension, public notice. Commission review pending.`);
+        }
+      }
+    }
+
+    // Non-homologated engine: post-race teardown finds an illegal spec.
+    // Teams running extreme engine performance carry more homologation risk.
+    const teamsInWeekend = new Set(
+      w.finishOrder.map(id => u.riders[id]?.teamId).filter((t): t is string => !!t),
+    );
+    for (const teamId of teamsInWeekend) {
+      const team = u.teams[teamId];
+      if (!team || team.charterRevoked) continue;
+      const teardownRisk = team.bike.engine >= 92 ? 0.003 : team.bike.engine >= 85 ? 0.001 : 0.0003;
+      if (rng() < teardownRisk) {
+        const dqRiders = w.finishOrder.filter(id => u.riders[id]?.teamId === teamId);
+        const penalty = trackTerminalViolation(team, 'non-homologated-engine', state.round, dqRiders);
+        // §12.4: DQ — all round points forfeited
+        for (const riderId of dqRiders) {
+          const pts = w.points[riderId] ?? 0;
+          if (pts > 0) {
+            penalty.pointsForfeitedByRound![riderId] = pts;
+            stripRoundPoints(state, w, riderId, pts);
+          }
+        }
+        const names = dqRiders.map(id => u.riders[id]?.name).filter(Boolean).join(', ');
+        state.messages.unshift(`🚫 §12.4 DQ: ${team.name} — non-homologated engine found in teardown. ${names} stripped of all Round ${state.round + 1} points. Commission review within 14 days.`);
+      }
+    }
+  }
+
   // Collect any Tier 2 fines to welfare fund
   for (const team of Object.values(u.teams)) {
     const collected = collectFines(state, team, state.round);
@@ -364,6 +414,35 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
 
   // Decrement all active suspensions
   decrementSuspensions(state);
+}
+
+/**
+ * §12.4 DQ: strip a rider's round points from the cached standings (rider and
+ * team tables), mirroring the keys applyPoints() writes to.
+ */
+function stripRoundPoints(state: CareerState, w: WeekendResult, riderId: string, pts: number): void {
+  const key = standingsKey(w.classId, w.championship);
+  const riders = state.standings.riders[key];
+  if (riders && riders[riderId] !== undefined) {
+    riders[riderId] = Math.max(0, riders[riderId] - pts);
+  }
+  const teamId = state.universe.riders[riderId]?.teamId;
+  if (!teamId) return;
+  const discipline = state.universe.teams[teamId]?.discipline ?? 'namc';
+  let tkey: string;
+  if (discipline === 'namc') {
+    tkey = w.championship === 'road' ? standingsKey(w.classId, 'road') : `team:${w.championship}`;
+  } else if (discipline === 'gp') {
+    tkey = `constructor:${w.classId}`;
+  } else if (discipline === 'sbk') {
+    tkey = `manufacturer:${w.classId}`;
+  } else {
+    tkey = standingsKey(w.classId, 'road');
+  }
+  const teams = state.standings.teams[tkey];
+  if (teams && teams[teamId] !== undefined) {
+    teams[teamId] = Math.max(0, teams[teamId] - pts);
+  }
 }
 
 /** Post-race mental-state pass; surfaces storylines for player-team riders + focus class. */

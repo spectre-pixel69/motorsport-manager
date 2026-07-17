@@ -140,8 +140,12 @@ export function decrementSuspensions(state: PenaltyState): void {
 }
 
 /**
- * Track a terminal technical violation (§12.4).
- * Examples: Ballast manipulation, non-homologated engine, rule breach.
+ * Track a terminal technical violation per the §12.4 table:
+ * - Ballast Manipulation (deliberate): Tier 3 Charter Violation — financial
+ *   penalty, public notice, Commission review. SECOND offense = Tier 4.
+ * - Non-Homologated Engine / Displacement Limit: DQ from round, ALL round
+ *   points forfeited (point-stripping is the caller's job via
+ *   pointsForfeitedByRound), Commission review within 14 days.
  */
 export function trackTerminalViolation(
   team: Team,
@@ -149,42 +153,37 @@ export function trackTerminalViolation(
   currentRound: number,
   affectedRiders?: string[],
 ): CharterPenalty {
-  const tier: PenaltyTier =
-    reason === 'ballast-manipulation' ? 3 :  // Tier 3 suspension
-    reason === 'non-homologated-engine' ? 2 : // Tier 2 DQ + fine
-    3; // Default to Tier 3
+  let tier: PenaltyTier;
+  let suspensionRounds: number | undefined;
 
-  const penalty = issuePenalty(team, reason, currentRound, tier, 1);
+  if (reason === 'ballast-manipulation') {
+    // §12.4: second deliberate ballast offense escalates to Tier 4.
+    const priorOffenses = team.penalties.filter(p => p.reason === 'ballast-manipulation').length;
+    tier = priorOffenses >= 1 ? 4 : 3;
+    suspensionRounds = tier === 3 ? 1 : undefined;
+  } else if (reason === 'non-homologated-engine') {
+    // §12.4: DQ + zero round points. Recorded as a Tier 2 charter entry so the
+    // fine reaches the Welfare Fund; the DQ itself is the real consequence.
+    tier = 2;
+  } else {
+    tier = 3;
+    suspensionRounds = 1;
+  }
+
+  const penalty = issuePenalty(team, reason, currentRound, tier, suspensionRounds);
 
   // Mark as terminal violation
   penalty.isTerminalViolation = true;
   penalty.affectedRiders = affectedRiders ?? [];
   penalty.pointsForfeitedByRound = {};
 
+  if (reason === 'ballast-manipulation' && tier === 3) {
+    // §12.4: Tier 3 charter violation carries a financial penalty on top of
+    // the §13.1 suspension. 100% flows to the Welfare Fund (§13.5).
+    penalty.fineAmount = 75_000;
+  }
+
   return penalty;
-}
-
-/**
- * Apply disqualification to riders for a technical violation.
- * Forfeits all points earned in the affected round.
- */
-export function applyDisqualification(
-  state: PenaltyState,
-  rider: Rider,
-  riderPointsThisRound: number,
-  currentRound: number,
-): void {
-  if (!rider.teamId) return;
-
-  const team = state.universe.riders[rider.id]?.teamId
-    ? state.universe.riders[rider.id]
-    : null;
-
-  if (!team) return;
-
-  state.messages.unshift(
-    `🚫 DISQUALIFIED: ${rider.name} (${team}) forfeited all ${riderPointsThisRound} points from Round ${currentRound + 1} due to technical violation.`
-  );
 }
 
 // ============================================================================
