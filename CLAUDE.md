@@ -35,7 +35,7 @@ These are contractual constraints from the NAMC v15.3 rulebook. All game mechani
   - Podium (2nd–3rd) = +1kg at next round
   - Off-podium (4th+) = -1kg at next round (minimum 0kg)
 - **Pace effect**: 0.07 seconds/lap per kg of ballast
-- **Cap**: 8kg maximum per rider (~0.56s/lap penalty)
+- **Cap**: 12kg maximum per rider (~0.84s/lap penalty)
 - **Reset**: Ballast resets to 0kg every season
 - **Verification**: Mandatory weigh-in before Sprint and Main Event
 - **All classes**: 350 Pro, 250, 250P, Women's 250

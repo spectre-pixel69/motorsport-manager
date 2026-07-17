@@ -188,7 +188,7 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
 /**
  * BOP success ballast (boss ruling 2026-07-17, mechanism per rulebook BOP
  * glossary entry; modeled on Super GT's success handicap, scaled for bikes):
- * Main Event win +2kg, podium +1kg, P4+ sheds 1kg. Cap 8kg (~0.32s/lap).
+ * Main Event win +2kg, podium +1kg, P4+ sheds 1kg. Cap 12kg (~0.84s/lap).
  * Winners get hunted; the pack gets a puncher's chance. Resets every season.
  */
 function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): void {
@@ -199,7 +199,7 @@ function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): voi
       if (!r) return;
       const before = r.ballastKg ?? 0;
       const delta = i === 0 ? 2 : i <= 2 ? 1 : -1;
-      r.ballastKg = clamp(before + delta, 0, 8);
+      r.ballastKg = clamp(before + delta, 0, 12);
       if (r.teamId === state.playerTeamId && r.ballastKg !== before && r.ballastKg >= 4) {
         state.messages.unshift(`BOP: ${r.name} now carries ${r.ballastKg}kg of success ballast.`);
       }
