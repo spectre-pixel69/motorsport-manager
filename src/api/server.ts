@@ -31,6 +31,89 @@ app.get('/health', (req: Request, res: Response) => {
 });
 
 // ============================================================================
+// HUB SCREEN ENDPOINT (UE5.7 Client)
+// ============================================================================
+
+app.get('/api/hub', (req: Request, res: Response) => {
+  try {
+    // Mock hub data for UE5 integration
+    // In a real implementation, this would pull from active career session
+    const hubData = {
+      teamName: 'Red Racing',
+      season: 'Season 2027 • Round 8/20',
+      rank: 3,
+      totalTeams: 20,
+      teamVitals: {
+        balance: 180000,
+        prestige: 75,
+        reliability: 82.5,
+        rdLevel: 3,
+      },
+      seasonProgress: 0.4,
+      nextRace: {
+        trackName: 'Travis Peak',
+        location: 'Montana',
+        discipline: 'Outdoor',
+        round: 8,
+        totalRounds: 20,
+      },
+      topRiders: [
+        { riderName: 'Martinez', points: 456, position: 1, bIsPlayerRider: false },
+        { riderName: 'Chen', points: 423, position: 2, bIsPlayerRider: false },
+        { riderName: 'Williams', points: 401, position: 3, bIsPlayerRider: false },
+        { riderName: 'Davis', points: 378, position: 4, bIsPlayerRider: false },
+        { riderName: 'Taylor', points: 356, position: 5, bIsPlayerRider: false },
+      ],
+      ryansBriefing: [
+        {
+          title: 'SBK Transfer Rumor',
+          content: 'Martinez linked to factory seat for 2028',
+          author: 'Ryan',
+          impact: 0.8,
+        },
+        {
+          title: 'Injury Update',
+          content: 'K. Yamaha out for round 9 with shoulder injury',
+          author: 'Ryan',
+          impact: 0.6,
+        },
+      ],
+      trackDays: [
+        {
+          title: 'Engine Optimization',
+          content: '+2.3 kg grip available with new mapping',
+          author: 'Dustin',
+          impact: 0.7,
+        },
+        {
+          title: 'Setup Breakthrough',
+          content: 'New spring compound tested, -0.3s/lap potential',
+          author: 'Dustin',
+          impact: 0.9,
+        },
+      ],
+    };
+    res.json(hubData);
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+app.post('/api/race/start', (req: Request, res: Response) => {
+  try {
+    res.json({
+      raceStarted: true,
+      trackId: 'travis-peak',
+      round: 8,
+      totalRounds: 20,
+      message: 'Race simulation starting...',
+    });
+  } catch (e: any) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// ============================================================================
 // TEAM ENDPOINTS
 // ============================================================================
 
