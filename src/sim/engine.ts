@@ -4,7 +4,7 @@
 import type { Rider, Team, Track, TireBrand, Universe } from '../data/types';
 import { clamp, gauss, type RNG } from '../util/rng';
 import { mentalPaceFactor, mentalCrashFactor, mentalStartAdjust } from '../game/psychology';
-import { simulateGateStart } from './motocross';
+import { simulateGateStart, terrainProfileForRound, fitnessPenalty, aggressionCrashMod } from './motocross';
 
 export interface Entrant {
   rider: Rider;
@@ -48,7 +48,16 @@ const APPROACH_PACE: Record<Entrant['approach'], number> = { push: 0.35, normal:
 const APPROACH_RISK: Record<Entrant['approach'], number> = { push: 1.6, normal: 1.0, conserve: 0.55 };
 
 /** Per-lap pace in seconds for one rider (lower = faster). */
-function lapPace(rng: RNG, e: Entrant, track: Track, wet: boolean, lap: number, laps: number): number {
+function lapPace(
+  rng: RNG,
+  e: Entrant,
+  track: Track,
+  wet: boolean,
+  lap: number,
+  laps: number,
+  stamina: number,
+  terrain: { gripMod: number; dustFactor: number },
+): number {
   const s = e.rider.stats;
   const bike = e.team.bike;
   const skill = wet ? s.pace * 0.7 + s.wet * 0.3 : s.pace;
@@ -60,7 +69,11 @@ function lapPace(rng: RNG, e: Entrant, track: Track, wet: boolean, lap: number, 
   const noise = Math.abs(gauss(rng, 0, (110 - s.consistency) * 0.012));
   const wetPenalty = wet ? track.baseLapSec * 0.08 : 0;
   const ballast = (e.rider.ballastKg ?? 0) * 0.07;   // BOP success ballast: ~0.07s/lap per kg
-  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty + ballast - APPROACH_PACE[e.approach];
+  // Motocross-specific fitness penalty (stamina matters more)
+  const fitnessCost = track.discipline === 'namc' ? fitnessPenalty(e.rider, lap, laps, stamina) : 0;
+  // Grip variance affects pace (tracks with lower grip = slower, dusty = less consistent)
+  const gripVariance = track.discipline === 'namc' ? (1.0 - terrain.gripMod) * 0.02 : 0;
+  const raw = track.baseLapSec + skillDeficit + tireEdge + fatigue + noise + wetPenalty + ballast + fitnessCost + gripVariance - APPROACH_PACE[e.approach];
   // mental state nudges the edges (hard-capped ±1% inside the factor)
   return raw * mentalPaceFactor(e.rider);
 }
@@ -75,6 +88,8 @@ function crashChance(e: Entrant, wet: boolean, laps: number): number {
   const s = e.rider.stats;
   // per-lap probability; season-long ≈ realistic DNF rates
   let p = 0.0022 + (s.aggression / 100) * 0.0035 * APPROACH_RISK[e.approach] + (100 - s.consistency) * 0.00003;
+  // Aggression affects crash risk more in motocross (natural terrain variance)
+  p *= aggressionCrashMod(e.rider);
   if (wet) p *= 2.1;
   p *= mentalCrashFactor(e.rider); // a tilted rider forces it
   return clamp(p * (24 / laps) ** 0.25, 0.0005, 0.05);
@@ -82,10 +97,11 @@ function crashChance(e: Entrant, wet: boolean, laps: number): number {
 
 export function simulateRace(
   rng: RNG, entrants: Entrant[], track: Track, laps: number,
-  opts: { wet?: boolean; allowRemount?: boolean } = {},
+  opts: { wet?: boolean; allowRemount?: boolean; round?: number } = {},
 ): RaceOutcome {
   const wet = opts.wet ?? rng() < track.weatherBias;
   const allowRemount = opts.allowRemount ?? track.discipline === 'namc';
+  const round = opts.round ?? 1;
   const events: LapEvent[] = [];
   const cumTime: Record<string, number> = {};
   const lapTimes: Record<string, number[]> = {};
@@ -93,12 +109,19 @@ export function simulateRace(
   const out: Record<string, { status: 'finished' | 'dnf'; lapsDone: number }> = {};
   const lapOrder: string[][] = [];
 
+  // Terrain profile (motocross only): affects grip, wear, dust
+  const terrain = track.discipline === 'namc'
+    ? terrainProfileForRound(rng, track, wet, round)
+    : { gripMod: 1.0, wearMod: 1.0, dustFactor: 0, dampness: wet ? 0.8 : 0.1 };
+
   // race-day form: per-rider, per-race pace offset (seconds/lap). Champions
   // still win seasons, but everyone has off weekends — real variance, no
   // rubber-banding. Consistency shrinks the swing.
   const form: Record<string, number> = {};
+  const stamina: Record<string, number> = {}; // rider stamina per race (0-100)
   for (const e of entrants) {
     form[e.rider.id] = gauss(rng, 0, 0.32 * (1.2 - e.rider.stats.consistency / 250));
+    stamina[e.rider.id] = 100; // start at full stamina
   }
 
   // grid start: motocross uses gate starts (all riders launch simultaneously)
@@ -157,11 +180,16 @@ export function simulateRace(
         continue;
       }
 
-      const t = lapPace(rng, e, track, wet, lap, laps) + form[e.rider.id];
+      const t = lapPace(rng, e, track, wet, lap, laps, stamina[e.rider.id], terrain) + form[e.rider.id];
       cumTime[e.rider.id] += t;
       lapTimes[e.rider.id].push(cumTime[e.rider.id]);
       if (t < bestLap[e.rider.id]) bestLap[e.rider.id] = t;
       st.lapsDone = lap;
+
+      // Motocross stamina decay: riders tire as race progresses
+      if (track.discipline === 'namc') {
+        stamina[e.rider.id] = Math.max(0, stamina[e.rider.id] - (100 / laps));
+      }
     }
 
     const order = entrants
@@ -222,9 +250,12 @@ function teamMakerName(e: Entrant): string {
 
 /** One-lap qualifying: returns riders sorted fastest-first. */
 export function simulateQualifying(rng: RNG, entrants: Entrant[], track: Track, wet: boolean): string[] {
+  const terrain = track.discipline === 'namc'
+    ? terrainProfileForRound(rng, track, wet, 1)
+    : { gripMod: 1.0, dustFactor: 0, wearMod: 1.0, dampness: 0 };
   const times = entrants.map(e => ({
     id: e.rider.id,
-    t: lapPace(rng, e, track, wet, 1, 10) - gauss(rng, 0.3, 0.4), // hot lap: everything on the line
+    t: lapPace(rng, e, track, wet, 1, 10, 100, terrain) - gauss(rng, 0.3, 0.4), // hot lap: everything on the line
   }));
   times.sort((a, b) => a.t - b.t);
   return times.map(x => x.id);

@@ -60,7 +60,7 @@ export function runRoadWeekend(
   qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
 
   const laps = Math.max(10, Math.round(105 / (track.baseLapSec / 60) / 4)); // ~26 min race
-  const race = simulateRace(rng, entrants, track, laps, { wet, allowRemount: false });
+  const race = simulateRace(rng, entrants, track, laps, { wet, allowRemount: false, round: roundNumber });
 
   const points: Record<string, number> = {};
   for (const row of race.rows) {
@@ -97,14 +97,14 @@ export function runNamcWeekend(
   // --- SPRINT RACE (§3.6): 12 min + 1 lap, half-scale points (§11.2)
   setGridFromQual();
   const sprintLaps = lapsForMinutes(track, RACE_MINUTES.sprint) + 1;
-  const sprint = simulateRace(rng, entrants, track, sprintLaps, { wet });
+  const sprint = simulateRace(rng, entrants, track, sprintLaps, { wet, round: roundNumber });
   const sprintPoints: Record<string, number> = {};
   sprint.rows.forEach(row => { sprintPoints[row.riderId] = Math.max(0.5, namcSprintPointsFor(row.pos)); });
 
   // --- MAIN EVENT (§3.6): 35 min + 2 laps, full points, gate pick from Friday qual
   setGridFromQual();
   const mainLaps = lapsForMinutes(track, RACE_MINUTES.main) + 2;
-  const main = simulateRace(rng, entrants, track, mainLaps, { wet });
+  const main = simulateRace(rng, entrants, track, mainLaps, { wet, round: roundNumber });
   const finishOrder = main.rows.map(r => r.riderId);
   const mainPoints: Record<string, number> = {};
   finishOrder.forEach((id, i) => { mainPoints[id] = Math.max(1, namcPointsFor(i + 1)); });
