@@ -14,6 +14,7 @@ import { OffSeason } from './ui/OffSeason';
 import { TrainingCenter } from './ui/training/TrainingCenter';
 import { PartsManager } from './ui/garage/PartsManager';
 import { RDCenter } from './ui/RDCenter';
+import { HubScreenDemo } from './ui/HubScreenDemo';
 import { ridersOfTeam } from './data/universe';
 import type { WeekendResult } from './sim/weekend';
 
@@ -21,6 +22,7 @@ type Screen =
   | { id: 'title' }
   | { id: 'new' }
   | { id: 'hub'; state: CareerState }
+  | { id: 'demo' }
   | { id: 'dashboard'; state: CareerState }
   | { id: 'race'; state: CareerState; weekends: WeekendResult[]; player: WeekendResult }
   | { id: 'showroom'; state: CareerState }
@@ -51,11 +53,17 @@ function App() {
           <div style="height:18px" />
           <div class="row">
             <button class="primary" onClick={() => setScreen({ id: 'new' })}>New Career</button>
-            <button class="ghost" onClick={() => { deleteSave(); location.reload(); }}>Delete Save</button>
+            <button class="ghost" onClick={() => setScreen({ id: 'demo' })}>View Demo</button>
           </div>
+          <div style="height:8px" />
+          <button class="ghost" style="width:100%" onClick={() => { deleteSave(); location.reload(); }}>Delete Save</button>
           <div style="height:10px" />
           <p class="muted">v0.1 — GP &middot; SBK &middot; NAMC</p>
         </div>
+      )}
+
+      {screen.id === 'demo' && (
+        <HubScreenDemo />
       )}
 
       {screen.id === 'new' && (
