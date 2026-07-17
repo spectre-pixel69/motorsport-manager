@@ -411,4 +411,39 @@ export interface Universe {
   engineOrders: EngineOrder[];     // active parts orders (lead time tracking)
   // Championship-specific extensions
   champExtension?: ChampionshipExtension;
+  // Inter-league news archive
+  newsArchive: NewsEvent[];
+}
+
+// ============================================================================
+// INTER-LEAGUE NEWS SYSTEM (Ryan's Briefing)
+// ============================================================================
+
+export type NewsEventType =
+  | 'signing'              // Free agent signs with team
+  | 'injury'               // Rider sidelined for rounds
+  | 'breakout'             // Unknown rider has breakthrough win
+  | 'rivalry'              // Heated battle between two riders
+  | 'transfer-rumor'       // Star rider linked to move
+  | 'championship-drama'   // Tense championship battle unfolding
+  | 'team-conflict'        // Internal team drama
+  | 'coaching-change'      // New crew chief or mentor
+  | 'comeback'             // Veteran returns after absence
+  | 'rookie-sensation';    // Newcomer impressing everyone
+
+export interface NewsEvent {
+  id: string;
+  round: number;                           // round generated
+  timestamp: number;                       // when in season (0-20 for NAMC, etc.)
+  type: NewsEventType;
+  discipline: DisciplineId;                // which league's news
+  subjectRiderId?: string;                 // primary rider involved
+  subjectTeamId?: string;                  // team involved
+  secondaryRiderId?: string;               // e.g., rival in rivalry news
+  headline: string;                        // brief title
+  body: string;                            // full description (Ryan's commentary)
+  impact?: {
+    riderMoraleShift?: Record<string, number>;  // teamId -> morale delta
+    playerTeamSentiment?: number;               // -10 to +10 (bad news / good news for player)
+  };
 }

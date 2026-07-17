@@ -11,6 +11,7 @@ import {
 import { ridersOfTeam } from '../data/universe';
 import { NAMC_CLASS_IDS } from '../data/namc';
 import { logRaceStart, logRaceEnd, exportTelemetry } from '../util/telemetry';
+import { RyansBriefing } from './RyansBriefing';
 import { Logo } from './Logo';
 import { IS_DEMO, DEMO_END_PITCH, LOCK_TAG } from './demo';
 import type { WeekendResult } from '../sim/weekend';
@@ -135,6 +136,9 @@ export function Hub({ state, onRaceReady, onExit, onViewDashboard, onOpenShowroo
                   </div>
                 ))}
               </div>
+
+              <RyansBriefing newsArchive={u.newsArchive} currentDiscipline={state.discipline} maxItems={3} />
+
               <div class="row">
                 <button class="primary" onClick={goRacing}>🏁 Go Racing (watch live)</button>
               </div>

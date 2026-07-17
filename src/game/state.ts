@@ -7,6 +7,7 @@ import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended, app
 import { runNamcWeekend, runRoadWeekend, runGPWeekend, runSBKWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
+import { generateNewsForRound } from './news';
 import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
 import { decayAllMentalStates, processWeekendPsychology } from './psychology';
 import { mulberry32, hashString, clamp, irange } from '../util/rng';
@@ -202,6 +203,16 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   }
   applyPsychology(state, weekends);
   recordHistory(state, weekends);
+
+  // Generate inter-league news for Ryan's briefing
+  const newsThisRound = generateNewsForRound(u, rng, round.round, state.discipline);
+  u.newsArchive.push(...newsThisRound);
+  if (newsThisRound.length > 0 && state.playerTeamId) {
+    // Show a brief note if there's big news from other leagues
+    const headlines = newsThisRound.slice(0, 2).map(n => n.headline).join(' • ');
+    state.messages.unshift(`📺 Ryan's reporting: ${headlines}`);
+  }
+
   state.round += 1;
   return { weekends, playerWeekend };
 }

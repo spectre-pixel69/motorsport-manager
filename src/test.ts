@@ -6,6 +6,7 @@ import { mulberry32 } from './util/rng';
 import { REVENUE_SPLIT_GP, APPEARANCE_FEE_GP } from './data/gp';
 import { REVENUE_SPLIT_SBK, APPEARANCE_FEE_SBK } from './data/sbk';
 import { applyGPGridPenalty, applySBKBallastViolation, applySBKBoPViolation } from './game/penalties';
+import { generateNewsForRound } from './game/news';
 
 interface TestResult {
   name: string;
@@ -213,6 +214,51 @@ test('Penalties: SBK BoP violation applies fine and tier', () => {
   const penalty = team!.penalties[0];
   assert(penalty.tier === 2, `Expected tier 2, got ${penalty.tier}`);
   assert(penalty.fineAmount === 25_000, `Expected fine 25000, got ${penalty.fineAmount}`);
+});
+
+// ============================================================================
+// TEST: Inter-League News System
+// ============================================================================
+
+test('News: Generation produces valid news events', () => {
+  const u = buildUniverse(12345, 2027);
+  const rng = mulberry32(99999);
+
+  const news = generateNewsForRound(u, rng, 1, 'namc');
+
+  // May or may not generate news (probabilistic), but if it does, structure is valid
+  if (news.length > 0) {
+    const n = news[0];
+    assert(n.id, 'News should have ID');
+    assert(n.type, 'News should have type');
+    assert(n.headline, 'News should have headline');
+    assert(n.body, 'News should have body');
+    assert(n.discipline !== 'namc', 'News should be from different discipline');
+  }
+});
+
+test('News: Archive initialized empty', () => {
+  const u = buildUniverse(12345, 2027);
+  assertEqual(u.newsArchive.length, 0, 'News archive should start empty');
+});
+
+test('News: Different events have different commentary', () => {
+  const u = buildUniverse(12345, 2027);
+  const rng = mulberry32(111111);
+
+  // Generate multiple news items to check variety
+  const allNews: any[] = [];
+  for (let i = 0; i < 10; i++) {
+    const news = generateNewsForRound(u, mulberry32(111111 + i), i + 1, 'namc');
+    allNews.push(...news);
+  }
+
+  // Should have some variety in types and headlines
+  const types = new Set(allNews.map(n => n.type));
+  assert(types.size >= 2, `Should have variety of news types, got ${types.size}`);
+
+  const headlines = new Set(allNews.map(n => n.headline));
+  assert(headlines.size >= 2, `Should have variety of headlines, got ${headlines.size}`);
 });
 
 // ============================================================================
