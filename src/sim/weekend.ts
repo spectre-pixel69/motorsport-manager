@@ -6,7 +6,11 @@
 // single gate. All four classes run identical formats.
 
 import type { ChampionshipId, ClassId, Rider, Track, Universe } from '../data/types';
-import { namcPointsFor, namcSprintPointsFor, roadPointsFor } from '../data/classes';
+import {
+  namcPointsFor, namcSprintPointsFor, roadPointsFor,
+  gpMainPointsFor, gpSprintPointsFor,
+  sbkRacePointsFor, sbkSuperpolePointsFor,
+} from '../data/classes';
 import { RACE_MINUTES } from '../data/namc';
 import { gridOf } from '../data/universe';
 import { simulateQualifying, simulateRace, lapsForMinutes, type Entrant, type RaceOutcome } from './engine';
@@ -141,4 +145,111 @@ export function runNamcWeekend(
     { name: 'MAIN EVENT', outcome: main, points: mainPoints },
   ];
   return { classId, championship, trackId, sessions, finishOrder, points, weather: main.weather };
+}
+
+export function runGPWeekend(
+  rng: RNG, u: Universe, classId: ClassId, trackId: string,
+  approachFor: (r: Rider) => Entrant['approach'] = defaultApproach,
+  roundNumber?: number,
+): WeekendResult {
+  const track = u.tracks[trackId];
+  const grid = gridOf(u, classId, 'road');
+  const weatherBias = roundNumber ? getWeatherBiasForRound(trackId, roundNumber) : track.weatherBias;
+  const wet = rng() < weatherBias;
+
+  // --- FRIDAY & SATURDAY PRACTICE + QUALIFYING
+  const entrants = toEntrants(u, grid, approachFor);
+  const qOrder = simulateQualifying(rng, entrants, track, wet);
+  const byId = new Map(entrants.map(e => [e.rider.id, e]));
+  const setGridFromQual = () => qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
+
+  // --- SATURDAY SPRINT (12/9/7/6/5/4/3/2/1 points, ~13km = ~12 min)
+  setGridFromQual();
+  const sprintLaps = Math.max(5, Math.round(13 / (track.lengthKm) * 1.2)); // ~12 minutes
+  const sprint = simulateRace(rng, entrants, track, sprintLaps, { wet, allowRemount: false, round: roundNumber });
+  const sprintPoints: Record<string, number> = {};
+  sprint.rows.forEach(row => { sprintPoints[row.riderId] = gpSprintPointsFor(row.pos); });
+
+  // --- SUNDAY MAIN RACE (25/20/16/13/11/10/9.../1 points, ~105km = ~45 min)
+  setGridFromQual();
+  const mainLaps = Math.max(12, Math.round(105 / (track.lengthKm))); // ~45 minutes
+  const main = simulateRace(rng, entrants, track, mainLaps, { wet, allowRemount: false, round: roundNumber });
+  const finishOrder = main.rows.map(r => r.riderId);
+  const mainPoints: Record<string, number> = {};
+  finishOrder.forEach((id, i) => { mainPoints[id] = gpMainPointsFor(i + 1); });
+
+  const points: Record<string, number> = {};
+  for (const id of Object.keys(mainPoints)) points[id] = (sprintPoints[id] ?? 0) + mainPoints[id];
+
+  const sessions: SessionResult[] = [
+    { name: 'SPRINT RACE', outcome: sprint, points: sprintPoints },
+    { name: 'MAIN RACE', outcome: main, points: mainPoints },
+  ];
+  return { classId, championship: 'road', trackId, sessions, finishOrder, points, weather: main.weather };
+}
+
+export function runSBKWeekend(
+  rng: RNG, u: Universe, classId: ClassId, trackId: string,
+  approachFor: (r: Rider) => Entrant['approach'] = defaultApproach,
+  roundNumber?: number,
+): WeekendResult {
+  const track = u.tracks[trackId];
+  const grid = gridOf(u, classId, 'road');
+  const weatherBias = roundNumber ? getWeatherBiasForRound(trackId, roundNumber) : track.weatherBias;
+  const wet = rng() < weatherBias;
+
+  // --- FRIDAY & SATURDAY PRACTICE + SUPERPOLE
+  const entrants = toEntrants(u, grid, approachFor);
+  const qOrder = simulateQualifying(rng, entrants, track, wet);
+  const byId = new Map(entrants.map(e => [e.rider.id, e]));
+  const setGridFromQual = () => qOrder.forEach((id, i) => { byId.get(id)!.gridPos = i + 1; });
+
+  // --- SATURDAY SUPERPOLE RACE (12/9/7/6/5/4/3/2/1 points, ~12km = ~12 min)
+  setGridFromQual();
+  const superpoleLaps = Math.max(5, Math.round(12 / (track.lengthKm) * 1.2)); // ~12 minutes
+  const superpole = simulateRace(rng, entrants, track, superpoleLaps, { wet, allowRemount: false, round: roundNumber });
+  const superpolePoints: Record<string, number> = {};
+  superpole.rows.forEach(row => { superpolePoints[row.riderId] = sbkSuperpolePointsFor(row.pos); });
+
+  // --- SUNDAY RACE 1 (25/20/16/13/11/10/9.../1 points, ~25km = ~25 min)
+  setGridFromQual();
+  const race1Laps = Math.max(8, Math.round(25 / (track.lengthKm) * 1.1)); // ~25 minutes
+  const race1 = simulateRace(rng, entrants, track, race1Laps, { wet, allowRemount: false, round: roundNumber });
+  const race1Points: Record<string, number> = {};
+  const race1FinishOrder: string[] = [];
+  race1.rows.forEach(row => {
+    race1Points[row.riderId] = sbkRacePointsFor(row.pos);
+    race1FinishOrder.push(row.riderId);
+  });
+
+  // --- SUNDAY RACE 2 (with grid reversal for top 6)
+  // Build reversed grid: top 6 from Race 1 are reversed, rest in order
+  const race2Grid: string[] = [];
+  const top6 = race1FinishOrder.slice(0, 6).reverse();
+  const rest = race1FinishOrder.slice(6);
+  race2Grid.push(...top6, ...rest);
+
+  // Update grid positions for Race 2 entrants
+  race2Grid.forEach((riderId, idx) => {
+    const e = byId.get(riderId);
+    if (e) e.gridPos = idx + 1;
+  });
+
+  const race2 = simulateRace(rng, entrants, track, race1Laps, { wet, allowRemount: false, round: roundNumber });
+  const finishOrder = race2.rows.map(r => r.riderId);
+  const race2Points: Record<string, number> = {};
+  finishOrder.forEach((id, i) => { race2Points[id] = sbkRacePointsFor(i + 1); });
+
+  // Aggregate points
+  const points: Record<string, number> = {};
+  for (const id of Object.keys(superpolePoints)) points[id] = (superpolePoints[id] ?? 0);
+  for (const id of Object.keys(race1Points)) points[id] = (points[id] ?? 0) + race1Points[id];
+  for (const id of Object.keys(race2Points)) points[id] = (points[id] ?? 0) + race2Points[id];
+
+  const sessions: SessionResult[] = [
+    { name: 'SUPERPOLE RACE', outcome: superpole, points: superpolePoints },
+    { name: 'RACE 1', outcome: race1, points: race1Points },
+    { name: 'RACE 2', outcome: race2, points: race2Points },
+  ];
+  return { classId, championship: 'road', trackId, sessions, finishOrder, points, weather: race2.weather };
 }

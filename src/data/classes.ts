@@ -58,3 +58,37 @@ export function namcPointsFor(pos: number): number {
 export function namcSprintPointsFor(pos: number): number {
   return pos >= 1 && pos <= 40 ? NAMC_SPRINT_POINTS[pos - 1] : 0;
 }
+
+/** MotoGP Main Race points (25/20/16/13/11/10/9.../1/0...). */
+export const GP_MAIN_POINTS = [
+  25, 20, 16, 13, 11, 10, 9, 8, 7, 6, 5, 4, 3, 2, 1,
+  ...Array(25).fill(0), // P16-40 get 0 points
+];
+
+/** MotoGP Sprint Race points (12/9/7/6/5/4/3/2/1/0...). */
+export const GP_SPRINT_POINTS = [
+  12, 9, 7, 6, 5, 4, 3, 2, 1,
+  ...Array(31).fill(0), // P10-40 get 0 points
+];
+
+export function gpMainPointsFor(pos: number): number {
+  return pos >= 1 && pos <= GP_MAIN_POINTS.length ? GP_MAIN_POINTS[pos - 1] : 0;
+}
+
+export function gpSprintPointsFor(pos: number): number {
+  return pos >= 1 && pos <= GP_SPRINT_POINTS.length ? GP_SPRINT_POINTS[pos - 1] : 0;
+}
+
+/** WorldSBK Race points (25/20/16/13/11/10/9.../1/0...). Same as GP main. */
+export const SBK_RACE_POINTS = GP_MAIN_POINTS;
+
+/** WorldSBK Superpole Race points (12/9/7/6/5/4/3/2/1/0...). Same as GP sprint. */
+export const SBK_SUPERPOLE_POINTS = GP_SPRINT_POINTS;
+
+export function sbkRacePointsFor(pos: number): number {
+  return pos >= 1 && pos <= SBK_RACE_POINTS.length ? SBK_RACE_POINTS[pos - 1] : 0;
+}
+
+export function sbkSuperpolePointsFor(pos: number): number {
+  return pos >= 1 && pos <= SBK_SUPERPOLE_POINTS.length ? SBK_SUPERPOLE_POINTS[pos - 1] : 0;
+}

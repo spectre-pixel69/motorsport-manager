@@ -4,7 +4,7 @@ import type { ChampionshipId, ClassId, DisciplineId, LogoSpec, Rider, Universe, 
 import { buildUniverse, gridOf, teamsOf, ridersOfTeam, overallOf, makeDraftRookie } from '../data/universe';
 import { classById, CLASSES } from '../data/classes';
 import { issuePenalty, collectFines, decrementSuspensions, isRiderSuspended, applyCharterRevocation } from './penalties';
-import { runNamcWeekend, runRoadWeekend, type WeekendResult } from '../sim/weekend';
+import { runNamcWeekend, runRoadWeekend, runGPWeekend, runSBKWeekend, type WeekendResult } from '../sim/weekend';
 import { settleNamcRound, settleRoadRound, type RoundLedgerEntry } from './economy';
 import { updateManufacturerFinance, fulfillEngineOrder } from './parts-economy';
 import { NAMC_CLASS_IDS, TEAM_CHAMPIONSHIP_PURSE, RIDERS_PER_CLASS_PER_TEAM } from '../data/namc';
@@ -163,8 +163,28 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
       const ledger = settleNamcRound(u, champ, champWeekends);
       state.leagueHealth.push({ round: round.round, championship: champ, ledger });
     }
+  } else if (state.discipline === 'gp') {
+    // MotoGP: all classes (GP1, GP2, GP3) race each round with Sprint + Main format
+    const ladder = CLASSES.filter(c => c.discipline === 'gp').map(c => c.id);
+    for (const cls of ladder) {
+      const w = runGPWeekend(rng, u, cls, round.trackId, approachFor, round.round);
+      weekends.push(w);
+      applyPoints(state, w);
+      settleRoadRound(u, w);
+      if (cls === state.focusClass) playerWeekend = w;
+    }
+  } else if (state.discipline === 'sbk') {
+    // WorldSBK: all classes (SBK, SS600, SS300) race each round with Superpole + Race1 + Race2 format
+    const ladder = CLASSES.filter(c => c.discipline === 'sbk').map(c => c.id);
+    for (const cls of ladder) {
+      const w = runSBKWeekend(rng, u, cls, round.trackId, approachFor, round.round);
+      weekends.push(w);
+      applyPoints(state, w);
+      settleRoadRound(u, w);
+      if (cls === state.focusClass) playerWeekend = w;
+    }
   } else {
-    // Road: all classes of the ladder race at the round's track.
+    // Fallback for any other road discipline
     const ladder = CLASSES.filter(c => c.discipline === state.discipline).map(c => c.id);
     for (const cls of ladder) {
       const w = runRoadWeekend(rng, u, cls, round.trackId, approachFor, round.round);

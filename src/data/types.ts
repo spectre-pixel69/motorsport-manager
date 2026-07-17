@@ -159,6 +159,10 @@ export interface Rider {
                               // podium +1kg, off-podium -1kg, cap 12kg, resets each season
   suspendedForRounds?: number;// §13.1: suspension penalty countdown
   suspensionReason?: string;  // reason for suspension
+  // MotoGP concession tier
+  concessionTier?: ConcessionTier;  // A/B/C/D: based on manufacturer championship position
+  // SBK fuel consumption & strategy
+  lastRaceAverageFuelPerLap?: number;  // liters/lap (for race strategy)
 }
 
 export type EngineMode = 'conserve' | 'standard' | 'push' | 'attack';
@@ -221,6 +225,10 @@ export interface Team {
   coachQuality: number; // coach skill modifier (0.8-1.5)
   penalties: Penalty[]; // §13.1: all penalties issued to this team
   charterRevoked?: boolean; // §13.1 Tier 4: charter permanently revoked (forces team fold)
+  // MotoGP-specific
+  developmentTokensUsed?: number;  // concession development tokens spent this season
+  // SBK-specific
+  fuelConsumptionBaseline?: number; // liters/lap baseline for race strategy (initialized from testing)
 }
 
 export type ManufacturerReliability = 'fragile' | 'balanced' | 'bulletproof';
@@ -341,6 +349,56 @@ export interface EngineOrder {
   delayedRounds?: number;         // if delayed mid-season, how many rounds?
 }
 
+// ============================================================================
+// CHAMPIONSHIP-SPECIFIC EXTENSIONS
+// ============================================================================
+
+export type ConcessionTier = 'A' | 'B' | 'C' | 'D';
+
+export interface MotoGPExtension {
+  discipline: 'gp';
+  // Concession tiers: assigned based on championship standing
+  concessionTiers: Record<string, ConcessionTier>;  // manufacturerId -> tier
+  // Development tokens (for technical upgrades)
+  developmentTokensUsed: Record<string, number>;    // manufacturerId -> count
+}
+
+export interface BoP_AdjustmentRecord {
+  rpmLimit: number;
+  fuelFlowMax: number;
+  airRingSize: number;
+  minWeight: number;
+}
+
+export interface SBKExtension {
+  discipline: 'sbk';
+  // Balance of Performance (BoP) adjustments every 3 rounds
+  bopAdjustments: Record<string, BoP_AdjustmentRecord>;  // manufacturerId -> BoP
+  bopLastAdjustedRound: number;
+  // Grid reversal logic (Race 2 grid based on Race 1 results)
+  gridReversalActive: boolean;
+}
+
+export type ChampionshipExtension = MotoGPExtension | SBKExtension | null;
+
+// ============================================================================
+// MULTI-RACE WEEKEND SUPPORT (Sprint + Main for GP, Superpole + Race1 + Race2 for SBK)
+// ============================================================================
+
+export type RaceSessionType = 'practice' | 'qualifying' | 'sprint' | 'superpole' | 'main' | 'race1' | 'race2';
+
+export interface CalendarRound {
+  round: number;
+  trackId: string;
+  // Multi-race support: different session schedules per championship
+  sessions?: {
+    sessionType: RaceSessionType;
+    earnPoints: boolean;
+    pointScale?: number;  // 1.0x for main, 0.5x for sprint, etc.
+    gridType?: 'combined' | 'reversed-top-6';  // for Race 2 in SBK
+  }[];
+}
+
 export interface Universe {
   seed: number;
   season: number; // year
@@ -352,4 +410,6 @@ export interface Universe {
   tracks: Record<string, Track>;
   calendars: Record<DisciplineId, CalendarRound[]>;
   engineOrders: EngineOrder[];     // active parts orders (lead time tracking)
+  // Championship-specific extensions
+  champExtension?: ChampionshipExtension;
 }
