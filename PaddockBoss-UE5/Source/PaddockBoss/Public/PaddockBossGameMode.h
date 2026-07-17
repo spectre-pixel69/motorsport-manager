@@ -4,8 +4,9 @@
 #include "GameFramework/GameModeBase.h"
 #include "PaddockBossGameMode.generated.h"
 
-class UHubScreenWidget;
+class UUserWidget;
 class AGameAPIManager;
+class AShowroomStage;
 
 UCLASS()
 class PADDOCKBOSS_API APaddockBossGameMode : public AGameModeBase
@@ -17,14 +18,19 @@ public:
 
 	virtual void BeginPlay() override;
 
+	// Optional Blueprint override. Left unset, the native UBossHubWidget
+	// (the boss's reference hub) is created directly — no Blueprint needed.
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "UI")
-	TSubclassOf<UHubScreenWidget> HubScreenClass;
+	TSubclassOf<UUserWidget> HubScreenClass;
 
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
-	UHubScreenWidget* CurrentHubScreen;
+	UUserWidget* CurrentHubScreen;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "API")
 	AGameAPIManager* APIManager;
+
+	UPROPERTY(BlueprintReadOnly, Category = "Stage")
+	AShowroomStage* ShowroomStage;
 
 	UFUNCTION(BlueprintCallable, Category = "UI")
 	void ShowHubScreen();
@@ -34,6 +40,9 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "API")
 	void SetupAPIManager();
+
+	UFUNCTION(BlueprintCallable, Category = "Stage")
+	void SetupShowroomStage();
 
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;

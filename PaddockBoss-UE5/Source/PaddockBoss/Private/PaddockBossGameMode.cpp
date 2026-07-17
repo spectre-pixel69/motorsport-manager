@@ -1,6 +1,8 @@
 #include "PaddockBossGameMode.h"
+#include "UI/BossHubWidget.h"
 #include "UI/HubScreenWidget.h"
 #include "GameAPIManager.h"
+#include "ShowroomStage.h"
 #include "Blueprint/UserWidget.h"
 #include "Kismet/GameplayStatics.h"
 
@@ -16,6 +18,7 @@ void APaddockBossGameMode::BeginPlay()
 	UE_LOG(LogTemp, Warning, TEXT("PaddockBossGameMode BeginPlay"));
 
 	SetupAPIManager();
+	SetupShowroomStage();
 	ShowHubScreen();
 }
 
@@ -38,14 +41,22 @@ void APaddockBossGameMode::SetupAPIManager()
 	}
 }
 
-void APaddockBossGameMode::ShowHubScreen()
+void APaddockBossGameMode::SetupShowroomStage()
 {
-	if (!HubScreenClass)
+	if (!ShowroomStage)
 	{
-		UE_LOG(LogTemp, Error, TEXT("HubScreenClass is not set!"));
-		return;
+		ShowroomStage = GetWorld()->SpawnActor<AShowroomStage>(FVector::ZeroVector, FRotator::ZeroRotator);
 	}
 
+	APlayerController* PC = GetWorld()->GetFirstPlayerController();
+	if (PC && ShowroomStage)
+	{
+		PC->SetViewTarget(ShowroomStage);
+	}
+}
+
+void APaddockBossGameMode::ShowHubScreen()
+{
 	APlayerController* PC = GetWorld()->GetFirstPlayerController();
 	if (!PC)
 	{
@@ -55,11 +66,35 @@ void APaddockBossGameMode::ShowHubScreen()
 
 	if (!CurrentHubScreen)
 	{
-		CurrentHubScreen = CreateWidget<UHubScreenWidget>(PC, HubScreenClass);
+		if (HubScreenClass)
+		{
+			CurrentHubScreen = CreateWidget<UUserWidget>(PC, HubScreenClass);
+		}
+		else
+		{
+			// Native reference hub — no Blueprint required.
+			CurrentHubScreen = CreateWidget<UBossHubWidget>(PC);
+		}
+
 		if (CurrentHubScreen)
 		{
 			CurrentHubScreen->AddToViewport(0);
-			CurrentHubScreen->SetAPIManager(APIManager);
+
+			if (UBossHubWidget* BossHub = Cast<UBossHubWidget>(CurrentHubScreen))
+			{
+				BossHub->SetAPIManager(APIManager);
+			}
+			else if (UHubScreenWidget* LegacyHub = Cast<UHubScreenWidget>(CurrentHubScreen))
+			{
+				LegacyHub->SetAPIManager(APIManager);
+			}
+
+			PC->SetShowMouseCursor(true);
+			FInputModeGameAndUI InputMode;
+			InputMode.SetLockMouseToViewportBehavior(EMouseLockMode::DoNotLock);
+			InputMode.SetHideCursorDuringCapture(false);
+			PC->SetInputMode(InputMode);
+
 			UE_LOG(LogTemp, Warning, TEXT("Hub Screen created and added to viewport"));
 		}
 	}

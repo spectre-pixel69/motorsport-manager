@@ -1,6 +1,23 @@
-# Paddock Boss — UE5.7 Client
+# Paddock Boss — UE5.8 Client
 
-Professional motorsport manager game built with Unreal Engine 5.7 + TypeScript/Preact backend.
+Professional motorsport manager game built with Unreal Engine 5.8 + TypeScript backend.
+
+## Quick Start (no Blueprint setup required)
+
+1. Install UE 5.8 from the Epic Launcher (Templates, Engine Source, MetaHuman Core Data, Android target).
+2. Install Visual Studio 2022 with the **Game development with C++** workload.
+3. Pull this repo, right-click `PaddockBoss.uproject` → **Generate Visual Studio project files**.
+4. Open the generated `.sln`, build `PaddockBossEditor` (Development Editor | Win64), or just
+   double-click the `.uproject` and let the editor compile the module.
+5. New empty level → World Settings → GameMode Override = `PaddockBossGameMode` → **Play**.
+
+`PaddockBossGameMode` spawns everything natively: the white showroom stage with display
+platform, lights, camera, and the reference hub UI (`UBossHubWidget`) — top money bar
+(BALANCE / INFLUENCE / NET SPEND), team logo roundel, SETUP/STAFF/CALENDAR/FINANCE rail,
+TEAM STANDINGS / DRIVER STANDINGS, track map, and PROCEED. The layout matches the
+reference art in `../art/reference/`. The bike on the platform is a basic-shape
+placeholder — swap it for the real bike asset and photoreal showroom set on the
+workstation; keep `AShowroomStage` as the camera rig.
 
 ## Project Structure
 

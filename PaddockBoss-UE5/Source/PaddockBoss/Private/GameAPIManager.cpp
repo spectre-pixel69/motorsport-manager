@@ -69,6 +69,91 @@ void AGameAPIManager::OnHubDataResponseReceived(FHttpRequestPtr Request, FHttpRe
 					HubData.TeamVitals.RDLevel = VitalsObj->GetIntegerField(TEXT("rdLevel"));
 				}
 
+				// Top money bar (reference hub): influence + net spend
+				int32 Influence = 0;
+				if (JsonObject->TryGetNumberField(TEXT("influence"), Influence))
+				{
+					HubData.Influence = Influence;
+				}
+				else
+				{
+					HubData.Influence = HubData.TeamVitals.Prestige;
+				}
+
+				double NetSpend = 0.0;
+				if (JsonObject->TryGetNumberField(TEXT("netSpend"), NetSpend))
+				{
+					HubData.NetSpend = static_cast<float>(NetSpend);
+				}
+
+				if (JsonObject->HasField(TEXT("nextRace")))
+				{
+					TSharedPtr<FJsonObject> RaceObj = JsonObject->GetObjectField(TEXT("nextRace"));
+					RaceObj->TryGetStringField(TEXT("trackName"), HubData.NextRace.TrackName);
+					RaceObj->TryGetStringField(TEXT("location"), HubData.NextRace.Location);
+					RaceObj->TryGetStringField(TEXT("discipline"), HubData.NextRace.Discipline);
+					RaceObj->TryGetNumberField(TEXT("round"), HubData.NextRace.Round);
+					RaceObj->TryGetNumberField(TEXT("totalRounds"), HubData.NextRace.TotalRounds);
+				}
+
+				auto ParseAccent = [](const TSharedPtr<FJsonObject>& Obj, FLinearColor& OutColor)
+				{
+					FString Hex;
+					if (Obj->TryGetStringField(TEXT("color"), Hex) && !Hex.IsEmpty())
+					{
+						OutColor = FLinearColor(FColor::FromHex(Hex));
+					}
+				};
+
+				const TArray<TSharedPtr<FJsonValue>>* TeamsArray = nullptr;
+				if (JsonObject->TryGetArrayField(TEXT("teamStandings"), TeamsArray))
+				{
+					for (const TSharedPtr<FJsonValue>& Value : *TeamsArray)
+					{
+						const TSharedPtr<FJsonObject>* RowObj = nullptr;
+						if (Value->TryGetObject(RowObj))
+						{
+							FTeamStandingRow Row;
+							(*RowObj)->TryGetStringField(TEXT("teamName"), Row.TeamName);
+							(*RowObj)->TryGetNumberField(TEXT("points"), Row.Points);
+							(*RowObj)->TryGetNumberField(TEXT("position"), Row.Position);
+							(*RowObj)->TryGetBoolField(TEXT("isPlayerTeam"), Row.bIsPlayerTeam);
+							ParseAccent(*RowObj, Row.AccentColor);
+							HubData.TeamStandings.Add(Row);
+						}
+					}
+				}
+
+				auto ParseRiders = [&ParseAccent](const TArray<TSharedPtr<FJsonValue>>& Values, TArray<FRiderStanding>& OutRiders)
+				{
+					for (const TSharedPtr<FJsonValue>& Value : Values)
+					{
+						const TSharedPtr<FJsonObject>* RowObj = nullptr;
+						if (Value->TryGetObject(RowObj))
+						{
+							FRiderStanding Row;
+							(*RowObj)->TryGetStringField(TEXT("riderName"), Row.RiderName);
+							(*RowObj)->TryGetNumberField(TEXT("points"), Row.Points);
+							(*RowObj)->TryGetNumberField(TEXT("position"), Row.Position);
+							(*RowObj)->TryGetBoolField(TEXT("bIsPlayerRider"), Row.bIsPlayerRider);
+							ParseAccent(*RowObj, Row.AccentColor);
+							OutRiders.Add(Row);
+						}
+					}
+				};
+
+				const TArray<TSharedPtr<FJsonValue>>* RidersArray = nullptr;
+				if (JsonObject->TryGetArrayField(TEXT("topRiders"), RidersArray))
+				{
+					ParseRiders(*RidersArray, HubData.TopRiders);
+				}
+
+				const TArray<TSharedPtr<FJsonValue>>* DriversArray = nullptr;
+				if (JsonObject->TryGetArrayField(TEXT("driverStandings"), DriversArray))
+				{
+					ParseRiders(*DriversArray, HubData.DriverStandings);
+				}
+
 				CachedHubData = HubData;
 				bSuccess = true;
 			}

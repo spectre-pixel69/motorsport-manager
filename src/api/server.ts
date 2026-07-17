@@ -44,11 +44,14 @@ app.get('/api/hub', (req: Request, res: Response) => {
       rank: 3,
       totalTeams: 20,
       teamVitals: {
-        balance: 180000,
+        balance: 2707725,
         prestige: 75,
         reliability: 82.5,
         rdLevel: 3,
       },
+      // Top money bar (reference hub screen)
+      influence: 83,
+      netSpend: -1843000,
       seasonProgress: 0.4,
       nextRace: {
         trackName: 'Travis Peak',
@@ -58,11 +61,25 @@ app.get('/api/hub', (req: Request, res: Response) => {
         totalRounds: 20,
       },
       topRiders: [
-        { riderName: 'Martinez', points: 456, position: 1, bIsPlayerRider: false },
-        { riderName: 'Chen', points: 423, position: 2, bIsPlayerRider: false },
-        { riderName: 'Williams', points: 401, position: 3, bIsPlayerRider: false },
-        { riderName: 'Davis', points: 378, position: 4, bIsPlayerRider: false },
-        { riderName: 'Taylor', points: 356, position: 5, bIsPlayerRider: false },
+        { riderName: 'Martinez', points: 456, position: 1, bIsPlayerRider: false, color: '#2ec4b6' },
+        { riderName: 'Chen', points: 423, position: 2, bIsPlayerRider: false, color: '#e63946' },
+        { riderName: 'Williams', points: 401, position: 3, bIsPlayerRider: false, color: '#f4a261' },
+        { riderName: 'Davis', points: 378, position: 4, bIsPlayerRider: false, color: '#457b9d' },
+        { riderName: 'Taylor', points: 356, position: 5, bIsPlayerRider: false, color: '#f28482' },
+      ],
+      teamStandings: [
+        { teamName: 'Motocycing', points: 334, position: 1, isPlayerTeam: false, color: '#2ec4b6' },
+        { teamName: 'Kero Team', points: 216, position: 2, isPlayerTeam: false, color: '#e63946' },
+        { teamName: 'Bractica', points: 166, position: 3, isPlayerTeam: false, color: '#f4a261' },
+        { teamName: 'New Team', points: 92, position: 4, isPlayerTeam: true, color: '#457b9d' },
+        { teamName: 'Bussolier', points: 0, position: 5, isPlayerTeam: false, color: '#f28482' },
+      ],
+      driverStandings: [
+        { riderName: 'Martinez', points: 456, position: 1, bIsPlayerRider: false, color: '#2ec4b6' },
+        { riderName: 'Chen', points: 423, position: 2, bIsPlayerRider: false, color: '#e63946' },
+        { riderName: 'Williams', points: 401, position: 3, bIsPlayerRider: false, color: '#f4a261' },
+        { riderName: 'Davis', points: 378, position: 4, bIsPlayerRider: false, color: '#457b9d' },
+        { riderName: 'Taylor', points: 356, position: 5, bIsPlayerRider: false, color: '#f28482' },
       ],
       ryansBriefing: [
         {

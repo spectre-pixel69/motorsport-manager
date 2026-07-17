@@ -37,6 +37,30 @@ struct FRiderStanding
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	bool bIsPlayerRider = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor AccentColor = FLinearColor(0.24f, 0.63f, 0.85f, 1.0f);
+};
+
+USTRUCT(BlueprintType)
+struct FTeamStandingRow
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString TeamName = FString();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Points = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Position = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsPlayerTeam = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor AccentColor = FLinearColor(0.18f, 0.77f, 0.71f, 1.0f);
 };
 
 USTRUCT(BlueprintType)
@@ -98,6 +122,13 @@ struct FHubScreenData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FTeamVitals TeamVitals;
 
+	// Top money bar (reference hub screen): BALANCE / INFLUENCE / NET SPEND
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Influence = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	float NetSpend = 0.0f;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	float SeasonProgress = 0.4f;
 
@@ -106,6 +137,12 @@ struct FHubScreenData
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FRiderStanding> TopRiders;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FTeamStandingRow> TeamStandings;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRiderStanding> DriverStandings;
 
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	TArray<FMediaFeed> RyansBriefing;
