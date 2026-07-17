@@ -3,10 +3,13 @@
 
 import type { ChassisId, EngineId, TireId } from '../data/bikes';
 import type { ElectronicsType, ExhaustType } from '../data/setups';
+import type { Team } from '../data/types';
 import { ENGINES, CHASSIS, TIRES, calculateBikeBuildCost } from '../data/bikes';
 import { ELECTRONICS_SYSTEMS, EXHAUST_SYSTEMS, calculateRoundSetupCost } from '../data/setups';
 import { ALL_STAFF } from '../data/staff';
-import { PURSES, WEEKLY_LEAGUE_REVENUE, REVENUE_SPLIT } from '../data/namc';
+import { PURSES, WEEKLY_LEAGUE_REVENUE, REVENUE_SPLIT, APPEARANCE_FEE } from '../data/namc';
+import { PURSES_GP, WEEKLY_LEAGUE_REVENUE_GP, REVENUE_SPLIT_GP, APPEARANCE_FEE_GP } from '../data/gp';
+import { PURSES_SBK, WEEKLY_LEAGUE_REVENUE_SBK, REVENUE_SPLIT_SBK, APPEARANCE_FEE_SBK } from '../data/sbk';
 
 export type RiderClass = '350-pro' | '250' | '250p' | 'womens-250';
 export type FinishPosition = number; // 1-40
@@ -150,9 +153,93 @@ export function settleNamcRound(u: any, championship: any, weekends: any[]): Rou
   return Object.values(byTeam);
 }
 
+/**
+ * Road championship settlement (MotoGP, WorldSBK).
+ * Handles single race (GP per race) or aggregated races (SBK 3 races per round).
+ * Updates team budgets with purse winnings, revenue share, and rider costs.
+ */
 export function settleRoadRound(u: any, weekend: any): void {
-  // Stub: process road round, update team budgets
-  // No return needed
+  if (!weekend) return;
+
+  const teams = Object.values(u.teams) as Team[];
+  const discipline = weekend.championship === 'road'
+    ? teams.find((t: Team) => t.discipline === 'gp')?.discipline ?? 'sbk'
+    : 'sbk';
+
+  // Determine purse table and revenue model based on discipline
+  const getPurseTable = (classId: string): number[] => {
+    if (discipline === 'gp') return PURSES_GP[classId] ?? [];
+    if (discipline === 'sbk') return PURSES_SBK[classId] ?? [];
+    return [];
+  };
+
+  const getRevenueSplit = () => {
+    if (discipline === 'gp') return REVENUE_SPLIT_GP;
+    if (discipline === 'sbk') return REVENUE_SPLIT_SBK;
+    return REVENUE_SPLIT;
+  };
+
+  const getWeeklyRevenue = () => {
+    if (discipline === 'gp') return WEEKLY_LEAGUE_REVENUE_GP;
+    if (discipline === 'sbk') return WEEKLY_LEAGUE_REVENUE_SBK;
+    return WEEKLY_LEAGUE_REVENUE;
+  };
+
+  const getAppearanceFee = () => {
+    if (discipline === 'gp') return APPEARANCE_FEE_GP;
+    if (discipline === 'sbk') return APPEARANCE_FEE_SBK;
+    return APPEARANCE_FEE;
+  };
+
+  const revenueSplit = getRevenueSplit();
+  const weeklyRevenue = getWeeklyRevenue();
+  const appearanceFee = getAppearanceFee();
+
+  // Calculate teams per discipline (GP: 11 teams, SBK: 12 teams, NAMC: 20 teams)
+  const teamsInDiscipline = Object.values(u.teams).filter((t: any) => {
+    if (discipline === 'gp') return t.discipline === 'gp';
+    if (discipline === 'sbk') return t.discipline === 'sbk';
+    return false;
+  }).length;
+
+  const revenueSharePerTeam = teamsInDiscipline > 0
+    ? (weeklyRevenue * revenueSplit.teams) / teamsInDiscipline
+    : 0;
+
+  const byTeam: Record<string, RoundLedgerEntry> = {};
+  const entry = (teamId: string): RoundLedgerEntry =>
+    (byTeam[teamId] ??= { teamId, purse: 0, revenuePool: 0, salaries: 0, appearance: 0 });
+
+  // Process race results: purse by finishing position
+  const purseTable = getPurseTable(weekend.classId);
+  weekend.finishOrder.forEach((riderId: string, i: number) => {
+    const r = u.riders[riderId];
+    if (!r?.teamId) return;
+    const payout = purseTable[i] ?? 0;  // Road racing: no minimum payout for out-of-points
+    const teamCut = Math.round(payout * Math.min(25, r.contract?.purseShareTeamPct ?? 0) / 100);
+    entry(r.teamId).purse += teamCut;
+  });
+
+  // Team obligations + league revenue share
+  for (const teamId in u.teams) {
+    const t = u.teams[teamId] as Team;
+    if (discipline === 'gp' && t.discipline !== 'gp') continue;
+    if (discipline === 'sbk' && t.discipline !== 'sbk') continue;
+
+    const e = entry(t.id);
+    const roster = Object.values(u.riders).filter((r: any) => r.teamId === t.id) as any[];
+
+    // Calculate round count for salary draw
+    const roundsPerSeason = discipline === 'gp' ? 22 : discipline === 'sbk' ? 12 : 20;
+
+    for (const r of roster) {
+      e.salaries += Math.round((r.salary ?? 0) / roundsPerSeason);
+      if (!r.bench && r.injuredForRounds === 0) e.appearance += appearanceFee;
+    }
+
+    e.revenuePool = Math.round(revenueSharePerTeam);
+    t.budget += e.purse + e.revenuePool - e.salaries - e.appearance;
+  }
 }
 
 export class EconomyManager {
