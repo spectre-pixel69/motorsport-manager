@@ -205,85 +205,253 @@ export function HubScreen({
           )}
 
           {/* Standings */}
-          {panel === 'standings' && (
-            <>
-              <div class="class-filter">
-                {classOptions.map(({ cls, champ }) => (
-                  <button
-                    key={cls}
-                    class={stClass === cls && stChamp === champ ? 'active' : ''}
-                    onClick={() => { setStClass(cls); setStChamp(champ); }}
-                  >{state.discipline === 'namc' ? `${champ === 'fourStroke' ? '4S' : '2S'}` : ''} {classById(cls).shortName}</button>
-                ))}
-              </div>
-              <table class="data standings">
-                <thead><tr><th>#</th><th>Rider</th><th style="text-align:right">Pts</th></tr></thead>
-                <tbody>
-                  {riderStandingsFor(state, stClass, stChamp).slice(0, 20).map((row, i) => (
-                    <tr key={row.rider.id} class={i === 0 ? 'leader' : ''}>
-                      <td>{i + 1}</td>
-                      <td>{row.rider.name}</td>
-                      <td style="text-align:right"><b>{row.pts}</b></td>
-                    </tr>
+          {panel === 'standings' && (() => {
+            const standings = riderStandingsFor(state, stClass, stChamp);
+            const leader = standings[0];
+            const roundsRemaining = cal.length - state.round;
+            const maxRemainingPoints = roundsRemaining * 75; // Main Event winner points
+            return (
+              <>
+                <div class="class-filter">
+                  {classOptions.map(({ cls, champ }) => (
+                    <button
+                      key={cls}
+                      class={stClass === cls && stChamp === champ ? 'active' : ''}
+                      onClick={() => { setStClass(cls); setStChamp(champ); }}
+                    >{state.discipline === 'namc' ? `${champ === 'fourStroke' ? '4S' : '2S'}` : ''} {classById(cls).shortName}</button>
                   ))}
-                </tbody>
-              </table>
-            </>
-          )}
+                </div>
+
+                {leader && (
+                  <div class="panel" style="padding:12px;margin-bottom:12px;background:linear-gradient(135deg, #15192e 0%, #1a1f3a 100%)">
+                    <div class="muted" style="font-size:11px">Championship Leader</div>
+                    <div style="display:flex;justify-content:space-between;align-items:center">
+                      <div>
+                        <div style="font-size:18px;font-weight:bold">{leader.rider.name}</div>
+                        <div class="muted" style="font-size:12px">{leader.rider.teamId ? u.teams[leader.rider.teamId]?.name : 'Free Agent'}</div>
+                      </div>
+                      <div style="text-align:right">
+                        <div style="font-size:28px;font-weight:bold;color:#f39c12">{leader.pts} pts</div>
+                        <div class="muted" style="font-size:11px">{roundsRemaining} rounds left</div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                <table class="data standings">
+                  <thead><tr><th>#</th><th>Rider / Team</th><th style="text-align:right">Pts</th><th style="text-align:center">Δ</th></tr></thead>
+                  <tbody>
+                    {standings.slice(0, 20).map((row, i) => {
+                      const delta = leader ? Math.round(leader.pts - row.pts) : 0;
+                      const canClench = delta <= maxRemainingPoints;
+                      return (
+                        <tr key={row.rider.id} class={i === 0 ? 'leader' : ''} style={!canClench ? 'opacity:0.6' : ''}>
+                          <td>{i + 1}</td>
+                          <td>
+                            <div>{row.rider.name}</div>
+                            <div class="muted" style="font-size:11px">{row.rider.teamId ? u.teams[row.rider.teamId]?.shortName : 'FA'}</div>
+                          </td>
+                          <td style="text-align:right"><b>{row.pts}</b></td>
+                          <td style="text-align:center" class="muted">{delta > 0 ? `−${delta}` : 'Lead'}</td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </>
+            );
+          })()}
 
           {/* Team Roster */}
-          {panel === 'team' && (
-            <>
+          {panel === 'team' && (() => {
+            const allRiders = ridersOfTeam(u, team.id);
+            const starters = allRiders.filter(r => !r.bench);
+            const bench = allRiders.filter(r => r.bench);
+            return (
+              <>
+                <div class="section">
+                  <h4>Active Roster ({starters.length})</h4>
+                  <table class="data" style="font-size:13px">
+                    <thead><tr><th>Rider</th><th style="text-align:center">OVR</th><th style="text-align:center">Age</th><th style="text-align:center">Class</th><th>Status</th></tr></thead>
+                    <tbody>
+                      {starters.map(r => (
+                        <tr key={r.id}>
+                          <td>#{r.number} {r.name}</td>
+                          <td style="text-align:center">{r.overall}</td>
+                          <td style="text-align:center">{r.age}</td>
+                          <td style="text-align:center">{classById(r.classId as any)?.shortName ?? '?'}</td>
+                          <td>
+                            {r.injuredForRounds > 0 ? (
+                              <span style="color:#e74c3c">🏥 {r.injuredForRounds} round{r.injuredForRounds !== 1 ? 's' : ''}</span>
+                            ) : r.suspendedForRounds && r.suspendedForRounds > 0 ? (
+                              <span style="color:#e74c3c">🚫 Suspended</span>
+                            ) : (
+                              <span style="color:#2ecc71">✓ Ready</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {bench.length > 0 && (
+                  <div class="section">
+                    <h4>Bench ({bench.length})</h4>
+                    <table class="data" style="font-size:13px">
+                      <thead><tr><th>Rider</th><th style="text-align:center">OVR</th><th style="text-align:center">Age</th><th style="text-align:center">Class</th></tr></thead>
+                      <tbody>
+                        {bench.map(r => (
+                          <tr key={r.id} style="opacity:0.7">
+                            <td>#{r.number} {r.name}</td>
+                            <td style="text-align:center">{r.overall}</td>
+                            <td style="text-align:center">{r.age}</td>
+                            <td style="text-align:center">{classById(r.classId as any)?.shortName ?? '?'}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                    <p class="muted" style="margin-top:8px;font-size:11px">Bench riders fill in for injured or suspended starters (rulebook §4.8.1).</p>
+                  </div>
+                )}
+              </>
+            );
+          })()}
+
+          {/* Finances */}
+          {panel === 'money' && (() => {
+            const cal = u.calendars[state.discipline];
+            const roundsRun = Math.min(state.round, state.history.length);
+            const totalPurse = state.leagueHealth.reduce((sum, lh) => {
+              const entry = lh.ledger.find(e => e.teamId === team.id);
+              return sum + (entry?.purse ?? 0);
+            }, 0);
+            const totalAppearance = state.leagueHealth.reduce((sum, lh) => {
+              const entry = lh.ledger.find(e => e.teamId === team.id);
+              return sum + (entry?.appearance ?? 0);
+            }, 0);
+            const totalRevenue = state.leagueHealth.reduce((sum, lh) => {
+              const entry = lh.ledger.find(e => e.teamId === team.id);
+              return sum + (entry?.revenuePool ?? 0);
+            }, 0);
+            const totalSalaries = state.leagueHealth.reduce((sum, lh) => {
+              const entry = lh.ledger.find(e => e.teamId === team.id);
+              return sum + (entry?.salaries ?? 0);
+            }, 0);
+            const netEarnings = totalPurse + totalAppearance + totalRevenue - totalSalaries;
+            const avgRoundFlow = roundsRun > 0 ? Math.round(netEarnings / roundsRun) : 0;
+            const projectedEndOfSeason = Math.round(team.budget + (avgRoundFlow * (cal.length - state.round)));
+
+            return (
               <div class="section">
-                <h4>Starters</h4>
-                <table class="data">
-                  <thead><tr><th>Rider</th><th>OVR</th><th>Age</th></tr></thead>
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px">
+                  <div class="panel" style="padding:12px">
+                    <div class="muted" style="font-size:12px">Cash on Hand</div>
+                    <div style="font-size:24px;font-weight:bold;color:#2ecc71">${Math.round(team.budget).toLocaleString()}</div>
+                  </div>
+                  <div class="panel" style="padding:12px">
+                    <div class="muted" style="font-size:12px">Season Projection</div>
+                    <div style={`font-size:24px;font-weight:bold;color:${projectedEndOfSeason < 0 ? '#e74c3c' : '#2ecc71'}`}>
+                      ${Math.round(projectedEndOfSeason).toLocaleString()}
+                    </div>
+                  </div>
+                </div>
+
+                <h4 style="margin-bottom:8px">Season Totals (R1–R{state.round})</h4>
+                <table class="data" style="margin-bottom:16px;font-size:13px">
+                  <thead><tr><th>Item</th><th style="text-align:right">Amount</th></tr></thead>
                   <tbody>
-                    {myRiders.map(r => (
-                      <tr key={r.id}>
-                        <td>#{r.number} {r.name}</td>
-                        <td>{r.overall}</td>
-                        <td>{r.age}</td>
-                      </tr>
-                    ))}
+                    <tr><td>Prize Money</td><td style="text-align:right;color:#2ecc71">+${Math.round(totalPurse).toLocaleString()}</td></tr>
+                    <tr><td>Appearance Fees</td><td style="text-align:right;color:#2ecc71">+${Math.round(totalAppearance).toLocaleString()}</td></tr>
+                    <tr><td>League Revenue Share</td><td style="text-align:right;color:#2ecc71">+${Math.round(totalRevenue).toLocaleString()}</td></tr>
+                    <tr><td style="border-bottom:1px solid #1a1f3a">Salary Payroll</td><td style="text-align:right;color:#e74c3c;border-bottom:1px solid #1a1f3a">−${Math.round(totalSalaries).toLocaleString()}</td></tr>
+                    <tr><td style="font-weight:bold">Net Cash Flow</td><td style={`text-align:right;font-weight:bold;color:${netEarnings >= 0 ? '#2ecc71' : '#e74c3c'}`}>{netEarnings >= 0 ? '+' : '−'}${Math.round(Math.abs(netEarnings)).toLocaleString()}</td></tr>
+                  </tbody>
+                </table>
+
+                <h4 style="margin-bottom:8px">Recent Races</h4>
+                <table class="data" style="font-size:13px">
+                  <thead><tr><th>Round</th><th>Track</th><th>Class Winner</th><th>Your Best</th></tr></thead>
+                  <tbody>
+                    {state.history.slice(0, 8).map((h, i) => {
+                      const track = u.tracks[cal[h.round - 1]?.trackId];
+                      return (
+                        <tr key={i}>
+                          <td>R{h.round}</td>
+                          <td class="muted" style="font-size:11px">{track?.name ?? '?'}</td>
+                          <td>{h.winnerName.split(' ')[0]}</td>
+                          <td><strong>{h.playerBest}</strong></td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
               </div>
-            </>
-          )}
-
-          {/* Finances */}
-          {panel === 'money' && (
-            <div class="section">
-              <h3 class="money">${Math.round(team.budget).toLocaleString()}</h3>
-              <p class="muted">Round-by-round income settled after each race.</p>
-              <table class="data">
-                <thead><tr><th>Recent</th><th>Winner</th><th>Your Best</th></tr></thead>
-                <tbody>
-                  {state.history.slice(0, 6).map((h, i) => (
-                    <tr key={i}><td>R{h.round}</td><td>{h.winnerName.split(' ')[0]}</td><td>{h.playerBest}</td></tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
+            );
+          })()}
 
           {/* League Health */}
           {panel === 'league' && state.discipline === 'namc' && (
             <div class="section">
-              <h4>League Financial Health</h4>
-              {state.leagueHealth.length === 0 ? (
-                <p class="muted">Run a round to collect league data.</p>
+              <h3>⚖️ League Health & Compliance</h3>
+              {state.welfareFund.totalAccumulated > 0 && (
+                <div class="panel" style="padding:12px;margin-bottom:12px;background:#1a1f3a">
+                  <div class="muted" style="font-size:12px">Rider Welfare Fund (§13.5)</div>
+                  <div style="font-size:20px;font-weight:bold;color:#2ecc71">${Math.round(state.welfareFund.totalAccumulated).toLocaleString()}</div>
+                  <div class="muted" style="font-size:11px">{state.welfareFund.fineHistory.length} fines collected</div>
+                </div>
+              )}
+
+              <h4>Penalty & Strike Summary</h4>
+              {Object.values(u.teams).filter(t => t.discipline === 'namc' && (t.strikes > 0 || t.charterRevoked)).length === 0 ? (
+                <p class="muted">All teams in good standing.</p>
               ) : (
-                (() => {
-                  const lh = state.leagueHealth[state.leagueHealth.length - 1];
-                  const totalPurse = lh.ledger.reduce((s, l) => s + l.purse, 0);
-                  return (
-                    <p class="muted">
-                      R{lh.round}: {lh.ledger.filter(l => (u.teams[l.teamId]?.budget ?? 0) < 0).length}/20 teams insolvent
-                    </p>
-                  );
-                })()
+                <table class="data" style="font-size:13px">
+                  <thead><tr><th>Team</th><th style="text-align:center">Strikes</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {Object.values(u.teams)
+                      .filter(t => t.discipline === 'namc' && (t.strikes > 0 || t.charterRevoked))
+                      .map((t, i) => (
+                        <tr key={i}>
+                          <td>{t.name}</td>
+                          <td style="text-align:center"><strong>{t.strikes}/3</strong></td>
+                          <td>
+                            {t.charterRevoked ? (
+                              <span style="color:#c0392b">❌ Charter Revoked</span>
+                            ) : t.strikes >= 2 ? (
+                              <span style="color:#e74c3c">⚠️ {3 - t.strikes} strike remaining</span>
+                            ) : (
+                              <span style="color:#f39c12">{3 - t.strikes} strikes remaining</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                  </tbody>
+                </table>
+              )}
+
+              {state.leagueHealth.length > 0 && (
+                <>
+                  <h4 style="margin-top:16px">Round {state.leagueHealth[state.leagueHealth.length - 1].round} Financial Status</h4>
+                  {(() => {
+                    const lh = state.leagueHealth[state.leagueHealth.length - 1];
+                    const insolvent = lh.ledger.filter(l => (u.teams[l.teamId]?.budget ?? 0) < 0).length;
+                    const totalLeaguePurse = lh.ledger.reduce((s, l) => s + l.purse, 0);
+                    return (
+                      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
+                        <div class="panel" style="padding:12px">
+                          <div class="muted" style="font-size:12px">Purse Distributed</div>
+                          <div style="font-size:18px;font-weight:bold">${Math.round(totalLeaguePurse).toLocaleString()}</div>
+                        </div>
+                        <div class="panel" style="padding:12px">
+                          <div class="muted" style="font-size:12px">Teams in Budget</div>
+                          <div style={`font-size:18px;font-weight:bold;color:${insolvent > 0 ? '#e74c3c' : '#2ecc71'}`}>{20 - insolvent}/20</div>
+                          {insolvent > 0 && <div class="muted" style="font-size:11px">{insolvent} teams insolvent</div>}
+                        </div>
+                      </div>
+                    );
+                  })()}
+                </>
               )}
             </div>
           )}
