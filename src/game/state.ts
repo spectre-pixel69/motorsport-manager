@@ -172,7 +172,10 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
   }
 
   applyInjuriesAndRecovery(state, rng, weekends);
-  if (state.discipline === 'namc') applySuccessBallast(state, weekends);
+  if (state.discipline === 'namc') {
+    applySuccessBallast(state, weekends);
+    applyRaceStrikeRisks(state, rng, weekends);
+  }
   applyPsychology(state, weekends);
   recordHistory(state, weekends);
   state.round += 1;
@@ -198,6 +201,35 @@ function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): voi
         state.messages.unshift(`BOP: ${r.name} now carries ${r.ballastKg}kg of success ballast.`);
       }
     });
+  }
+}
+
+/**
+ * NAMC three-strike penalty system (rulebook §13.1): reckless riders or
+ * unsportsmanlike teams may draw strikes. Each strike bumps the counter;
+ * Strike 3 triggers suspension (handled at off-season).
+ * Strikes reset each season.
+ */
+function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: WeekendResult[]): void {
+  const u = state.universe;
+  for (const w of weekends) {
+    for (const s of w.sessions) {
+      for (const ev of s.outcome.events) {
+        // Aggressive riders who crash have a small risk of a strike
+        if (ev.kind === 'crash') {
+          const r = u.riders[ev.riderId];
+          if (!r?.teamId || r.stats.aggression < 70) continue; // only aggressive riders at risk
+          if (rng() < 0.08) { // 8% chance per crash for aggressive riders
+            const team = u.teams[r.teamId];
+            if (team.strikes < 3) {
+              team.strikes += 1;
+              const penalty = team.strikes === 1 ? 'warning' : team.strikes === 2 ? '5-point deduction' : 'suspension';
+              state.messages.unshift(`PENALTY: ${team.name} receives strike #{team.strikes} (${penalty}) for ${r.name}'s aggressive riding.`);
+            }
+          }
+        }
+      }
+    }
   }
 }
 
@@ -609,6 +641,10 @@ export function advanceSeason(state: CareerState): OffSeasonReport {
   u.season += 1;
   state.round = 0;
   state.standings = emptyStandings();
+  // Reset strikes for all teams (rulebook §13.1: annual reset)
+  for (const t of Object.values(u.teams)) {
+    if (t.discipline === 'namc') t.strikes = 0;
+  }
   state.messages.unshift(...notes, `The ${state.season} season is here. New year, same dirt.`);
   return report;
 }
