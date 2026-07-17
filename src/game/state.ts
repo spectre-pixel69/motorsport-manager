@@ -153,7 +153,7 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
     for (const champ of ['fourStroke'] as ChampionshipId[]) {
       const champWeekends: WeekendResult[] = [];
       for (const cls of NAMC_CLASS_IDS) {
-        const w = runNamcWeekend(rng, u, cls, champ, round.trackId, approachFor);
+        const w = runNamcWeekend(rng, u, cls, champ, round.trackId, approachFor, round.round);
         champWeekends.push(w);
         weekends.push(w);
         applyPoints(state, w);
@@ -167,7 +167,7 @@ export function runRound(state: CareerState, approaches: ApproachMap = {}): Roun
     // Road: all classes of the ladder race at the round's track.
     const ladder = CLASSES.filter(c => c.discipline === state.discipline).map(c => c.id);
     for (const cls of ladder) {
-      const w = runRoadWeekend(rng, u, cls, round.trackId, approachFor);
+      const w = runRoadWeekend(rng, u, cls, round.trackId, approachFor, round.round);
       weekends.push(w);
       applyPoints(state, w);
       settleRoadRound(u, w);

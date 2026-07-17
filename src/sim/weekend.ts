@@ -11,6 +11,7 @@ import { RACE_MINUTES } from '../data/namc';
 import { gridOf } from '../data/universe';
 import { simulateQualifying, simulateRace, lapsForMinutes, type Entrant, type RaceOutcome } from './engine';
 import { type RNG } from '../util/rng';
+import { getWeatherBiasForRound } from '../data/seasonal-weather';
 
 export interface SessionResult {
   name: string;
@@ -45,10 +46,13 @@ const defaultApproach = (): Entrant['approach'] => 'normal';
 export function runRoadWeekend(
   rng: RNG, u: Universe, classId: ClassId, trackId: string,
   approachFor: (r: Rider) => Entrant['approach'] = defaultApproach,
+  roundNumber?: number,
 ): WeekendResult {
   const track = u.tracks[trackId];
   const grid = gridOf(u, classId, 'road');
-  const wet = rng() < track.weatherBias;
+  // Use seasonal weather bias if round number provided, else static bias
+  const weatherBias = roundNumber ? getWeatherBiasForRound(trackId, roundNumber) : track.weatherBias;
+  const wet = rng() < weatherBias;
 
   const entrants = toEntrants(u, grid, approachFor);
   const qOrder = simulateQualifying(rng, entrants, track, wet);
@@ -75,10 +79,13 @@ export function runRoadWeekend(
 export function runNamcWeekend(
   rng: RNG, u: Universe, classId: ClassId, championship: ChampionshipId, trackId: string,
   approachFor: (r: Rider) => Entrant['approach'] = defaultApproach,
+  roundNumber?: number,
 ): WeekendResult {
   const track = u.tracks[trackId];
   const grid = gridOf(u, classId, championship);
-  const wet = rng() < track.weatherBias;
+  // Use seasonal weather bias if round number provided, else static bias
+  const weatherBias = roundNumber ? getWeatherBiasForRound(trackId, roundNumber) : track.weatherBias;
+  const wet = rng() < weatherBias;
 
   // --- Friday hot-lap qualifying (§3.7): fastest qualifier picks his gate
   // first. Grid slot = qualifying rank until rider gate-selection lands.

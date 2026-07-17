@@ -18,6 +18,7 @@ import { buildUniverse } from './src/data/universe.ts';
 import { simulateRace, lapsForMinutes, type Entrant } from './src/sim/engine.ts';
 import { NAMC_CLASS_IDS } from './src/data/namc.ts';
 import { mulberry32, hashString } from './src/util/rng.ts';
+import { getWeatherBiasForRound, roundToMonth } from './src/data/seasonal-weather.ts';
 
 interface ValidationMetrics {
   round: number;
@@ -112,11 +113,13 @@ export function validateMotocrossSim(seed?: number): void {
 
       if (entrants.length === 0) continue;
 
-      // Run race
+      // Run race (with seasonal weather bias)
       const track = universe.tracks[round.trackId];
       const laps = lapsForMinutes(track, 40);
       const raceRng = mulberry32(hashString(`${s}:${universe.season}:${roundNum}:${classId}`));
-      const result = simulateRace(raceRng, entrants, track, laps);
+      const seasonalWeatherBias = getWeatherBiasForRound(round.trackId, roundNum);
+      const wet = raceRng() < seasonalWeatherBias;
+      const result = simulateRace(raceRng, entrants, track, laps, { wet });
 
       // Parse events
       const crashes = result.events.filter(e => e.kind === 'crash').length;
@@ -207,6 +210,23 @@ export function validateMotocrossSim(seed?: number): void {
   console.log(`  Total mechanical failures: ${totalMechanicalFailures}`);
   console.log(`  Total remonts: ${totalRemonts}`);
   console.log(`  Wet races: ${wetRaceCount}/${cal.length}`);
+
+  // Seasonal weather analysis
+  console.log(`\n🌡️  SEASONAL WEATHER BIAS (by round and track):`);
+  const weatherBiases = new Map<number, { track: string; bias: number; month: number }[]>();
+  for (let i = 0; i < cal.length; i++) {
+    const round = cal[i];
+    const bias = getWeatherBiasForRound(round.trackId, i + 1);
+    const month = roundToMonth(i + 1);
+    if (!weatherBiases.has(month)) weatherBiases.set(month, []);
+    weatherBiases.get(month)!.push({ track: universe.tracks[round.trackId].name, bias, month });
+  }
+
+  const monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November'];
+  for (const [month, entries] of Array.from(weatherBiases.entries()).sort((a, b) => a[0] - b[0])) {
+    const avgBias = entries.reduce((s, e) => s + e.bias, 0) / entries.length;
+    console.log(`  ${monthNames[month]}: avg bias ${avgBias.toFixed(2)} (${(avgBias * 100).toFixed(0)}% wet probability)`);
+  }
 
   // Analyze DNF and crash distribution
   const dnfMetrics = metrics.filter(m => m.dnfs > 0);

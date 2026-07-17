@@ -13,6 +13,7 @@ import { SALARY_FLOORS, CHARTERS_PER_CHAMPIONSHIP, RIDERS_PER_CLASS_PER_TEAM, NA
 import { mulberry32, hashString, pick, irange, gauss, clamp, shuffle, type RNG } from '../util/rng';
 import { makeGatePreferenceProfile } from './gatePreference';
 import { seededLogo } from '../logo/logos';
+import { getSeasonalWeatherBias, roundToMonth } from './seasonal-weather';
 
 let riderSeq = 0;
 let teamSeq = 0;
