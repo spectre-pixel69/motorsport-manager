@@ -3,6 +3,10 @@
 // Tier 2: Fine (100% to Rider Welfare Fund)
 // Tier 3: Suspension (1-4 consecutive rounds, forfeits points/purse)
 // Tier 4: Charter Revocation (charter permanently revoked, riders become free agents)
+//
+// Discipline-Specific Penalties:
+// GP: Grid penalties (position loss), concession tier deduction, development token revocation
+// SBK: Grid penalties (race-specific), ballast manipulation, BoP violation fines
 
 import type { Penalty, PenaltyTier, PenaltyReason, Rider, Team, RiderWelfareFund } from '../data/types';
 
@@ -244,4 +248,87 @@ function describeReason(reason: PenaltyReason): string {
     'driver-aid-violation': 'Banned driver aid detected',
   };
   return map[reason];
+}
+
+// ============================================================================
+// DISCIPLINE-SPECIFIC PENALTIES (GP, SBK)
+// ============================================================================
+
+/**
+ * Apply a grid penalty for MotoGP (§10.2: qualifying penalties, race start penalties).
+ * Rider loses N grid positions in next race session.
+ */
+export function applyGPGridPenalty(
+  rider: Rider,
+  positions: number,
+  reason: 'qualifying-violation' | 'unsafe-practice' | 'technical-infraction',
+  currentRound: number,
+): void {
+  if (!rider.gridPenaltyPositions) rider.gridPenaltyPositions = 0;
+  rider.gridPenaltyPositions += positions;
+}
+
+/**
+ * Apply development token penalty for MotoGP concession tier violation.
+ * Reduces available development tokens for next round.
+ */
+export function applyGPConcessionPenalty(
+  team: Team,
+  tokensRevoked: number,
+  reason: 'cost-cap-violation' | 'concession-tier-infraction',
+  currentRound: number,
+  universe?: any,
+): void {
+  const penalty = issuePenalty(team, 'technical-violation', currentRound, 2, undefined);
+  penalty.description = `GP Concession violation: ${tokensRevoked} development token(s) revoked (${reason})`;
+  penalty.fineAmount = 50_000 * tokensRevoked;
+
+  // Update universe extension if available
+  if (universe?.champExtension?.discipline === 'gp') {
+    const manufacturerIds = Object.values(team).filter((v: any) => typeof v === 'string' && v.startsWith('m'));
+    for (const mfgId of manufacturerIds) {
+      if (universe.champExtension.developmentTokensUsed[mfgId] !== undefined) {
+        universe.champExtension.developmentTokensUsed[mfgId] += tokensRevoked;
+      }
+    }
+  }
+}
+
+/**
+ * Apply SBK-specific ballast manipulation penalty.
+ * Higher severity than road racing due to safety criticality.
+ */
+export function applySBKBallastViolation(
+  team: Team,
+  currentRound: number,
+): void {
+  const penalty = issuePenalty(team, 'ballast-manipulation', currentRound, 3, 2);
+  penalty.description = 'SBK Ballast manipulation detected: 2-round suspension + mandatory scrutineering';
+  penalty.fineAmount = 75_000;
+}
+
+/**
+ * Apply SBK BoP violation penalty (fuel flow, air restrictor, rpm limit).
+ * Can result in disqualification from race or grid penalty for next race.
+ */
+export function applySBKBoPViolation(
+  team: Team,
+  violation: 'fuel-flow' | 'air-restrictor' | 'rpm-limit' | 'min-weight',
+  currentRound: number,
+  severity: 'minor' | 'major',
+): void {
+  const tier: PenaltyTier = severity === 'minor' ? 2 : 3;
+  const suspRounds = severity === 'major' ? 1 : undefined;
+  const penalty = issuePenalty(team, 'technical-violation', currentRound, tier, suspRounds);
+  penalty.description = `SBK BoP violation (${violation}): ${severity} infraction`;
+  penalty.fineAmount = severity === 'minor' ? 25_000 : 100_000;
+}
+
+/**
+ * Apply Race 2 grid reversal penalty for SBK (when top-6 from Race 1 grid is compromised).
+ * Rider is moved to back of grid for Race 2.
+ */
+export function applySBKRace2GridPenalty(rider: Rider, currentRound: number): void {
+  if (!rider.race2GridPenalty) rider.race2GridPenalty = 0;
+  rider.race2GridPenalty = 1; // Flag for Race 2 grid move
 }

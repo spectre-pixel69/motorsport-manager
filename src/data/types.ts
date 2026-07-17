@@ -161,6 +161,9 @@ export interface Rider {
   suspensionReason?: string;  // reason for suspension
   // MotoGP concession tier
   concessionTier?: ConcessionTier;  // A/B/C/D: based on manufacturer championship position
+  // GP/SBK grid penalties
+  gridPenaltyPositions?: number;  // GP: position loss in next qualifying/race
+  race2GridPenalty?: number;      // SBK: flag for Race 2 grid move (1 = move to back)
   // SBK fuel consumption & strategy
   lastRaceAverageFuelPerLap?: number;  // liters/lap (for race strategy)
 }
@@ -319,12 +322,6 @@ export interface TrackDetails extends Track {
   specialties: string[];
 }
 
-export interface CalendarRound {
-  round: number;
-  trackId: string;
-  /** NAMC: rounds 1-12 stadium, 13-24 outdoor */
-  kind: 'road' | 'stadium' | 'outdoor';
-}
 
 export interface ClassDef {
   id: ClassId;
@@ -390,6 +387,8 @@ export type RaceSessionType = 'practice' | 'qualifying' | 'sprint' | 'superpole'
 export interface CalendarRound {
   round: number;
   trackId: string;
+  /** NAMC: rounds 1-12 stadium, 13-24 outdoor; GP/SBK: always 'road' */
+  kind: 'road' | 'stadium' | 'outdoor';
   // Multi-race support: different session schedules per championship
   sessions?: {
     sessionType: RaceSessionType;

@@ -155,6 +155,10 @@ export const GP_TRACKS: [string, string, string, number, number, number][] = [
   ['sepang', 'Sepanga International', 'Malaysia', 5.5, 118, 0.40],
   ['valencia', 'Valentia Ricardo Toro', 'Spain', 4.0, 90, 0.12],
   ['mandalika', 'Mandalaika Street', 'Indonesia', 4.3, 102, 0.35],
+  ['buriram', 'Buriram International', 'Thailand', 5.4, 115, 0.38],
+  ['brno', 'Brno Masaryk', 'Czech Republic', 5.4, 112, 0.32],
+  ['mugello2', 'Mugello II', 'Italy', 5.2, 105, 0.12],
+  ['istanbul', 'Istanbul Park', 'Turkey', 5.3, 110, 0.25],
 ];
 
 export const SBK_TRACKS: [string, string, string, number, number, number][] = [

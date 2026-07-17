@@ -341,7 +341,18 @@ function applyPoints(state: CareerState, w: WeekendResult): void {
     riders[riderId] = (riders[riderId] ?? 0) + pts;
     const teamId = state.universe.riders[riderId]?.teamId;
     if (teamId) {
-      const tkey = w.championship === 'road' ? standingsKey(w.classId, 'road') : `team:${w.championship}`;
+      // Discipline-specific team/constructor/manufacturer standing keys
+      const discipline = state.universe.teams[teamId]?.discipline ?? 'namc';
+      let tkey: string;
+      if (discipline === 'namc') {
+        tkey = w.championship === 'road' ? standingsKey(w.classId, 'road') : `team:${w.championship}`;
+      } else if (discipline === 'gp') {
+        tkey = `constructor:${w.classId}`;  // MotoGP: constructor championship per class
+      } else if (discipline === 'sbk') {
+        tkey = `manufacturer:${w.classId}`;  // WorldSBK: manufacturer championship per class
+      } else {
+        tkey = standingsKey(w.classId, 'road');
+      }
       const teams = (state.standings.teams[tkey] ??= {});
       teams[teamId] = (teams[teamId] ?? 0) + pts;
     }
