@@ -20,7 +20,7 @@ export const MANUFACTURERS_BASE: Omit<Manufacturer, 'cashOnHand' | 'financialSta
   { id: 'gasgaz', name: 'GasGaz', color: '#cc1f2f', strokes: '2S', reliabilityBias: 'fragile', performanceCeiling: 92 },
   { id: 'triumf', name: 'Triumf', color: '#0e2a3a', strokes: '4S', reliabilityBias: 'bulletproof', performanceCeiling: 81 },
   { id: 'betta', name: 'Betta', color: '#b01d2e', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 86 },
-  { id: 'atk', name: 'ATK', color: '#ff6b35', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 84 },
+  { id: 'atk', name: 'ATK', color: '#ff6b35', strokes: '4S', reliabilityBias: 'balanced', performanceCeiling: 84 },
 ];
 
 /**
