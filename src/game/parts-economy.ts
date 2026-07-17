@@ -8,6 +8,7 @@ import { clamp } from '../util/rng';
 /**
  * Simulate manufacturer financial state each season.
  * Cash flow comes from engine sales revenue. In crisis, they can't fulfill orders.
+ * ATK (parts company origin) is more resilient: higher cash buffer, lower cost multipliers.
  */
 export function updateManufacturerFinance(
   mfg: Manufacturer,
@@ -18,11 +19,19 @@ export function updateManufacturerFinance(
   const revenue = orderCount * 50_000;
   mfg.cashOnHand += revenue;
 
-  // Operating costs (fixed: ~$200k/season for infrastructure)
-  const operatingCost = 200_000;
+  // Operating costs (fixed: ~$200k/season for infrastructure; ATK $150k due to efficiency)
+  const operatingCost = mfg.id === 'atk' ? 150_000 : 200_000;
   mfg.cashOnHand -= operatingCost;
 
-  // Determine financial state based on cash reserves
+  // ATK: always stable with lower cost multipliers (parts company resilience)
+  if (mfg.id === 'atk') {
+    mfg.financialState = 'stable';
+    mfg.productionCapacity = 1.0;    // always 100% capacity
+    mfg.costMultiplier = 0.95;       // slightly cheaper than baseline
+    return;
+  }
+
+  // Determine financial state based on cash reserves (for non-ATK manufacturers)
   const threshold = {
     crisis: 100_000,      // below $100k = crisis
     stressed: 300_000,    // $100k-$300k = stressed
@@ -70,7 +79,8 @@ export function calculateEngineCost(
 
 /**
  * Fulfill engine order based on manufacturer production capacity.
- * Random selection: if capacity 70%, 70% of orders get fulfilled this season.
+ * ATK (parts company) always fulfills 100%. Others: capacity-based random selection.
+ * Lead time: 1-2 weeks (essentially 0-1 round delay for mid-season orders).
  */
 export function fulfillEngineOrder(
   order: EngineOrder,
@@ -83,14 +93,20 @@ export function fulfillEngineOrder(
   // Check if order is due for delivery
   if (currentSeason < order.expectedArrivalSeason) return false;
 
-  // Random fulfillment based on capacity
+  // ATK (parts company) always has parts available
+  if (mfg.id === 'atk') {
+    order.fulfilled = true;
+    return true;
+  }
+
+  // Other manufacturers: random fulfillment based on capacity
   if (rng() < mfg.productionCapacity) {
     order.fulfilled = true;
     return true;
   }
 
-  // Unfulfilled: delay 2-3 rounds
-  order.delayedRounds = Math.floor(2 + rng() * 2);
+  // Unfulfilled: delay 1-2 rounds (1-2 week lead time)
+  order.delayedRounds = Math.floor(1 + rng() * 2);
   return false;
 }
 

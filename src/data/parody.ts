@@ -20,10 +20,12 @@ export const MANUFACTURERS_BASE: Omit<Manufacturer, 'cashOnHand' | 'financialSta
   { id: 'gasgaz', name: 'GasGaz', color: '#cc1f2f', strokes: '2S', reliabilityBias: 'fragile', performanceCeiling: 92 },
   { id: 'triumf', name: 'Triumf', color: '#0e2a3a', strokes: '4S', reliabilityBias: 'bulletproof', performanceCeiling: 81 },
   { id: 'betta', name: 'Betta', color: '#b01d2e', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 86 },
+  { id: 'atk', name: 'ATK', color: '#ff6b35', strokes: '2S', reliabilityBias: 'balanced', performanceCeiling: 84 },
 ];
 
 /**
  * Initialize manufacturers with seed-based financial health.
+ * ATK (parts company) always has 100% production capacity regardless of financial state.
  */
 export function initializeManufacturers(seed: number): Manufacturer[] {
   const rng = mulberry32(hashString(`${seed}:manufacturers`));
@@ -32,8 +34,8 @@ export function initializeManufacturers(seed: number): Manufacturer[] {
     ...base,
     cashOnHand: 400_000 + Math.floor(rng() * 200_000),  // $400k-$600k starting cash
     financialState: 'stable' as const,
-    productionCapacity: 1.0,  // all manufacturers start at full capacity
-    baseEngineCost: 80_000,   // baseline engine cost
+    productionCapacity: base.id === 'atk' ? 1.0 : 1.0,  // ATK always 1.0, others start at 1.0 (affected by financial state during season)
+    baseEngineCost: base.id === 'atk' ? 75_000 : 80_000,   // ATK slightly cheaper (parts company advantage)
     costMultiplier: 1.0,      // no premium at start
   }));
 }

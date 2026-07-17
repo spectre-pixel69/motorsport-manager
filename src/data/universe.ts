@@ -154,7 +154,7 @@ function makeTeam(rng: RNG, opts: {
   name: string; shortName?: string; discipline: DisciplineId; championship: ChampionshipId;
   orgId?: string; dualCharter?: boolean; primary?: string; secondary?: string;
   manufacturerId?: string; prestige?: number; classIds: ClassId[]; tireBrandId?: string;
-}): Team {
+}, manufacturers: ReturnType<typeof initializeManufacturers>): Team {
   const id = `t${teamSeq++}`;
   const primary = opts.primary ?? pick(rng, ['#e2261f', '#f07000', '#1a49c4', '#3fb950', '#e8b23a', '#8a2be2', '#00b3ad', '#c8102e', '#2f9de0', '#59c118']);
   const secondary = opts.secondary ?? pick(rng, ['#101214', '#ffffff', '#12294a', '#e8e8e8']);
@@ -169,7 +169,7 @@ function makeTeam(rng: RNG, opts: {
     dualCharter: opts.dualCharter ?? false,
     colors: { primary, secondary },
     logo: seededLogo(opts.name, initials, primary, secondary),
-    manufacturerId: opts.manufacturerId ?? pick(rng, MANUFACTURERS).id,
+    manufacturerId: opts.manufacturerId ?? pick(rng, manufacturers).id,
     tireBrandId: opts.tireBrandId ?? pick(rng, TIRE_BRANDS).id,
     bike: {
       engine: clamp(Math.round(gauss(rng, 55 + (opts.prestige ?? 50) * 0.35, 8)), 30, 98),
@@ -199,6 +199,7 @@ function buildRoadDiscipline(
   rng: RNG, u: Universe, discipline: 'gp' | 'sbk',
   factoryTeams: [string, string, string, string, string, number][],
   stars: [string, string, number, number][],
+  manufacturers: ReturnType<typeof initializeManufacturers>,
 ): void {
   const ladder = discipline === 'gp' ? (['gp1', 'gp2', 'gp3'] as ClassId[]) : (['sbk', 'ss600', 'ss300'] as ClassId[]);
 
@@ -210,7 +211,7 @@ function buildRoadDiscipline(
     const team = makeTeam(rng, {
       name, shortName: short, discipline, championship: 'road',
       primary, secondary, manufacturerId: maker, prestige, classIds: [premier],
-    });
+    }, manufacturers);
     u.teams[team.id] = team;
     for (let i = 0; i < 2; i++) {
       let rider: Rider;
@@ -234,7 +235,7 @@ function buildRoadDiscipline(
     for (let t = 0; t < teamCount; t++) {
       const name = `${pick(rng, TEAM_ADJ)} ${pick(rng, TEAM_NOUN)}`;
       const prestige = irange(rng, 30, 70);
-      const team = makeTeam(rng, { name, discipline, championship: 'road', prestige, classIds: [cls] });
+      const team = makeTeam(rng, { name, discipline, championship: 'road', prestige, classIds: [cls] }, manufacturers);
       u.teams[team.id] = team;
       for (let i = 0; i < 2; i++) {
         const base = def.tier === 2 ? 58 : 50;
@@ -246,7 +247,7 @@ function buildRoadDiscipline(
   }
 }
 
-function buildNAMC(rng: RNG, u: Universe): void {
+function buildNAMC(rng: RNG, u: Universe, manufacturers: ReturnType<typeof initializeManufacturers>): void {
   // NAMC v15.1: S4-only championship, 20 charters. (2S parallel championship
   // is future DLC — dual-charter plumbing stays in the data model for it.)
   const champs: ChampionshipId[] = ['fourStroke'];
@@ -272,13 +273,13 @@ function buildNAMC(rng: RNG, u: Universe): void {
   };
   const makeCharterTeam = (championship: ChampionshipId, dual: boolean, orgId: string | undefined, name: string, prestige: number) => {
     const strokes = championship === 'fourStroke' ? '4S' : '2S';
-    const makers = MANUFACTURERS.filter(m => m.strokes === 'both' || m.strokes === strokes);
+    const makers = manufacturers.filter(m => m.strokes === 'both' || m.strokes === strokes);
     const team = makeTeam(rng, {
       name, discipline: 'namc', championship, orgId, dualCharter: dual,
       manufacturerId: pick(rng, makers).id, prestige,
       classIds: [...NAMC_CLASS_IDS],
       tireBrandId: pick(rng, TIRE_BRANDS).id,
-    });
+    }, manufacturers);
     u.teams[team.id] = team;
 
     // 8 starters: 2 per class (women's class riders are female).
@@ -392,9 +393,9 @@ export function buildUniverse(seed: number, season = 2027): Universe {
     engineOrders: [],
   };
   buildTracks(u);
-  buildRoadDiscipline(rng, u, 'gp', GP_TEAMS, GP_STARS);
-  buildRoadDiscipline(rng, u, 'sbk', SBK_TEAMS, SBK_STARS);
-  buildNAMC(rng, u);
+  buildRoadDiscipline(rng, u, 'gp', GP_TEAMS, GP_STARS, mfgs);
+  buildRoadDiscipline(rng, u, 'sbk', SBK_TEAMS, SBK_STARS, mfgs);
+  buildNAMC(rng, u, mfgs);
   return u;
 }
 

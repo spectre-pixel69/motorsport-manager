@@ -75,6 +75,7 @@ function rider(
     teamId: null,
     classId: null,
     championship,
+    seasonsInCurrentClass: 1,
     bench: false,
   };
 
