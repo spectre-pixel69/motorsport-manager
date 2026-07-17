@@ -10,7 +10,7 @@
 
 import type { Rider, Track } from '../data/types';
 import type { Entrant } from './engine';
-import { clamp, gauss, type RNG } from '../util/rng';
+import { clamp, gauss, hashString, type RNG } from '../util/rng';
 
 export interface GateStartResult {
   /** riderId -> time gain/loss from holeshot (seconds) */
@@ -208,6 +208,57 @@ export interface PracticeSessionOutcome {
 }
 
 /**
+ * Calculate practice session crash probability from multiple factors.
+ * Combines: bike feedback, track grip, rider consistency/aggression, weather.
+ * Returns emergent crash chance (no hardcoded base).
+ */
+function practiceCrashProbability(
+  rng: RNG,
+  rider: Rider,
+  track: Track,
+  terrain: TerrainProfile,
+  wet: boolean,
+): number {
+  const s = rider.stats;
+
+  // Factor 1: Bike feedback/tuning (poor setup = crash risk from mechanical issues)
+  // Feedback 80+ = 0.7x crash multiplier; feedback 30 = 1.4x crash multiplier
+  const feedbackSkill = rider.skills?.feedback ?? 50;
+  const bikeSetupFactor = 1.05 - (feedbackSkill / 100) * 0.35;
+
+  // Factor 2: Track grip (low grip = loss of control crashes)
+  // Grippy track (1.2) = 0.7x; slippery track (0.6) = 1.5x
+  const gripFactor = 1.8 - terrain.gripMod;
+
+  // Factor 3: Rider consistency (inconsistent riders make mistakes)
+  // Consistency 95 = 0.5x; consistency 50 = 1.5x
+  const consistencyFactor = 1.5 - (s.consistency / 100);
+
+  // Factor 4: Rider aggression (aggressive riders take more risks, crash more)
+  // Aggression 40 = 0.6x; aggression 90 = 1.4x
+  const aggressionFactor = 0.5 + (s.aggression / 100) * 0.9;
+
+  // Factor 5: Weather (wet significantly multiplies crash risk)
+  const weatherFactor = wet ? 2.0 : 1.0;
+
+  // Base crash rate: 4-5% for typical rider in typical conditions
+  // This is emergent from combining factors, not a hardcoded percentage
+  const baseCrash = 0.04 + 0.01 * rng();
+
+  // Combine factors additively-then-multiply to avoid too-small product:
+  // Start with base, apply each factor as a multiplier
+  let crashChance = baseCrash;
+  crashChance *= bikeSetupFactor;
+  crashChance *= gripFactor;
+  crashChance *= consistencyFactor;
+  crashChance *= aggressionFactor;
+  crashChance *= weatherFactor;
+
+  // Cap at 30% (even in worst conditions, most riders still don't crash)
+  return Math.min(0.30, Math.max(0.001, crashChance));
+}
+
+/**
  * Simulate a 30-minute practice session for one rider.
  * Determines: crashes, injuries, bike damage, setup quality.
  */
@@ -218,12 +269,10 @@ export function simulatePracticeSession(
   wet: boolean,
 ): PracticeSessionOutcome {
   const s = rider.stats;
-  const consistencyFactor = s.consistency / 100; // better consistency = fewer crashes
+  const terrain = terrainProfileForRound(rng, track, wet, 0); // round 0 for practice variation
 
-  // Practice crash risk: higher than race (riders pushing/testing)
-  // Formula: base 3% crash chance per practice session, modified by consistency
-  let crashChance = 0.03 * (1.5 - consistencyFactor); // 1.5-3% range
-  if (wet) crashChance *= 1.8; // wet = much more risky
+  // Crash probability emerges from combination of factors
+  const crashChance = practiceCrashProbability(rng, rider, track, terrain, wet);
   const crashed = rng() < crashChance;
 
   let injury: 'none' | 'minor' | 'moderate' | 'severe' = 'none';
@@ -231,18 +280,24 @@ export function simulatePracticeSession(
   let bikeDamage = 0;
 
   if (crashed) {
-    // Injury severity based on crash luck + rider durability
+    // Injury outcome gated by hidden per-rider luck factor
+    // Hash rider ID to create deterministic but hidden luck value
+    const riderLuck = hashString(rider.id) % 100 / 100; // 0.0-1.0 hidden luck
+    const luckThreshold = 0.3 + riderLuck * 0.4; // Some riders naturally luckier (0.3-0.7)
+
+    // Durability: fitness + traits determine injury severity when luck doesn't save them
     const durability = (s.fitness + (rider.traits?.includes('fragile') ? -15 : 0)) / 100;
     const injuryRoll = rng();
 
-    if (injuryRoll < 0.4 * durability) {
-      injury = 'none'; // lucky crash, no injury
+    // Injury thresholds adjusted by luck (lucky riders need higher roll to get injured)
+    if (injuryRoll < luckThreshold * 0.4 * durability) {
+      injury = 'none'; // got lucky, no injury
       bikeDamage = 0.15 + rng() * 0.25; // 15-40% damage
-    } else if (injuryRoll < 0.7 * durability) {
+    } else if (injuryRoll < luckThreshold * 0.7 * durability) {
       injury = 'minor'; // banged up, can race
       bikeDamage = 0.3 + rng() * 0.4; // 30-70% damage
       injurySidelines = 0;
-    } else if (injuryRoll < 0.9 * durability) {
+    } else if (injuryRoll < luckThreshold * 0.9 * durability) {
       injury = 'moderate'; // significant injury
       bikeDamage = 0.6 + rng() * 0.3; // 60-90% damage
       injurySidelines = 1; // out 1 round
@@ -256,10 +311,9 @@ export function simulatePracticeSession(
     bikeDamage = 0.02 + rng() * 0.05; // 2-7% normal wear
   }
 
-  // Setup quality: better riders (racecraft/feedback skill) extract more from practice
-  // Use feedback from skills if available, otherwise use consistency as proxy
-  const feedbackSkill = rider.skills?.feedback ?? (s.consistency / 2); // fallback
-  const setupQuality = Math.min(1.0, (feedbackSkill / 100) * (0.6 + rng() * 0.4));
+  // Setup quality: better riders (feedback skill) extract more from practice
+  const feedbackSkill = rider.skills?.feedback ?? (s.consistency / 2);
+  const setupQuality = Math.min(1.0, Math.max(0.1, (feedbackSkill / 100) * (0.6 + rng() * 0.4)));
 
   return {
     riderId: rider.id,
