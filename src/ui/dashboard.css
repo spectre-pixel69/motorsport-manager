@@ -1541,6 +1541,11 @@ button:disabled:hover {
   font-weight: 600;
 }
 
+.penalty-body .dq-detail {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
 .resolved {
   margin-top: 8px;
   padding-top: 8px;

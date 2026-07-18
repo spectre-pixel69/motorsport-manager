@@ -130,7 +130,22 @@ export function LeagueHealth({ state }: Props) {
                           </div>
                         )}
                         {p.isTerminalViolation && (
-                          <div class="terminal">⛔ Terminal Technical Violation</div>
+                          <div class="terminal">⛔ Terminal Technical Violation (§12.4)</div>
+                        )}
+                        {p.pointsForfeitedByRound && Object.keys(p.pointsForfeitedByRound).length > 0 && (
+                          <div class="dq-detail muted">
+                            🏁 DQ — points forfeited:{' '}
+                            {Object.entries(p.pointsForfeitedByRound).map(([riderId, pts], i, arr) => (
+                              <span key={riderId}>
+                                {u.riders[riderId]?.name ?? 'rider'} (−{pts}){i < arr.length - 1 ? ', ' : ''}
+                              </span>
+                            ))}
+                          </div>
+                        )}
+                        {p.affectedRiders && p.affectedRiders.length > 0 && !p.pointsForfeitedByRound?.[p.affectedRiders[0]] && (
+                          <div class="dq-detail muted">
+                            Riders cited: {p.affectedRiders.map(id => u.riders[id]?.name ?? 'rider').join(', ')}
+                          </div>
                         )}
                       </div>
                       {p.resolvedRound && (
