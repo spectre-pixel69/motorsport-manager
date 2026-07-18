@@ -2,14 +2,14 @@
 
 #include "Core/PBRandom.h"
 
-uint32 PBHashString(const FString& S)
+uint32_t PBHashString(const std::string& S)
 {
-	// FNV-1a, port of hashString() in rng.ts. Iterates UTF-16 code units,
-	// matching JS charCodeAt; ASCII seeds (team/rider ids) hash identically.
-	uint32 H = 2166136261u;
-	for (int32 I = 0; I < S.Len(); ++I)
+	// FNV-1a, port of hashString() in rng.ts. Iterates bytes, matching JS
+	// charCodeAt for ASCII seeds (team/rider ids), which hash identically.
+	uint32_t H = 2166136261u;
+	for (unsigned char C : S)
 	{
-		H ^= static_cast<uint32>(S[I]);
+		H ^= static_cast<uint32_t>(C);
 		H = FPBRandom::Imul(H, 16777619u);
 	}
 	return H;
