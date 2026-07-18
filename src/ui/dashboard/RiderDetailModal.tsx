@@ -22,16 +22,26 @@ function PillarBar({ label, value }: { label: string; value: number }) {
   );
 }
 
+const SKILL_LABELS: [keyof NonNullable<Rider['skills']>, string][] = [
+  ['pace', 'Pace'],
+  ['braking', 'Braking'],
+  ['cornerSpeed', 'Corner Speed'],
+  ['racecraft', 'Racecraft'],
+  ['consistency', 'Consistency'],
+  ['starts', 'Starts'],
+  ['fitness', 'Fitness'],
+  ['wet', 'Wet'],
+  ['feedback', 'Feedback'],
+];
+
 function OVRPillars({ rider }: { rider: Rider }) {
   return (
     <div class="ovr-pillars">
-      <h3>OVR Breakdown</h3>
+      <h3>Skills (0–100)</h3>
       <div class="pillar-list">
-        <PillarBar label="Style/Scrub" value={rider.stats.pace} />
-        <PillarBar label="Technical Line" value={rider.stats.consistency} />
-        <PillarBar label="Start Gate Jump" value={rider.stats.starts} />
-        <PillarBar label="Race Endurance" value={rider.stats.fitness} />
-        <PillarBar label="Track Awareness" value={rider.stats.wet} />
+        {SKILL_LABELS.map(([key, label]) => (
+          <PillarBar key={key} label={label} value={rider.skills?.[key] ?? 50} />
+        ))}
       </div>
     </div>
   );
@@ -148,16 +158,6 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
         <div class="left-column">
           <OVRPillars rider={rider} />
           <CareerStats rider={rider} />
-
-          {/* Skills & Development */}
-          <div class="skills-section">
-            <h3>Advanced Skills</h3>
-            <div class="skill-bars">
-              <PillarBar label="Racecraft" value={rider.skills?.racecraft ?? 50} />
-              <PillarBar label="Braking" value={rider.skills?.braking ?? 50} />
-              <PillarBar label="Feedback" value={rider.skills?.feedback ?? 50} />
-            </div>
-          </div>
         </div>
 
         <div class="right-column">
