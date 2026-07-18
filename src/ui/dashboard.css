@@ -459,6 +459,15 @@
   text-transform: uppercase;
 }
 
+/* §13.5 Rider Welfare Fund — gold accent, it's a league-governance panel */
+.financial-box.welfare-fund {
+  border-left: 2px solid #f39c12;
+}
+
+.financial-box.welfare-fund h3 {
+  color: #f39c12;
+}
+
 .financial-row {
   display: flex;
   justify-content: space-between;

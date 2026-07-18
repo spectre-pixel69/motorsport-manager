@@ -50,6 +50,12 @@ export function FinancialTracker({ team, myRiders, classId, standings, state, on
   const budgetRemaining = team.budget;
   const budgetPercent = ((2_500_000 - budgetRemaining) / 2_500_000) * 100;
 
+  // §13.5 Rider Welfare Fund — 100% of Tier 2 fines. Surface this team's
+  // contributions alongside the league-wide fund total.
+  const welfare = state?.welfareFund;
+  const myFines = welfare?.fineHistory.filter(f => f.teamId === team.id) ?? [];
+  const myFinesTotal = myFines.reduce((sum, f) => sum + f.amount, 0);
+
   return (
     <div class="financial-tracker">
       {/* Current Position */}
@@ -126,6 +132,35 @@ export function FinancialTracker({ team, myRiders, classId, standings, state, on
           <div class="cost-summary">
             <span class="label">Class total</span>
             <span class="value">${(seasonSpend / 1000).toFixed(0)}k/yr</span>
+          </div>
+        </div>
+      )}
+
+      {/* §13.5 Rider Welfare Fund */}
+      {welfare && (
+        <div class="financial-box welfare-fund">
+          <h3>Rider Welfare Fund</h3>
+          <div class="financial-row total">
+            <span class="label">League fund (§13.5)</span>
+            <span class="value income">${Math.round(welfare.totalAccumulated).toLocaleString()}</span>
+          </div>
+          <div class="financial-row">
+            <span class="label muted">Fines collected league-wide</span>
+            <span class="value muted">{welfare.fineHistory.length}</span>
+          </div>
+          <div class="financial-row">
+            <span class="label">Your team's contributions</span>
+            <span class={`value ${myFinesTotal > 0 ? 'expense' : 'muted'}`}>
+              {myFinesTotal > 0 ? `−$${Math.round(myFinesTotal).toLocaleString()}` : '$0'}
+            </span>
+          </div>
+          {myFines.length > 0 && (
+            <div class="financial-row">
+              <span class="label muted">{myFines.length} fine{myFines.length > 1 ? 's' : ''} — last: {myFines[myFines.length - 1].reason}</span>
+            </div>
+          )}
+          <div class="financial-row">
+            <span class="label muted" style={{ fontSize: '10px' }}>100% of Tier 2 fines fund rider welfare (§13.1)</span>
           </div>
         </div>
       )}
