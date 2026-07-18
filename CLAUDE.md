@@ -86,6 +86,10 @@ deterministic under the seeded RNG (`util/rng.ts`); same seed ⇒ same season.
 ## Conventions
 
 - **Change tunable values in ONE place**, then re-derive — never hardcode a dependent copy.
+- **Hand token-heavy execution to Codex — don't burn it here.** Delegate via the
+  codex plugin (`/codex:*`) for: bulk or repetitive file edits, well-specced
+  builds (clear spec, little ambiguity), and any bug still failing after 2 local
+  attempts. Always show the diff for review before writing the changes.
 - Verify before commit: `npm run build` (tsc + vite) and a sim run (`run-full-season.ts`);
   commit + push each unit to the branch; never force-push.
 - New locked constraint ⇒ add it to "Locked constants" above **and** honor the PDF.
