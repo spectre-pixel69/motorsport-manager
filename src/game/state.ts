@@ -333,14 +333,17 @@ function applyRaceStrikeRisks(state: CareerState, rng: () => number, weekends: W
             .filter(w => w.finishOrder.find(id => id === r.id) === undefined)
             .length;
 
-          if (recentDNFs >= 3) {
-            // Three DNFs could indicate technical rule violation
-            if (rng() < 0.15) {
-              const penalty = issuePenalty(team, 'technical-violation', state.round, 2);
-              state.messages.unshift(
-                `⚠️ PENALTY: ${team.name} fined for technical violation - excessive DNF rate on ${r.name}'s bike.`,
-              );
-            }
+          // Persistent unreliability (5+ DNFs) may indicate a non-compliant
+          // engine. Rare (§13.1 fines should be rarer than warnings), and at
+          // most one technical fine per team per round.
+          const alreadyFinedThisRound = team.penalties.some(
+            p => p.reason === 'technical-violation' && p.issuedRound === state.round,
+          );
+          if (recentDNFs >= 5 && !alreadyFinedThisRound && rng() < 0.05) {
+            issuePenalty(team, 'technical-violation', state.round, 2);
+            state.messages.unshift(
+              `⚠️ PENALTY: ${team.name} fined for technical violation - excessive DNF rate on ${r.name}'s bike.`,
+            );
           }
         }
       }
