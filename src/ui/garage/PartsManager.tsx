@@ -3,7 +3,7 @@
 
 import { useState } from 'preact/hooks';
 import type { BikeComponent, BikeSetup, EngineMode } from '../../data/types';
-import { calculateFailureChance, estimateRebuildCost } from '../../game/reliability';
+import { calculateFailureChance, estimateRebuildCost, ENGINE_MODE_MULTIPLIERS, ENGINE_MODE_PACE } from '../../game/reliability';
 import './garage.css';
 
 interface Props {
@@ -77,17 +77,29 @@ export function PartsManager({
         <div class="engine-mode-panel">
           <h3>Engine Mode</h3>
           <div class="mode-selector">
-            {ENGINE_MODES.map(mode => (
-              <div key={mode} class="mode-option">
-                <button
-                  class={`mode-btn ${bikeSetup.engineMode === mode ? 'active' : ''}`}
-                  onClick={() => onEngineModChange(mode)}
-                >
-                  {mode.toUpperCase()}
-                </button>
-                <div class="mode-info">{ENGINE_MODE_INFO[mode]}</div>
-              </div>
-            ))}
+            {ENGINE_MODES.map(mode => {
+              const paceDelta = ENGINE_MODE_PACE[mode];
+              const paceLabel = paceDelta === 0
+                ? 'baseline pace'
+                : `${paceDelta < 0 ? '' : '+'}${paceDelta.toFixed(2)}s/lap`;
+              return (
+                <div key={mode} class="mode-option">
+                  <button
+                    class={`mode-btn ${bikeSetup.engineMode === mode ? 'active' : ''}`}
+                    onClick={() => onEngineModChange(mode)}
+                  >
+                    {mode.toUpperCase()}
+                  </button>
+                  <div class="mode-info">{ENGINE_MODE_INFO[mode]}</div>
+                  <div class="mode-tradeoff">
+                    <span class={paceDelta < 0 ? 'pace-fast' : paceDelta > 0 ? 'pace-slow' : 'pace-neutral'}>
+                      {paceLabel}
+                    </span>
+                    <span class="wear-mult">×{ENGINE_MODE_MULTIPLIERS[mode].toFixed(1)} wear/risk</span>
+                  </div>
+                </div>
+              );
+            })}
           </div>
         </div>
 

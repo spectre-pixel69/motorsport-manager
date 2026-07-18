@@ -4,7 +4,7 @@
 import type { BikeComponent, Rider, Team, Track, TireBrand, Universe } from '../data/types';
 import { clamp, gauss, type RNG } from '../util/rng';
 import { mentalPaceFactor, mentalCrashFactor, mentalStartAdjust } from '../game/psychology';
-import { calculateFailureChance } from '../game/reliability';
+import { calculateFailureChance, ENGINE_MODE_PACE } from '../game/reliability';
 import { simulateGateStart, terrainProfileForRound, fitnessPenalty, aggressionCrashMod } from './motocross';
 
 export interface Entrant {
@@ -48,9 +48,8 @@ export interface RaceOutcome {
 const APPROACH_PACE: Record<Entrant['approach'], number> = { push: 0.35, normal: 0, conserve: -0.3 };
 const APPROACH_RISK: Record<Entrant['approach'], number> = { push: 1.6, normal: 1.0, conserve: 0.55 };
 
-// Engine mode: seconds/lap pace edge bought with failure risk + wear
-// (conserve trades pace for parts life; attack is race-day-only maximum).
-const ENGINE_MODE_PACE: Record<string, number> = { conserve: 0.10, standard: 0, push: -0.12, attack: -0.25 };
+// Engine mode pace deltas (conserve trades pace for parts life; attack is
+// race-day-only maximum) live in game/reliability.ts — single source of truth.
 // Global scale on per-component race failure chance so league-wide mechanical
 // rates stay near the tuned ~3-5% DNF per race (severity split adds non-DNF
 // minor/moderate issues on top).

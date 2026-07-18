@@ -21,6 +21,16 @@ export const ENGINE_MODE_MULTIPLIERS: Record<EngineMode, number> = {
   attack: 2.2,
 };
 
+// Engine mode effect on lap pace (seconds/lap; negative = faster). Conserve
+// trades pace for parts life; attack is race-day maximum. Single source of
+// truth — the race sim and the garage UI both read this.
+export const ENGINE_MODE_PACE: Record<EngineMode, number> = {
+  conserve: 0.10,
+  standard: 0,
+  push: -0.12,
+  attack: -0.25,
+};
+
 /**
  * Standard six-component loadout derived from a team's headline bike
  * reliability. The engine carries the base rate; ancillaries run a little
