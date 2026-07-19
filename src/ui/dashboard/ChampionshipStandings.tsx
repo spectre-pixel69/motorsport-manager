@@ -29,8 +29,8 @@ export function ChampionshipStandings({ standings }: Props) {
             <div class="col-team">Team</div>
             <div class="col-points">Pts</div>
             <div class="col-gap">Gap</div>
-            <div class="col-wins">W</div>
-            <div class="col-pods">P</div>
+            <div class="col-wins" title="Career wins">W</div>
+            <div class="col-pods" title="Career podiums">P</div>
           </div>
           {standings.slice(0, 12).map((entry, idx) => {
             const leader = standings[0];
@@ -47,6 +47,11 @@ export function ChampionshipStandings({ standings }: Props) {
                 <div class="col-rider">
                   <span class="rider-number">#{entry.rider.number}</span>
                   <span class="rider-name">{entry.rider.name.split(' ')[0]}</span>
+                  {(entry.rider.ballastKg ?? 0) > 0 && (
+                    <span class="ballast-chip" title={`BOP ballast ${entry.rider.ballastKg}kg — ${((entry.rider.ballastKg ?? 0) * 0.07).toFixed(2)}s/lap`}>
+                      ⚖️{entry.rider.ballastKg}
+                    </span>
+                  )}
                 </div>
                 <div class="col-team muted">{riderTeam?.name?.split(' ')[0] || '—'}</div>
                 <div class="col-points">
@@ -66,6 +71,11 @@ export function ChampionshipStandings({ standings }: Props) {
       {standings.length > 12 && (
         <p class="muted" style="margin-top:8px;font-size:11px">
           + {standings.length - 12} more riders
+        </p>
+      )}
+      {hasRaces && (
+        <p class="muted" style="margin-top:4px;font-size:10px">
+          W/P = career totals · ⚖️ = current BOP ballast (kg)
         </p>
       )}
     </div>
