@@ -838,6 +838,16 @@
   color: #000;
 }
 
+.badge.suspension {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.badge.ballast {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+}
+
 .off-season {
   background: #0a0e27;
   border: 1px solid #2a2f4a;

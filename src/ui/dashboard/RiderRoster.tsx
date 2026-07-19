@@ -54,6 +54,16 @@ function RiderStatusBadges({ rider }: { rider: Rider }) {
           ⚡
         </span>
       )}
+      {(rider.suspendedForRounds ?? 0) > 0 && (
+        <span class="badge suspension" title={`Suspended ${rider.suspendedForRounds} more round(s) — §13.1`}>
+          🚫 {rider.suspendedForRounds}rd
+        </span>
+      )}
+      {(rider.ballastKg ?? 0) > 0 && (
+        <span class="badge ballast" title={`BOP success ballast — ${((rider.ballastKg ?? 0) * 0.07).toFixed(2)}s/lap`}>
+          ⚖️ {rider.ballastKg}kg
+        </span>
+      )}
     </div>
   );
 }
@@ -131,7 +141,7 @@ export function RiderRoster({ riders, team, benchRiders, onSelectRider, isExpand
                 <div class="rider-financials">
                   <div class="financial-item">
                     <span class="label">Retainer</span>
-                    <span class="value">$50k/wk</span>
+                    <span class="value">$50k/yr</span>
                   </div>
                 </div>
               </div>
