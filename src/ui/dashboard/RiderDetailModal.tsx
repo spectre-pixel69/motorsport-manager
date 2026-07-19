@@ -204,10 +204,25 @@ export function RiderDetailModal({ rider, universe, onClose }: Props) {
               </div>
             )}
 
+            {/* Suspension (§13.1) */}
+            {(rider.suspendedForRounds ?? 0) > 0 && (
+              <div class="status-injury alert">
+                🚫 Suspended {rider.suspendedForRounds} round{rider.suspendedForRounds !== 1 ? 's' : ''} — §13.1
+              </div>
+            )}
+
+            {/* BOP ballast (§8.6) */}
+            {(rider.ballastKg ?? 0) > 0 && (
+              <div class="status-item">
+                <span class="label">BOP Ballast</span>
+                <span class="value">⚖️ {rider.ballastKg}kg (+{((rider.ballastKg ?? 0) * 0.07).toFixed(2)}s/lap)</span>
+              </div>
+            )}
+
             {/* Bench Status */}
             {rider.bench && (
               <div class="status-bench">
-                📋 Reserve/Bench Rider — $50k/wk retainer
+                📋 Reserve/Bench Rider — $50k/yr retainer
               </div>
             )}
 
