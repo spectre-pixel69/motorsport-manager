@@ -1568,3 +1568,13 @@ button:disabled:hover {
   color: #f39c12;
   font-weight: 600;
 }
+
+.overall-championship .class-chip {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.15);
+  border-radius: 8px;
+}

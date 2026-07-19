@@ -3,6 +3,7 @@
 import type { CareerState } from '../../game/state';
 import { riderStandingsFor } from '../../game/state';
 import { NAMC_CLASS_IDS } from '../../data/namc';
+import { classById } from '../../data/classes';
 import { getChampionshipForClass } from './helpers';
 
 interface Props {
@@ -26,6 +27,7 @@ export function OverallChampionship({ state }: Props) {
     riderId: string;
     rider: any;
     points: number;
+    classId: string;
   }>();
 
   allStandings.forEach(entry => {
@@ -38,6 +40,7 @@ export function OverallChampionship({ state }: Props) {
         riderId: entry.rider.id,
         rider: entry.rider,
         points: entry.pts,
+        classId: entry.classId,
       });
     }
   });
@@ -60,8 +63,8 @@ export function OverallChampionship({ state }: Props) {
             <div class="col-rider">Rider</div>
             <div class="col-team">Team</div>
             <div class="col-points">Pts</div>
-            <div class="col-wins">W</div>
-            <div class="col-podiums">P</div>
+            <div class="col-wins" title="Career wins">W</div>
+            <div class="col-podiums" title="Career podiums">P</div>
           </div>
           {sorted.map((entry, idx) => {
             const team = u.teams[entry.rider.teamId];
@@ -77,6 +80,9 @@ export function OverallChampionship({ state }: Props) {
                 <div class="col-rider">
                   <span class="rider-number">#{entry.rider.number}</span>
                   <span>{entry.rider.name.split(' ')[0]}</span>
+                  <span class="class-chip" title={classById(entry.classId as any)?.name}>
+                    {classById(entry.classId as any)?.shortName ?? entry.classId}
+                  </span>
                 </div>
                 <div class="col-team muted">{team?.name?.split(' ')[0] || '—'}</div>
                 <div class="col-points">
@@ -93,6 +99,11 @@ export function OverallChampionship({ state }: Props) {
       {sorted.length > 12 && (
         <p class="muted" style="margin-top:8px;font-size:11px">
           + {sorted.length - 12} more riders
+        </p>
+      )}
+      {hasRaces && (
+        <p class="muted" style="margin-top:4px;font-size:10px">
+          W/P = career totals · chip = rider's class
         </p>
       )}
     </div>
