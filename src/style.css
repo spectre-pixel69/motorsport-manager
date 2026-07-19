@@ -387,6 +387,10 @@ table.data tr.p1 td:first-child {
 .tower-row.player {
   background: rgba(231, 76, 60, 0.15);
 }
+.tower-row.below-cut {
+  border-top: 1px dashed rgba(231, 76, 60, 0.5);
+  margin-top: 2px;
+}
 .tower-row .cbar {
   height: 16px;
   border-radius: 2px;

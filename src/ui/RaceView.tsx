@@ -36,6 +36,12 @@ export function RaceView({ u, title, outcome, playerTeamId, onDone }: Props) {
   const displayLimit = 15;
   const topOrder = order.slice(0, displayLimit);
 
+  // Player riders running below the cutoff — always pin them so the manager
+  // can see their own position even outside the top 15.
+  const playerBelowCut = order
+    .map((id, i) => ({ id, pos: i + 1 }))
+    .filter(({ id, pos }) => pos > displayLimit && u.riders[id]?.teamId === playerTeamId);
+
   const dnfSoFar = useMemo(() => {
     const s = new Set<string>();
     for (const ev of outcome.events) {
@@ -82,6 +88,19 @@ export function RaceView({ u, title, outcome, playerTeamId, onDone }: Props) {
                   <span class="cbar" style={{ background: t.colors.primary }} />
                   <span class="rname">#{r.number} {r.name}</span>
                   <span class="gap">{gapFor(id, i)}</span>
+                </div>
+              );
+            })}
+            {playerBelowCut.map(({ id, pos }) => {
+              const r = u.riders[id];
+              const t = r?.teamId ? u.teams[r.teamId] : null;
+              if (!r || !t || dnfSoFar.has(id)) return null;
+              return (
+                <div class="tower-row player below-cut" key={`pb-${id}`}>
+                  <span class="pos">{pos}</span>
+                  <span class="cbar" style={{ background: t.colors.primary }} />
+                  <span class="rname">#{r.number} {r.name}</span>
+                  <span class="gap">{gapFor(id, pos - 1)}</span>
                 </div>
               );
             })}
