@@ -8,82 +8,59 @@
 class AGameAPIManager;
 class UTextBlock;
 class UButton;
-class UImage;
+class UBorder;
 class UVerticalBox;
-class UHorizontalBox;
 class UScrollBox;
 
+DECLARE_DYNAMIC_MULTICAST_DELEGATE(FOnReturnToHub);
+
+/**
+ * Live race timing screen, native C++ UMG (no Blueprint required) — mirrors the
+ * web RaceView: left timing tower (position, team colour bar, rider, gap; DNFs
+ * and below-cut player riders pinned), right column with track/weather/lap head,
+ * scrolling incident feed, and a Return-to-Hub button. Dark broadcast theme.
+ *
+ * Create with CreateWidget<URaceViewWidget>(PC), call SetBroadcast() with data,
+ * AddToViewport.
+ */
 UCLASS()
 class PADDOCKBOSS_API URaceViewWidget : public UUserWidget
 {
 	GENERATED_BODY()
 
 public:
-	virtual void NativeConstruct() override;
-	virtual void NativeDestruct() override;
+	virtual bool Initialize() override;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Race")
-	int32 CurrentLap = 0;
+	UPROPERTY(BlueprintReadOnly, Category = "Race")
+	FRaceBroadcast Broadcast;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Race")
-	int32 TotalLaps = 20;
+	UPROPERTY(BlueprintReadWrite, Category = "API")
+	AGameAPIManager* APIManager = nullptr;
 
-	UPROPERTY(BlueprintReadWrite, Category = "Race")
-	float LeaderDistance = 0.0f;
+	UPROPERTY(BlueprintAssignable, Category = "Race")
+	FOnReturnToHub OnReturnToHub;
 
-	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "API")
-	AGameAPIManager* APIManager;
-
+	/** Replace the broadcast state and repaint (call each lap tick). */
 	UFUNCTION(BlueprintCallable, Category = "Race")
-	void StartBroadcastStream();
-
-	UFUNCTION(BlueprintCallable, Category = "Race")
-	void UpdateRaceData();
-
-	UFUNCTION(BlueprintCallable, Category = "Race")
-	void OnRaceDataReceived(bool bSuccess, FString Data);
-
-	UFUNCTION(BlueprintCallable, Category = "Actions")
-	void OnReturnToHubClicked();
+	void SetBroadcast(const FRaceBroadcast& InBroadcast);
 
 	UFUNCTION(BlueprintCallable, Category = "API")
-	void SetAPIManager(AGameAPIManager* InAPIManager);
+	void SetAPIManager(AGameAPIManager* InAPIManager) { APIManager = InAPIManager; }
 
 protected:
-	virtual void NativePreConstruct() override;
-	virtual void NativeTick(const FGeometry& MyGeometry, float InDeltaTime) override;
+	UPROPERTY(Transient) UVerticalBox* TowerRowsBox = nullptr;
+	UPROPERTY(Transient) UScrollBox* FeedScroll = nullptr;
+	UPROPERTY(Transient) UTextBlock* TrackText = nullptr;
+	UPROPERTY(Transient) UTextBlock* WeatherText = nullptr;
+	UPROPERTY(Transient) UTextBlock* LapText = nullptr;
 
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* RaceHeaderText;
+	UFUNCTION() void HandleReturnClicked();
 
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* LapCounterText;
+	void BuildLayout();
+	void RebuildTower();
+	void RebuildFeed();
 
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* LeaderNameText;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* LeaderDistanceText;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* PlayerPositionText;
-
-	UPROPERTY(meta = (BindWidget))
-	UTextBlock* PlayerTimeGapText;
-
-	UPROPERTY(meta = (BindWidget))
-	UScrollBox* RaceResultsScroll;
-
-	UPROPERTY(meta = (BindWidget))
-	UVerticalBox* RaceResultsList;
-
-	UPROPERTY(meta = (BindWidget))
-	UButton* ReturnToHubButton;
-
-	float RaceElapsedTime = 0.0f;
-	FTimerHandle UpdateTimerHandle;
-
-	void SetupButtonCallbacks();
-	void UpdateRaceDisplay();
-	void PopulateRaceResults();
+	UBorder* MakeCard(const FLinearColor& Fill, float Radius) const;
+	UTextBlock* MakeText(const FString& Value, int32 Size, const FLinearColor& Color, bool bBold = true) const;
+	static FLinearColor FeedColor(const FString& Kind);
 };

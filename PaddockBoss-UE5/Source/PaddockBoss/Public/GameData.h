@@ -156,3 +156,79 @@ struct FHubScreenData
 	UPROPERTY(EditAnywhere, BlueprintReadWrite)
 	FLinearColor SecondaryColor = FLinearColor(0.1f, 0.08f, 0.22f, 1.0f);
 };
+
+// ============================================================================
+// RACE VIEW (live timing tower — mirrors the web RaceView)
+// ============================================================================
+
+USTRUCT(BlueprintType)
+struct FRaceTowerRow
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Position = 0;                 // 0 or negative renders as "–" (DNF)
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Number = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString RiderName = FString();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Gap = FString();            // "Leader", "+1.4s", "OUT"
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FLinearColor TeamColor = FLinearColor(0.24f, 0.63f, 0.85f, 1.0f);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bIsPlayer = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bDnf = false;
+};
+
+USTRUCT(BlueprintType)
+struct FRaceFeedItem
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Lap = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Kind = FString();           // crash | mechanical | overtake | fastLap | remount
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString Text = FString();
+};
+
+USTRUCT(BlueprintType)
+struct FRaceBroadcast
+{
+	GENERATED_BODY()
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString TrackName = FString();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	FString SessionName = FString();
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 Lap = 0;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	int32 TotalLaps = 20;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bWet = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	bool bFinished = false;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRaceTowerRow> Tower;
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite)
+	TArray<FRaceFeedItem> Feed;
+};
