@@ -5,6 +5,7 @@
 #include "PaddockBossGameMode.generated.h"
 
 class UUserWidget;
+class URaceViewWidget;
 class AGameAPIManager;
 class AShowroomStage;
 
@@ -26,6 +27,9 @@ public:
 	UPROPERTY(BlueprintReadWrite, Category = "UI")
 	UUserWidget* CurrentHubScreen;
 
+	UPROPERTY(BlueprintReadWrite, Category = "UI")
+	URaceViewWidget* CurrentRaceView;
+
 	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "API")
 	AGameAPIManager* APIManager;
 
@@ -44,6 +48,16 @@ public:
 	UFUNCTION(BlueprintCallable, Category = "Stage")
 	void SetupShowroomStage();
 
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void ShowRaceView();
+
+	UFUNCTION(BlueprintCallable, Category = "UI")
+	void HideRaceView();
+
 protected:
 	virtual void PostLogin(APlayerController* NewPlayer) override;
+
+	// Hub PROCEED -> race; race Continue -> hub
+	UFUNCTION() void HandleHubProceed();
+	UFUNCTION() void HandleRaceReturn();
 };
