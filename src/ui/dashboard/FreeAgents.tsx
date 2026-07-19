@@ -23,6 +23,8 @@ export function FreeAgents({ universe, teamId, classId, onClose, onSign }: Props
     return !r.teamId || r.teamId === '';
   });
 
+  const teamBudget = universe.teams[teamId]?.budget ?? 0;
+
   const handleSign = async (riderId: string) => {
     setSigning(riderId);
     setError(null);
@@ -65,6 +67,7 @@ export function FreeAgents({ universe, teamId, classId, onClose, onSign }: Props
               <div class="col-age">Age</div>
               <div class="col-pace">Pace</div>
               <div class="col-starts">Starts</div>
+              <div class="col-salary" title="Annual salary to sign">Cost</div>
               <div class="col-action">Action</div>
             </div>
             {freeAgents.slice(0, 20).map(rider => (
@@ -79,11 +82,15 @@ export function FreeAgents({ universe, teamId, classId, onClose, onSign }: Props
                 <div class="col-age">{rider.age}</div>
                 <div class="col-pace">{Math.round(rider.stats.pace)}</div>
                 <div class="col-starts">{Math.round(rider.stats.starts)}</div>
+                <div class={`col-salary ${rider.salary > teamBudget ? 'over-budget' : ''}`}>
+                  ${Math.round(rider.salary / 1000)}k
+                </div>
                 <div class="col-action">
                   <button
                     class="btn-sign"
                     onClick={() => handleSign(rider.id)}
-                    disabled={signing === rider.id}
+                    disabled={signing === rider.id || rider.salary > teamBudget}
+                    title={rider.salary > teamBudget ? 'Over budget' : 'Sign this rider'}
                   >
                     {signing === rider.id ? '...' : 'Sign'}
                   </button>

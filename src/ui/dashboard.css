@@ -706,7 +706,7 @@
 
 .free-agents-table .table-header {
   display: grid;
-  grid-template-columns: 1fr 60px 40px 50px 50px 80px;
+  grid-template-columns: 1fr 56px 36px 46px 46px 72px 76px;
   padding: 8px 12px;
   background: #1a1f3a;
   font-weight: 600;
@@ -716,7 +716,7 @@
 
 .free-agents-table .table-row {
   display: grid;
-  grid-template-columns: 1fr 60px 40px 50px 50px 80px;
+  grid-template-columns: 1fr 56px 36px 46px 46px 72px 76px;
   padding: 8px 12px;
   background: #0a0e27;
   border-radius: 3px;
@@ -1577,4 +1577,14 @@ button:disabled:hover {
   color: #3498db;
   background: rgba(52, 152, 219, 0.15);
   border-radius: 8px;
+}
+
+.free-agents-table .col-salary {
+  text-align: right;
+  color: #4ade80;
+  font-weight: 600;
+  font-size: 11px;
+}
+.free-agents-table .col-salary.over-budget {
+  color: #e74c3c;
 }
