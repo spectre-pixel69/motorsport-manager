@@ -16,10 +16,12 @@ export function DraftPool({ universe, teamId, classId, onClose, onDraft }: Props
   const [drafting, setDrafting] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // Get all riders not on a team (available for draft)
-  const availableRiders = Object.values(universe.riders).filter(
-    r => !r.teamId || r.teamId === ''
-  );
+  // Available for draft: unassigned riders, best first, capped so the strongest
+  // prospects surface instead of being buried in an unbounded list.
+  const availableRiders = Object.values(universe.riders)
+    .filter(r => !r.teamId || r.teamId === '')
+    .sort((a, b) => b.overall - a.overall)
+    .slice(0, 30);
 
   const handleDraft = async (riderId: string) => {
     setDrafting(riderId);
@@ -59,7 +61,10 @@ export function DraftPool({ universe, teamId, classId, onClose, onDraft }: Props
               <div class="rider-option" key={rider.id}>
                 <div class="rider-info">
                   <div class="rider-header-row">
-                    <span class="rider-name">{rider.name}</span>
+                    <span class="rider-name">
+                      {rider.name}
+                      {rider.age <= 21 && <span class="prospect-tag" title="Young prospect — room to develop">★ Prospect</span>}
+                    </span>
                     <span class="rider-number">#{rider.number}</span>
                   </div>
                   <div class="rider-stats-row">
