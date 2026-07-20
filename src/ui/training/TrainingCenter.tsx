@@ -89,7 +89,7 @@ export function TrainingCenter({ riders, facilityLevel, coachQuality, onClose }:
                   <span class="skill-potential"> / {selectedRider.potential}</span>
                 </div>
                 <div class="expected-gain">
-                  +{expectedGain.toFixed(1)}
+                  +{calculateTrainingGain(selectedRider, skill, facilityLevel, coachQuality).toFixed(1)}
                 </div>
               </button>
             ))}
