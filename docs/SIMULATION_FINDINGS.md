@@ -102,6 +102,42 @@ between seasons is what's missing.**
 - **Demo work HALTED** (boss ruling): no demo until all three disciplines
   ship. Routine re-aimed at fleshing out game pages.
 
+## Update 2026-07-20 — GP/SBK dashboard build-out (task #25) + off-season gap found
+
+- Shipped: `constructorStandingsFor(state, classId)` in `src/game/state.ts`
+  (GP constructor / WorldSBK manufacturer championship per class — reads
+  the `constructor:<class>` / `manufacturer:<class>` keys `applyPoints()`
+  already wrote, which nothing previously read). Fixed a real bug found
+  along the way: `teamStandingsFor()`'s 'road' branch read a
+  `<class>:road` key that `applyPoints()` never writes for gp/sbk, so
+  GP/SBK team standings — including HubScreenNew's player-team rank — were
+  silently always empty; it now delegates to `constructorStandingsFor`.
+- `TeamDashboard.tsx` is now discipline-aware: GP/SBK get their real
+  3-tier class ladder (gp1/gp2/gp3, sbk/ss600/ss300 via new
+  `classLadderFor()` in `dashboard/helpers.ts`) instead of the hardcoded
+  NAMC 4-class panel grid, a discipline-labeled header instead of a fixed
+  "• NAMC" string, and a new `ConstructorStandings.tsx` panel in place of
+  the (NAMC-only) tire championship. `SeasonCalendar.tsx` no longer shows
+  NAMC's flat $800k purse and "After Round 20" for GP (22 rounds) / SBK
+  (12 rounds) — it now reads each discipline's real revenue-share model.
+- **New finding, needs a boss ruling on scope/sequencing**: while fixing
+  SeasonCalendar's off-season text, found that `advanceSeason()` in
+  `state.ts` gates its ENTIRE roster off-season cycle — retirements,
+  contract expiry, the draft-equivalent rookie intake, free agency — behind
+  `if (state.discipline === 'namc')`. Only champion-crowning and per-rider
+  aging/development run for gp/sbk; team-championship purse payout is also
+  namc-only. Net effect: a GP or SBK career's roster is frozen forever —
+  no rider ever retires, ages out, or changes teams, season after season.
+  This is a full build (GP/SBK-appropriate contract expiry, retirement
+  age/quality curve, a rookie-intake mechanism analogous to but distinct
+  from the NAMC Draft since real MotoGP/WSBK don't have one, and free
+  agency), not a dashboard-sized unit — did not attempt it unannounced.
+  Priority-list item added below (#15).
+
+## NOT CONNECTED YET — Priority order (cont'd)
+
+| 15 | **GP/SBK off-season roster cycle** | `advanceSeason()` runs retirement/contract-expiry/draft/free-agency only for `discipline === 'namc'`; gp/sbk rosters never change season to season | Same "game dies after N seasons" problem as old #3, but for two of the three disciplines the boss ruled must ship |
+
 ## Notes for tuning sessions (numbers to revisit)
 
 - Champion pts 746/800, margin 36 → add variance, not rubber-banding
