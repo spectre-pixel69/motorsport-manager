@@ -53,6 +53,15 @@ export function RDCenter({ state, onExit }: Props) {
       100,
       currentLevel + UPGRADE_GAIN,
     );
+    // Adaptability = reliability: the race sim reads per-component reliability
+    // (bikeSetup.components), not the flat team.bike.reliability. Bump the
+    // components too, or the investment does nothing in the race.
+    if (selectedPhil === 'adaptability' && team.bikeSetup?.components) {
+      for (const key of Object.keys(team.bikeSetup.components)) {
+        const c = team.bikeSetup.components[key];
+        c.reliability = Math.min(98, c.reliability + UPGRADE_GAIN);
+      }
+    }
     state.messages.unshift(`🔧 R&D: ${team.name} invested in ${philo.name.toLowerCase()}. Level now ${currentLevel + UPGRADE_GAIN}/100.`);
     saveCareer(state);
   };
