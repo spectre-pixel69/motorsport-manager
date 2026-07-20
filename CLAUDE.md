@@ -21,8 +21,7 @@ implementing any league rule. Data-model source of truth is `src/data/types.ts`.
 - **Points** (§11.2): Main `75/60/52/37/36/35…1`; Sprint = each halved. The 3rd→4th
   cliff (52→37) is intentional.
 - **Dynamic ballast** (§8.6): win +2kg / podium +1kg / P4+ −1kg next round; 0.07s/lap
-  per kg; cap 12kg; resets each season; all classes. (Note: PDF §14 glossary caps at 8kg —
-  reconcile against the code constant in `state.ts applySuccessBallast` before changing.)
+  per kg; **cap 8kg** (§14 glossary; ~0.56s/lap); resets each season; all classes.
 - **Budget**: $2.5M/season fixed, no mid-season funding. Per-round purse $800k across
   4 classes; 25% to riders, 75% operational.
 - **Penalties** (§13.1): 4-tier — warning → fine (100% to Rider Welfare Fund §13.5) →

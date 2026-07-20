@@ -264,7 +264,8 @@ function applySuccessBallast(state: CareerState, weekends: WeekendResult[]): voi
       if (!r) return;
       const before = r.ballastKg ?? 0;
       const delta = i === 0 ? 2 : i <= 2 ? 1 : -1;
-      r.ballastKg = clamp(before + delta, 0, 12);
+      // §14 glossary: max 8kg per rider (PDF is authority; was 12kg).
+      r.ballastKg = clamp(before + delta, 0, 8);
       if (r.teamId === state.playerTeamId && r.ballastKg !== before && r.ballastKg >= 4) {
         state.messages.unshift(`BOP: ${r.name} now carries ${r.ballastKg}kg of success ballast.`);
       }
