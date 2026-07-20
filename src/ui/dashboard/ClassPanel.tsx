@@ -3,13 +3,14 @@
 
 import type { ClassId } from '../../data/types';
 import type { CareerState } from '../../game/state';
-import { riderStandingsFor } from '../../game/state';
+import { riderStandingsFor, constructorStandingsFor } from '../../game/state';
 import { ridersOfTeam } from '../../data/universe';
 import { classById } from '../../data/classes';
 import { RiderRoster } from './RiderRoster';
 import { ChampionshipStandings } from './ChampionshipStandings';
 import { FinancialTracker } from './FinancialTracker';
 import { TireChampionship } from './TireChampionship';
+import { ConstructorStandings } from './ConstructorStandings';
 import { getChampionshipForClass, getClassColor } from './helpers';
 
 type ModalType = 'draft' | 'freeagents' | 'calendar';
@@ -63,10 +64,17 @@ export function ClassPanel({
           />
         </div>
 
-        {/* Center: Standings + Tire Championship */}
+        {/* Center: Standings + Tire Championship (namc) / Constructor-Manufacturer (gp/sbk) */}
         <div class="panel-section standings-section">
           <ChampionshipStandings standings={standings} />
-          <TireChampionship standings={standings} universe={u} />
+          {state.discipline === 'namc' ? (
+            <TireChampionship standings={standings} universe={u} />
+          ) : (
+            <ConstructorStandings
+              standings={constructorStandingsFor(state, classId)}
+              label={state.discipline === 'gp' ? 'Constructor Championship' : 'Manufacturer Championship'}
+            />
+          )}
         </div>
 
         {/* Right: Financial Tracker */}

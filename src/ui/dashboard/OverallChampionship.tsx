@@ -2,9 +2,8 @@
 
 import type { CareerState } from '../../game/state';
 import { riderStandingsFor } from '../../game/state';
-import { NAMC_CLASS_IDS } from '../../data/namc';
 import { classById } from '../../data/classes';
-import { getChampionshipForClass } from './helpers';
+import { getChampionshipForClass, classLadderFor } from './helpers';
 
 interface Props {
   state: CareerState;
@@ -12,9 +11,13 @@ interface Props {
 
 export function OverallChampionship({ state }: Props) {
   const u = state.universe;
+  const ladder = classLadderFor(state.discipline);
+  const title = state.discipline === 'namc'
+    ? '🏆 Multi-Class Overall Championship'
+    : `🏆 ${state.discipline === 'gp' ? 'GP' : 'SBK'} Overall Standings (all classes)`;
 
-  // Aggregate standings across all NAMC classes
-  const allStandings = NAMC_CLASS_IDS.flatMap(classId => {
+  // Aggregate standings across all of this discipline's classes
+  const allStandings = ladder.flatMap(classId => {
     const champ = getChampionshipForClass(classId);
     return riderStandingsFor(state, classId, champ).map(entry => ({
       ...entry,
@@ -53,7 +56,7 @@ export function OverallChampionship({ state }: Props) {
 
   return (
     <div class="overall-championship">
-      <h3>🏆 Multi-Class Overall Championship</h3>
+      <h3>{title}</h3>
       {!hasRaces ? (
         <p class="empty">Complete races in any class to see standings</p>
       ) : (

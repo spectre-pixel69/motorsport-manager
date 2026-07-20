@@ -3,8 +3,8 @@
 
 import { useState, useEffect } from 'preact/hooks';
 import type { CareerState } from '../game/state';
-import { NAMC_CLASS_IDS } from '../data/namc';
 import type { ClassId } from '../data/types';
+import { DISCIPLINE_META } from '../data/brand';
 import { Logo } from './Logo';
 import { ClassPanel } from './dashboard/ClassPanel';
 import { OverallChampionship } from './dashboard/OverallChampionship';
@@ -14,6 +14,7 @@ import { FreeAgents } from './dashboard/FreeAgents';
 import { SeasonCalendar } from './dashboard/SeasonCalendar';
 import { RiderDetailModal } from './dashboard/RiderDetailModal';
 import { LeagueHealth } from './dashboard/LeagueHealth';
+import { classLadderFor } from './dashboard/helpers';
 import './dashboard.css';
 
 interface Props {
@@ -32,6 +33,8 @@ export function TeamDashboard({ state, onExit }: Props) {
   const u = state.universe;
   const team = u.teams[state.playerTeamId];
   const cal = u.calendars[state.discipline];
+  const ladder = classLadderFor(state.discipline);
+  const disciplineLabel = DISCIPLINE_META[state.discipline].short;
 
   return (
     <div class="team-dashboard">
@@ -41,7 +44,7 @@ export function TeamDashboard({ state, onExit }: Props) {
           <Logo spec={team.logo} size={40} />
           <div>
             <h1>{team.name}</h1>
-            <span class="season-label">Season {state.season} • NAMC</span>
+            <span class="season-label">Season {state.season} • {disciplineLabel}</span>
           </div>
         </div>
         <div class="header-right">
@@ -73,9 +76,9 @@ export function TeamDashboard({ state, onExit }: Props) {
           <OverallChampionship state={state} />
           <SeasonProgress state={state} currentRound={state.round} totalRounds={cal.length} />
 
-          {/* Four Class Panels */}
+          {/* Class Panels — this discipline's ladder (NAMC: 4 classes; GP/SBK: 3-tier pyramid) */}
           <div class="class-panels-grid">
-            {NAMC_CLASS_IDS.map(classId => (
+            {ladder.map(classId => (
               <ClassPanel
                 key={classId}
                 state={state}
