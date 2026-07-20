@@ -618,8 +618,29 @@ export function riderStandingsFor(state: CareerState, classId: ClassId, champion
 }
 
 export function teamStandingsFor(state: CareerState, championship: ChampionshipId, classId?: ClassId) {
+  // GP/SBK team points are filed under constructor:/manufacturer: keys (see
+  // applyPoints), not the generic road key — delegate so callers get real data.
+  if (championship === 'road' && (state.discipline === 'gp' || state.discipline === 'sbk')) {
+    return constructorStandingsFor(state, classId ?? state.focusClass);
+  }
   const key = championship === 'road' ? standingsKey(classId ?? state.focusClass, 'road') : `team:${championship}`;
   const table = state.standings.teams[key] ?? {};
+  return Object.entries(table)
+    .map(([teamId, pts]) => ({ team: state.universe.teams[teamId], pts }))
+    .filter(x => x.team)
+    .sort((a, b) => b.pts - a.pts);
+}
+
+/**
+ * GP constructor / WorldSBK manufacturer championship for one class.
+ * applyPoints() files road-discipline team points under `constructor:<classId>`
+ * (gp) / `manufacturer:<classId>` (sbk) — this is the read side of that write.
+ * Returns [] for namc (no constructor/manufacturer championship in that discipline).
+ */
+export function constructorStandingsFor(state: CareerState, classId: ClassId) {
+  const prefix = state.discipline === 'gp' ? 'constructor' : state.discipline === 'sbk' ? 'manufacturer' : null;
+  if (!prefix) return [];
+  const table = state.standings.teams[`${prefix}:${classId}`] ?? {};
   return Object.entries(table)
     .map(([teamId, pts]) => ({ team: state.universe.teams[teamId], pts }))
     .filter(x => x.team)
