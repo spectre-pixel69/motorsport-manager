@@ -1,48 +1,21 @@
-// Tire Championship - Shows which tire brand is leading in this class
+// Tire Championship — real tire-manufacturer standings (source of truth:
+// state.standings.tires, filled by applyTirePoints from top-3 finishers).
 
-import type { Rider, Universe } from '../../data/types';
-
-interface StandingEntry {
-  rider: Rider;
-  pts: number;
-}
+import type { Universe } from '../../data/types';
 
 interface Props {
-  standings: StandingEntry[];
+  tirePoints: Record<string, number>;   // brandId -> points (state.standings.tires)
   universe: Universe;
 }
 
-export function TireChampionship({ standings, universe }: Props) {
-  // Aggregate tire brand points from all riders based on their team's tire brand
-  const tireBrands = new Map<string, {
-    brandId: string;
-    brandName: string;
-    points: number;
-  }>();
-
-  standings.forEach(entry => {
-    if (!entry.rider.teamId) return;
-
-    const team = universe.teams[entry.rider.teamId];
-    if (!team) return;
-
-    const brand = universe.tireBrands[team.tireBrandId];
-    const brandId = team.tireBrandId;
-    const brandName = brand?.name || 'Unknown';
-
-    const existing = tireBrands.get(brandId);
-    if (existing) {
-      existing.points += entry.pts;
-    } else {
-      tireBrands.set(brandId, {
-        brandId,
-        brandName,
-        points: entry.pts,
-      });
-    }
-  });
-
-  const sorted = Array.from(tireBrands.values()).sort((a, b) => b.points - a.points);
+export function TireChampionship({ tirePoints, universe }: Props) {
+  const sorted = Object.entries(tirePoints)
+    .map(([brandId, points]) => ({
+      brandId,
+      brandName: universe.tireBrands[brandId]?.name ?? brandId,
+      points,
+    }))
+    .sort((a, b) => b.points - a.points);
 
   return (
     <div class="tire-championship">
@@ -56,16 +29,12 @@ export function TireChampionship({ standings, universe }: Props) {
             <div class="col-pos">Pos</div>
             <div class="col-brand">Tire Brand</div>
             <div class="col-points">Points</div>
-            <div class="col-wins">Wins</div>
-            <div class="col-podiums">Podiums</div>
           </div>
           {sorted.slice(0, 6).map((entry, idx) => (
-            <div class="table-row" key={entry.brandId}>
+            <div class={`table-row ${idx === 0 ? 'leader' : ''}`} key={entry.brandId}>
               <div class="col-pos">{idx + 1}</div>
               <div class="col-brand">{entry.brandName}</div>
               <div class="col-points">{entry.points}</div>
-              <div class="col-wins">—</div>
-              <div class="col-podiums">—</div>
             </div>
           ))}
         </div>

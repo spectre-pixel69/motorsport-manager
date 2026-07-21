@@ -68,7 +68,7 @@ export function ClassPanel({
         <div class="panel-section standings-section">
           <ChampionshipStandings standings={standings} />
           {state.discipline === 'namc' ? (
-            <TireChampionship standings={standings} universe={u} />
+            <TireChampionship tirePoints={state.standings.tires} universe={u} />
           ) : (
             <ConstructorStandings
               standings={constructorStandingsFor(state, classId)}

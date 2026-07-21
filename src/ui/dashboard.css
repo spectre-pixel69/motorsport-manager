@@ -427,13 +427,13 @@
 }
 
 .tire-table .table-header {
-  grid-template-columns: 20px 1fr 40px 30px 40px;
+  grid-template-columns: 20px 1fr 60px;
   padding: 4px 6px;
   font-size: 8px;
 }
 
 .tire-table .table-row {
-  grid-template-columns: 20px 1fr 40px 30px 40px;
+  grid-template-columns: 20px 1fr 60px;
   padding: 4px 6px;
 }
 
