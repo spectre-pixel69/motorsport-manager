@@ -1,0 +1,202 @@
+# NAMC Rulebook Discrepancy Log
+
+Running list of places where the game (or its docs) got the rules wrong, so we
+can go back to the rulebook and see where the misreadings came from. Add an
+entry every time we catch one. Do NOT delete entries after fixing — the point
+is the audit trail.
+
+Status meanings:
+- **FIXED** — code now matches the correct rule
+- **DOC-ONLY** — code was right, documentation (CLAUDE.md) was wrong
+- **VERIFY** — implementation and spec disagree; need the rulebook open to settle it
+
+---
+
+## 1. Stadium/outdoor calendar split — FIXED
+
+- **What was built:** 24-round season, rounds 1-12 in stadiums + rounds 13-24
+  outdoor. Code comment cited "rulebook 10.3" for the split. CLAUDE.md repeated
+  it as "Rounds 1-12: Stadium (mixed terrain), Rounds 13-20: Outdoor nationals."
+- **Correct rule:** NAMC is a 20-round, ALL-OUTDOOR championship. No stadium
+  rounds at all.
+- **Rulebook section to re-check:** 10.3 (calendar). Whatever was read as a
+  stadium/outdoor split needs a second look.
+- **Fixed in:** `src/data/namc.ts` (NAMC_ROUNDS 24 → 20), `src/data/universe.ts`
+  (calendar builder uses outdoor venues only).
+- **Leftovers to clean up:** `NAMC_STADIUMS` still exists in `src/data/parody.ts`
+  with the stale "rounds 1-12" comment; stadium tracks still generated into the
+  universe (unused by the calendar); `RACE_MINUTES.stadium` entries in
+  `src/data/namc.ts`; stale comment on `CalendarRound` in `src/data/types.ts`
+  ("rounds 1-12 stadium, 13-24 outdoor").
+
+## 2. F1-style championship points — DOC-ONLY
+
+- **What the docs claimed:** CLAUDE.md "locked specifications" listed F1-style
+  points (25, 20, 18, 16, ...).
+- **Correct rule:** NAMC Main Race points run 40 down to 1 (P1 = 40 pts ...
+  P40 = 1 pt), per rulebook 3.9. The code in `src/data/classes.ts`
+  (`NAMC_POINTS`) already did this correctly.
+- **Action:** CLAUDE.md locked-spec section needs rewriting; re-check
+  rulebook 3.9 / 11.0 to confirm the 40→1 table and any DNF minimum
+  (code currently gives DNF in the Main 1 pt minimum).
+
+## 3. Two parallel championships (4S + 2S) running now — FIXED
+
+- **What was built:** Both a fourStroke and a twoStroke championship simulated
+  every round; 6 dual-charter orgs fielding a team in each championship + 14
+  single-charter teams per championship (cited "rulebook 11.4 dual-charter
+  constructors championship"). UI tabs showed both championships.
+- **Correct rule:** Current game is the S4-only championship. The 2S parallel
+  championship is FUTURE content (DLC), not launch content.
+- **Rulebook section to re-check:** 11.4 (dual-charter) and wherever the 2S
+  championship is described — confirm whether the rulebook presents it as
+  active or planned.
+- **Fixed in:** `src/data/universe.ts` (builds 20 S4 charters only),
+  `src/game/state.ts` (round runner), `src/ui/Hub.tsx`, `src/ui/Standings.tsx`,
+  `src/ui/dashboard/helpers.ts`.
+- **Kept for DLC:** `twoStroke` in the `ChampionshipId` type, `dualCharter`
+  team fields, manufacturer `strokes` ratings, purse split plumbing.
+
+## 4. Class → championship mapping — FIXED
+
+- **What was built:** Dashboard helper mapped 250 / 125 (250P) / Women's
+  classes to the twoStroke championship, leaving only the 350 class in
+  fourStroke.
+- **Correct rule:** All four classes (350, 250, 250P/125, Women's) race inside
+  the single S4 championship. A class's engine type is flavor, not its
+  championship.
+- **Fixed in:** `src/ui/dashboard/helpers.ts` (`getChampionshipForClass`).
+
+## 5. Empty fourStroke grids from the hand-authored rider file — FIXED
+
+- **What was built:** Universe builder tried to fill teams from the
+  hand-authored `src/data/riders.ts` (advertised as "160 NAMC riders,
+  4 classes × 20 teams"). The file actually contained 75 riders (27 4S / 48 2S),
+  block headers that don't match the four class IDs, and most riders had no
+  `classId` — so every fourStroke race grid came up empty and the sim crashed
+  on race day.
+- **Root cause:** The rider file was authored against the wrong championship
+  structure (see items 3 & 4), which traces back to the same rulebook
+  misreading.
+- **Fixed in:** `src/data/universe.ts` — predefined-rider path removed; all
+  riders go through `makeRider()` (guarantees class, unique number per
+  class+championship per rulebook 6.2, salary floor, gate profile).
+  `riders.ts` is retained (unwired) as raw material for the future 2S DLC.
+
+## 6. Weekend format: A/B split vs unified 40-man gate — FIXED
+
+- **What was built:** `src/sim/weekend.ts` ran hot-lap qualifying → A/B split
+  (top 20 / bottom 20) → Race 1 + Race 2 qualifying races → separate B-Main and
+  A-Main (20 riders each), citing "rulebook 3.x". Points 1-40 assigned across
+  A-Main then B-Main finishers.
+- **Ruling (boss, 2026-07-13):** The A/B-Main structure is the OLD rule from
+  the two-stroke/four-stroke days. Current format: hot-lap qualifying (fastest
+  qualifier picks his gate first) → one MAIN RACE on a unified 40-rider single
+  gate. No motos, no relegation. Much simpler race weekend across all four
+  classes.
+- **Root cause to check in rulebook:** section 3.x was read from an outdated
+  edition — verify v15.1 replaced the A/B format.
+- **Fixed in:** `src/sim/weekend.ts` (runNamcWeekend rewritten),
+  `src/data/namc.ts` (A_MAIN_SIZE removed).
+
+## 7. 125-class purse table doesn't sum to its stated total — FIXED
+
+- **Class identity resolved (boss, 2026-07-13):** The table the rulebook labels
+  "125" belongs to the **250P Restricted** class — a 250 tuned down to 125-spec
+  output; the "P" denotes the restriction. Not a separate 125cc class.
+- **Arithmetic resolved (boss, 2026-07-13):** Tier weighting order is
+  **350 > 250 > Women's > 250P**. The rulebook printed one table and served it
+  to two classes — that's the source of the mismatch. Resolution:
+  - The printed table (sums $385,250) is the **Women's Pro** table (tier 3).
+  - The **250P** (tier 4, bottom) gets its own table built to the rulebook's
+    stated total of exactly **$341,200**, same shape, P40 = $5,000 minimum
+    finish payout preserved.
+- **Fixed in:** `src/data/namc.ts` (PURSE_WOMEN + new PURSE_250P, PURSES map),
+  `src/data/classes.ts` (women tier 3, 250P tier 4), `NAMC_CLASS_IDS` and
+  Standings tab order now follow tier order.
+- **Rulebook erratum needed:** 5.10.1 should print separate Women's and 250P
+  tables.
+
+## 9. 350 & 250 purse tables don't sum to their stated totals — VERIFY (rulebook errors?)
+
+- **What was found (while fixing #7):** The rulebook's stated per-round totals
+  don't match its own printed tables for the top two classes either:
+  - 350 Class: printed table sums to **$619,000**; rulebook states $585,000.
+  - 250 Class: printed table sums to **$499,500**; rulebook states $486,600.
+- **Current code:** implements the printed tables exactly (values untouched);
+  comments in `src/data/namc.ts` now record the true sums.
+- **Rulebook section to re-check:** 5.10.1 — decide per class whether the
+  table or the stated total is authoritative. (Tier order holds either way:
+  619,000 > 499,500 > 385,250 > 341,200.)
+
+## 8. Class naming: "125 Class" vs "250P Restricted" — FIXED
+
+- **What was built:** Code displayed the third class as "125 Class"
+  (shortName "125"), reading rulebook 3.1 literally.
+- **Ruling (boss, 2026-07-13):** Official class is **250P Restricted**
+  (shortName "250P") — a 250 machine restricted to 125-spec output.
+- **Fixed in:** `src/data/classes.ts` (display name + shortName). Internal
+  class id stays `c125` for save/key compatibility.
+- **Rulebook section to re-check:** 3.1 — see whether the rulebook's own
+  wording caused the misread.
+
+## 10. "25% of purse goes to riders" — FIXED (misread) + VERIFY (split arithmetic)
+
+- **What the docs claimed:** CLAUDE.md locked specs said "25% of purse goes to
+  riders (appearance + finish bonuses)" with a "75% operational split" to
+  teams — i.e., the team keeps three quarters of a rider's race winnings.
+- **Ruling (boss, 2026-07-13):** Backwards. Purse winnings are the RIDER'S
+  money. The team's cut is negotiated at contract signing and is HARD-CAPPED
+  at 25% — no rider gives more. The 25%-to-riders figure was lifted from a
+  different stream entirely: the weekly LEAGUE REVENUE split (merch/swag/TV,
+  rulebook 5.3), which the boss quotes as: riders 25%, teams 45%, NAMC
+  personnel 20%, operational costs 20%.
+- **Fixed in:** `src/data/types.ts` (`RiderContract.purseShareTeamPct`, 0-25),
+  contract factories in `src/data/universe.ts` / `src/data/riders.ts`
+  (default 0 until negotiation system lands), comment on `REVENUE_SPLIT` in
+  `src/data/namc.ts`.
+- **Still to VERIFY in rulebook 5.3:** the quoted revenue split sums to 110%
+  (25+45+20+20). Code currently carries riders 25 / teams 45 / tires 10 /
+  league 20 (= 100%). Settle which slice is 10% — personnel, operational — or
+  whether the tire manufacturers' slice exists at all.
+- **Also:** CLAUDE.md locked-specs section needs the purse/revenue conflation
+  rewritten.
+
+## 11-18. THE v15.1 ALIGNMENT WAVE (2026-07-13, actual rulebook obtained)
+
+The real rulebook (docs/NAMC_RULEBOOK_v15.1_06232026.pdf) is now in the repo.
+Root cause of ALL prior items confirmed: the game was built from a secondhand
+summary. Corrections applied this wave:
+
+- **11. Points (§11.2) — FIXED.** Not 40→1. Main Event: 25/22/20/18/16/15/14/
+  13/12/11, then 10..1, then 1 pt P21-40. Sprint Race half-scale (12.5 win).
+- **12. Sprint Races (§3.5/3.6) — FIXED.** Every round = Sprint (12min+1lap,
+  0.5x) + Main Event (35min+2laps, 1.0x) per class. Weekend sim rebuilt.
+- **13. Race lengths — FIXED.** Main is 35+2, not 30. The 60% "scaled classes"
+  rule for 250P/Women's does NOT exist (Appendix A: all classes identical).
+- **14. Calendar (§10.2) — FIXED.** Real 20-venue 2027 calendar implemented
+  (Fox Raceway opener → Glen Helen finale). Bye weeks/1,000-mile rule =
+  calendar metadata, not yet modeled.
+- **15. Purse (§5.2) — FIXED + NEW CONTRADICTION.** Only endpoints specified:
+  wins 75/40/20/20k, $5k P40 floor. Old detailed tables were from a stale
+  source. NEW: §5.2's "$800,000 round purse" cannot cover its own guarantees
+  (160 × $5k floor = $800k before win money). Needs boss ruling/erratum.
+- **16. Numbers (§6.1) — FIXED.** Earned annually by standings position;
+  champion runs #1. Wired into season rollover. Legacy NUMBER program (§6.2,
+  retired numbers) ≠ our gold/platinum/diamond "legacy plates" — plates are
+  an invention of the old summary; keep or replace pending boss ruling.
+- **17. Penalties (§13.1) — LOGGED.** Four-tier system (Warning/Fine/
+  Suspension/Charter Revocation), NOT three strikes. Fines → Rider Welfare
+  Fund. Terminal violations list (§12.4). Enforcement still unwired.
+- **18. Misc corrections logged:** revenue = 25% of gross to rider pool
+  (§5.1); tire championship does not exist in v15.1 (§8 = open tire war) —
+  applyTirePoints is legacy; Rider's Cup eligibility = 10 round starts
+  (§11.1); Manufacturer's Cup = sum of all 8 roster riders w/ Mathematical
+  Elimination Rule (§11.4); draft/free agency fully specified (§4.10-4.14);
+  bench activation protocol (App. B) — IMPLEMENTED; OVR 5-pillar scouting
+  scale (§4.10); 18+ hard age floor (§3.8); charter system (§2).
+
+---
+
+**How to add an entry:** what was built, what the correct rule is, which
+rulebook section to re-check, where it was fixed (files), and status.

@@ -1,0 +1,1600 @@
+/* Team Dashboard Styling */
+
+.team-dashboard {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: #0a0e27;
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  overflow: hidden;
+}
+
+/* Header */
+.dashboard-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  background: #1a1f3a;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+.header-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.header-left h1 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.season-label {
+  font-size: 12px;
+  color: #888;
+  display: block;
+}
+
+.header-right {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.budget {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ade80;
+}
+
+/* Overall Championship */
+.overall-championship {
+  padding: 16px 20px;
+  background: #111827;
+  border-bottom: 2px solid #2a2f4a;
+}
+
+.overall-championship h3 {
+  margin: 0 0 12px 0;
+  font-size: 13px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #aaa;
+  letter-spacing: 0.5px;
+}
+
+.standings-table {
+  display: grid;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.table-header {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 100px 50px 60px;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #1a1f3a;
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 11px;
+  color: #888;
+  border-radius: 4px;
+}
+
+.table-row {
+  display: grid;
+  grid-template-columns: 40px 1fr 120px 100px 50px 60px;
+  gap: 12px;
+  padding: 8px 12px;
+  background: #0a0e27;
+  border-left: 2px solid transparent;
+  border-radius: 4px;
+  align-items: center;
+}
+
+.table-row:hover {
+  background: #111827;
+  border-left-color: #ff9800;
+}
+
+.col-pos {
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.col-rider {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 500;
+}
+
+.rider-number {
+  color: #888;
+  font-size: 11px;
+  min-width: 30px;
+}
+
+.col-team {
+  color: #999;
+  font-size: 11px;
+}
+
+.col-points {
+  text-align: center;
+  font-weight: 600;
+  color: #fff;
+}
+
+.col-wins,
+.col-podiums {
+  text-align: center;
+  color: #999;
+}
+
+/* Season Progress */
+.season-progress {
+  padding: 16px 20px;
+  background: #0a0e27;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+.progress-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.progress-info h3 {
+  margin: 0;
+  font-size: 13px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+}
+
+.round-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: #4ade80;
+}
+
+.progress-bar {
+  position: relative;
+  height: 20px;
+  background: #1a1f3a;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 8px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #ff9800, #ffc107);
+  transition: width 0.3s ease;
+}
+
+.progress-marker {
+  position: absolute;
+  top: 0;
+  width: 2px;
+  height: 100%;
+  background: #2a2f4a;
+}
+
+.progress-marker.completed {
+  background: #4ade80;
+}
+
+.progress-marker.active {
+  background: #fff;
+  width: 3px;
+  left: calc(var(--pos) - 1.5px) !important;
+}
+
+.next-race-preview {
+  display: flex;
+  gap: 8px;
+  font-size: 12px;
+  color: #999;
+}
+
+.next-label {
+  color: #666;
+  font-weight: 600;
+}
+
+.track-name {
+  color: #4ade80;
+  font-weight: 500;
+}
+
+/* Class Panels Grid */
+.class-panels-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+  padding: 16px 20px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.class-panel {
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+  border-radius: 4px;
+  overflow: hidden;
+  border-top: 3px solid #ff9800;
+}
+
+.panel-header {
+  padding: 12px;
+  background: #ff9800;
+  color: #000;
+  font-weight: 600;
+  font-size: 14px;
+  text-transform: uppercase;
+}
+
+.panel-header h2 {
+  margin: 0;
+  font-size: 14px;
+}
+
+.panel-content {
+  display: grid;
+  grid-template-columns: 150px 1fr 150px;
+  gap: 12px;
+  padding: 12px;
+  font-size: 11px;
+  flex: 1;
+  overflow-y: auto;
+  max-height: 400px;
+}
+
+.panel-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.panel-section h3 {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  color: #888;
+}
+
+/* Rider Roster */
+.rider-roster {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.empty-roster {
+  text-align: center;
+  padding: 12px;
+  color: #666;
+  font-size: 11px;
+}
+
+.empty-roster p {
+  margin: 0 0 8px 0;
+}
+
+.roster-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rider-card {
+  background: #0a0e27;
+  border-radius: 3px;
+  padding: 8px;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.rider-card:hover {
+  background: #1a1f3a;
+}
+
+.rider-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.rider-name {
+  font-weight: 600;
+  font-size: 11px;
+}
+
+.rider-number {
+  font-weight: 600;
+  color: #ff9800;
+  font-size: 12px;
+}
+
+.rider-stats {
+  margin-bottom: 4px;
+}
+
+.stat {
+  display: flex;
+  gap: 4px;
+  font-size: 10px;
+}
+
+.stars {
+  color: #ffc107;
+}
+
+.rating {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.rider-financials {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin-bottom: 4px;
+  font-size: 9px;
+}
+
+.financial-item {
+  display: flex;
+  justify-content: space-between;
+}
+
+.financial-item .label {
+  color: #666;
+}
+
+.financial-item .value {
+  color: #4ade80;
+  font-weight: 600;
+}
+
+.btn-setup {
+  width: 100%;
+  padding: 4px;
+  background: #1a1f3a;
+  border: 1px solid #2a2f4a;
+  color: #aaa;
+  font-size: 10px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-setup:hover {
+  background: #2a2f4a;
+  color: #fff;
+}
+
+/* Championship Standings (Compact) */
+.championship-standings {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.standings-table.compact {
+  font-size: 10px;
+}
+
+.standings-table.compact .table-header {
+  grid-template-columns: 30px 1fr 60px 50px 35px 45px;
+  padding: 6px 8px;
+  font-size: 9px;
+}
+
+.standings-table.compact .table-row {
+  grid-template-columns: 30px 1fr 60px 50px 35px 45px;
+  padding: 6px 8px;
+}
+
+.empty {
+  font-size: 11px;
+  color: #666;
+  text-align: center;
+  padding: 12px;
+}
+
+/* Tire Championship */
+.tire-championship {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2f4a;
+}
+
+.tire-table {
+  font-size: 9px;
+}
+
+.tire-table .table-header {
+  grid-template-columns: 20px 1fr 60px;
+  padding: 4px 6px;
+  font-size: 8px;
+}
+
+.tire-table .table-row {
+  grid-template-columns: 20px 1fr 60px;
+  padding: 4px 6px;
+}
+
+/* Financial Tracker */
+.financial-tracker {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.financial-box {
+  background: #0a0e27;
+  border-radius: 3px;
+  padding: 8px;
+  font-size: 10px;
+}
+
+.financial-box h3 {
+  margin: 0 0 6px 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+}
+
+/* §13.5 Rider Welfare Fund — gold accent, it's a league-governance panel */
+.financial-box.welfare-fund {
+  border-left: 2px solid #f39c12;
+}
+
+.financial-box.welfare-fund h3 {
+  color: #f39c12;
+}
+
+.financial-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 2px 0;
+  color: #999;
+}
+
+.financial-row .label {
+  font-size: 9px;
+}
+
+.financial-row .value {
+  font-weight: 600;
+  color: #fff;
+}
+
+.financial-row.total {
+  border-top: 1px solid #2a2f4a;
+  padding-top: 4px;
+  margin-top: 4px;
+  color: #fff;
+}
+
+.value.success {
+  color: #4ade80;
+}
+
+.value.warning {
+  color: #f87171;
+}
+
+.budget-bar-container {
+  margin-top: 6px;
+}
+
+.budget-bar {
+  width: 100%;
+  height: 8px;
+  background: #1a1f3a;
+  border-radius: 2px;
+  overflow: hidden;
+  margin-bottom: 2px;
+}
+
+.budget-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #4ade80, #ffc107);
+}
+
+.budget-limit {
+  font-size: 8px;
+  color: #666;
+  display: block;
+  text-align: right;
+}
+
+/* Quick Actions */
+.quick-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.quick-actions h3 {
+  margin: 0 0 4px 0;
+  font-size: 10px;
+  font-weight: 600;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.btn-action {
+  padding: 6px;
+  background: #1a1f3a;
+  border: 1px solid #2a2f4a;
+  color: #aaa;
+  font-size: 9px;
+  border-radius: 2px;
+  cursor: pointer;
+  text-align: left;
+}
+
+.btn-action:hover {
+  background: #2a2f4a;
+  color: #4ade80;
+}
+
+/* Modal */
+.modal-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 100;
+}
+
+.modal {
+  background: #111827;
+  border: 1px solid #2a2f4a;
+  border-radius: 4px;
+  padding: 20px;
+  max-width: 500px;
+  width: 90%;
+  position: relative;
+}
+
+.modal-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: #888;
+  font-size: 18px;
+  cursor: pointer;
+}
+
+.modal-close:hover {
+  color: #fff;
+}
+
+/* Modal Content Sections */
+.modal-content {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  max-height: 80vh;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px;
+  border-bottom: 1px solid #2a2f4a;
+  background: #0a0e27;
+}
+
+.modal-header h2 {
+  margin: 0;
+  font-size: 16px;
+  color: #fff;
+}
+
+.modal-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Draft Pool Styles */
+.riders-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 12px;
+}
+
+.rider-option {
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 4px;
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rider-option:hover {
+  background: #111827;
+  border-color: #3a3f4a;
+}
+
+.rider-info {
+  flex: 1;
+}
+
+.rider-header-row {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 4px;
+}
+
+.rider-name {
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.rider-number {
+  color: #ff9800;
+  font-weight: 600;
+  font-size: 12px;
+}
+
+.rider-stats-row {
+  display: flex;
+  gap: 8px;
+  font-size: 11px;
+  color: #999;
+  margin-bottom: 6px;
+}
+
+.rider-attributes {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  font-size: 10px;
+  color: #888;
+}
+
+.btn-draft,
+.btn-sign {
+  padding: 6px 12px;
+  background: #ff9800;
+  border: none;
+  color: #000;
+  font-weight: 600;
+  font-size: 11px;
+  border-radius: 2px;
+  cursor: pointer;
+}
+
+.btn-draft:hover,
+.btn-sign:hover {
+  background: #ffc107;
+}
+
+/* Free Agents Table */
+.free-agents-table {
+  display: grid;
+  gap: 8px;
+  font-size: 11px;
+}
+
+.free-agents-table .table-header {
+  display: grid;
+  grid-template-columns: 1fr 56px 36px 46px 46px 72px 76px;
+  padding: 8px 12px;
+  background: #1a1f3a;
+  font-weight: 600;
+  color: #888;
+  border-radius: 3px;
+}
+
+.free-agents-table .table-row {
+  display: grid;
+  grid-template-columns: 1fr 56px 36px 46px 46px 72px 76px;
+  padding: 8px 12px;
+  background: #0a0e27;
+  border-radius: 3px;
+  align-items: center;
+}
+
+.free-agents-table .table-row:hover {
+  background: #111827;
+}
+
+.free-agents-table .col-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.free-agents-table .number {
+  color: #666;
+  font-size: 10px;
+  min-width: 30px;
+}
+
+.free-agents-table .col-ovr {
+  text-align: center;
+  color: #4ade80;
+}
+
+.free-agents-table .col-age,
+.free-agents-table .col-pace,
+.free-agents-table .col-starts {
+  text-align: center;
+  color: #999;
+}
+
+.free-agents-table .col-action {
+  text-align: center;
+}
+
+/* Calendar Styles */
+.calendar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.calendar-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.calendar-section h3 {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #4ade80;
+  text-transform: uppercase;
+}
+
+.rounds-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 8px;
+}
+
+.round-card {
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 3px;
+  padding: 8px;
+  text-align: center;
+  font-size: 10px;
+}
+
+.round-card.completed {
+  opacity: 0.6;
+  background: #0a3a2a;
+  border-color: #2a4a3a;
+}
+
+.round-card.current {
+  border: 2px solid #ff9800;
+  background: #1a1a2a;
+}
+
+.round-number {
+  font-weight: 600;
+  color: #4ade80;
+  margin-bottom: 4px;
+}
+
+.track-name {
+  font-weight: 500;
+  color: #fff;
+  margin-bottom: 2px;
+}
+
+.track-location {
+  color: #666;
+  font-size: 9px;
+}
+
+.badge {
+  display: inline-block;
+  margin-top: 4px;
+  padding: 2px 4px;
+  border-radius: 2px;
+  font-size: 8px;
+  font-weight: 600;
+}
+
+.badge.completed {
+  background: #2a4a3a;
+  color: #4ade80;
+}
+
+.badge.current {
+  background: #ff9800;
+  color: #000;
+}
+
+.badge.suspension {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+}
+
+.badge.ballast {
+  background: rgba(243, 156, 18, 0.2);
+  color: #f39c12;
+}
+
+.off-season {
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 3px;
+  padding: 12px;
+}
+
+.off-season-text {
+  margin: 0 0 8px 0;
+  font-size: 11px;
+  color: #999;
+}
+
+.off-season-activities {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  font-size: 10px;
+  color: #888;
+}
+
+.off-season-activities li {
+  padding-left: 0;
+}
+
+.info {
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 3px;
+  padding: 12px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.info-item .label {
+  font-size: 9px;
+  color: #666;
+  text-transform: uppercase;
+  font-weight: 600;
+}
+
+.info-item .value {
+  font-size: 12px;
+  color: #4ade80;
+  font-weight: 600;
+}
+
+/* Empty State */
+.empty-state {
+  text-align: center;
+  padding: 40px 20px;
+  color: #666;
+}
+
+.empty-state p {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* Error Banner */
+.error-banner {
+  background: #3a1a1a;
+  border: 1px solid #8a2a2a;
+  color: #ff6b6b;
+  padding: 8px 12px;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+
+/* Button States */
+button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+button:disabled:hover {
+  background-color: inherit;
+}
+
+/* Buttons */
+.btn-secondary {
+  padding: 6px 12px;
+  background: #1a1f3a;
+  border: 1px solid #2a2f4a;
+  color: #aaa;
+  font-size: 12px;
+  border-radius: 3px;
+  cursor: pointer;
+}
+
+.btn-secondary:hover {
+  background: #2a2f4a;
+  color: #fff;
+}
+
+/* Scrollbar */
+.class-panels-grid::-webkit-scrollbar,
+.panel-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.class-panels-grid::-webkit-scrollbar-track,
+.panel-content::-webkit-scrollbar-track {
+  background: #0a0e27;
+}
+
+.class-panels-grid::-webkit-scrollbar-thumb,
+.panel-content::-webkit-scrollbar-thumb {
+  background: #2a2f4a;
+  border-radius: 3px;
+}
+
+.class-panels-grid::-webkit-scrollbar-thumb:hover,
+.panel-content::-webkit-scrollbar-thumb:hover {
+  background: #3a3f4a;
+}
+
+/* Rider Detail Modal */
+.modal.rider-detail {
+  max-width: 900px;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.rider-detail-modal {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+}
+
+.modal-header {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  border-bottom: 1px solid #2a2f4a;
+  padding-bottom: 16px;
+}
+
+.rider-header-top {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.rider-number {
+  font-size: 24px;
+  font-weight: bold;
+  color: #e74c3c;
+  min-width: 40px;
+}
+
+.rider-name-big {
+  font-size: 28px;
+  font-weight: 700;
+  color: #fff;
+  flex: 1;
+}
+
+.rider-nationality {
+  font-size: 13px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
+
+.rider-header-stats {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+
+.header-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  background: #15192e;
+  border-radius: 6px;
+}
+
+.header-stat .label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.header-stat .value {
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.header-stat .stars {
+  font-size: 12px;
+  color: #ffd700;
+}
+
+.modal-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+/* OVR Pillars */
+.ovr-pillars {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.ovr-pillars h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.pillar-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pillar-bar {
+  display: grid;
+  grid-template-columns: 100px 1fr 50px;
+  gap: 12px;
+  align-items: center;
+}
+
+.pillar-label {
+  font-size: 12px;
+  color: #aaa;
+  font-weight: 500;
+}
+
+.pillar-track {
+  height: 6px;
+  background: #1a1f3a;
+  border-radius: 3px;
+  overflow: hidden;
+}
+
+.pillar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #3498db, #2ecc71);
+  border-radius: 3px;
+  transition: width 0.3s ease;
+}
+
+.pillar-value {
+  font-size: 12px;
+  color: #888;
+  text-align: right;
+}
+
+/* Career Stats */
+.career-stats {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.career-stats h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.stat-block {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 10px;
+  background: #15192e;
+  border-radius: 6px;
+  border-left: 3px solid #3498db;
+}
+
+.stat-block .stat-label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.stat-block .stat-value {
+  font-size: 18px;
+  font-weight: 700;
+  color: #fff;
+}
+
+/* Strengths & Weaknesses */
+.strengths-weaknesses {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+.strengths-weaknesses .column {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.strengths-weaknesses h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  display: inline-block;
+  padding: 4px 10px;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.tag.strength {
+  background: rgba(46, 204, 113, 0.2);
+  color: #2ecc71;
+  border: 1px solid #2ecc71;
+}
+
+.tag.weakness {
+  background: rgba(231, 76, 60, 0.2);
+  color: #e74c3c;
+  border: 1px solid #e74c3c;
+}
+
+.placeholder {
+  color: #666;
+  font-style: italic;
+}
+
+/* Morale Section */
+.morale-section {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 12px;
+  border-top: 1px solid #2a2f4a;
+}
+
+.morale-section h3 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.status-item .label {
+  font-size: 12px;
+  color: #888;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.morale-bar {
+  height: 8px;
+  background: #1a1f3a;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.morale-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f39c12, #e74c3c);
+  border-radius: 4px;
+  transition: width 0.3s ease;
+}
+
+.status-item .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.status-injury,
+.status-bench {
+  padding: 8px 12px;
+  background: #15192e;
+  border-left: 3px solid #f39c12;
+  border-radius: 4px;
+  font-size: 12px;
+  color: #f39c12;
+  margin-top: 4px;
+}
+
+.status-bench {
+  border-left-color: #3498db;
+  color: #3498db;
+}
+
+/* Modal Footer */
+.modal-footer {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  padding-top: 16px;
+  border-top: 1px solid #2a2f4a;
+}
+
+.btn-primary {
+  padding: 8px 20px;
+  background: #3498db;
+  color: white;
+  border: none;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  transition: background 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #2980b9;
+}
+
+.btn-primary:active {
+  transform: scale(0.98);
+}
+
+/* Dashboard Tabs */
+.dashboard-tabs {
+  display: flex;
+  gap: 12px;
+  padding: 12px 20px;
+  background: #0a0e27;
+  border-bottom: 1px solid #2a2f4a;
+}
+
+.tab {
+  padding: 8px 16px;
+  background: transparent;
+  border: 1px solid #2a2f4a;
+  border-radius: 4px;
+  color: #888;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.tab:hover {
+  border-color: #3498db;
+  color: #3498db;
+}
+
+.tab.active {
+  background: #3498db;
+  border-color: #3498db;
+  color: white;
+}
+
+/* League Health Panel */
+.league-health {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  padding: 20px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.league-health .panel {
+  padding: 16px;
+  background: #15192e;
+  border: 1px solid #2a2f4a;
+  border-radius: 6px;
+}
+
+.league-health h3 {
+  margin: 0 0 12px 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.league-health h4 {
+  margin: 0 0 12px 0;
+  font-size: 12px;
+  font-weight: 600;
+  color: #aaa;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+/* Welfare Summary */
+.welfare-summary {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.welfare-stat {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px;
+  background: #0a0e27;
+  border-left: 3px solid #2ecc71;
+  border-radius: 4px;
+}
+
+.welfare-stat .label {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.welfare-stat .value {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2ecc71;
+}
+
+.welfare-stat .value.large {
+  font-size: 18px;
+}
+
+/* Fine History Table */
+.fine-history {
+  margin-top: 12px;
+}
+
+.fine-history table {
+  width: 100%;
+  font-size: 12px;
+  border-collapse: collapse;
+}
+
+.fine-history th {
+  text-align: left;
+  padding: 8px 0;
+  font-weight: 600;
+  color: #888;
+  border-bottom: 1px solid #2a2f4a;
+  text-transform: uppercase;
+  font-size: 11px;
+}
+
+.fine-history td {
+  padding: 8px 0;
+  border-bottom: 1px solid #1a1f3a;
+}
+
+.fine-history .text-right {
+  text-align: right;
+}
+
+/* Team Penalties */
+.team-penalties {
+  padding: 12px;
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 4px;
+  margin-bottom: 12px;
+}
+
+.team-penalties h4 {
+  margin: 0 0 8px 0;
+}
+
+.alert.charter-revoked {
+  padding: 12px;
+  background: #c0392b;
+  color: #fff;
+  border-left: 3px solid #a93226;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 12px;
+  font-weight: 600;
+}
+
+.alert {
+  padding: 12px;
+  background: #e74c3c;
+  color: #fff;
+  border-left: 3px solid #c0392b;
+  border-radius: 4px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+
+.warning {
+  color: #f39c12;
+}
+
+/* Penalty Card */
+.penalties-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.penalty-card {
+  padding: 12px;
+  background: #0a0e27;
+  border: 1px solid #2a2f4a;
+  border-radius: 4px;
+  border-left: 4px solid #95a5a6;
+  font-size: 12px;
+}
+
+.penalty-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+  gap: 12px;
+}
+
+.tier-badge {
+  padding: 4px 8px;
+  border-radius: 3px;
+  font-size: 11px;
+  font-weight: 600;
+  color: white;
+}
+
+.round {
+  font-size: 11px;
+  color: #888;
+  text-transform: uppercase;
+}
+
+.penalty-body {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.penalty-body .reason {
+  font-weight: 600;
+  color: #fff;
+}
+
+.penalty-body .code {
+  font-family: monospace;
+  font-size: 11px;
+}
+
+.penalty-body .fine {
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.penalty-body .suspension {
+  color: #e74c3c;
+  font-weight: 600;
+}
+
+.penalty-body .terminal {
+  color: #c0392b;
+  font-weight: 600;
+}
+
+.penalty-body .dq-detail {
+  margin-top: 4px;
+  font-size: 11px;
+}
+
+.resolved {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid #2a2f4a;
+}
+
+.championship-standings .ballast-chip {
+  margin-left: 4px;
+  font-size: 9px;
+  color: #f39c12;
+  font-weight: 600;
+}
+
+.overall-championship .class-chip {
+  margin-left: 6px;
+  padding: 1px 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #3498db;
+  background: rgba(52, 152, 219, 0.15);
+  border-radius: 8px;
+}
+
+.free-agents-table .col-salary {
+  text-align: right;
+  color: #4ade80;
+  font-weight: 600;
+  font-size: 11px;
+}
+.free-agents-table .col-salary.over-budget {
+  color: #e74c3c;
+}
+
+.prospect-tag {
+  margin-left: 6px;
+  font-size: 9px;
+  font-weight: 600;
+  color: #f39c12;
+  background: rgba(243, 156, 18, 0.15);
+  padding: 1px 6px;
+  border-radius: 8px;
+}
